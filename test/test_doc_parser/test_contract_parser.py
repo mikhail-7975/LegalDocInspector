@@ -1,6 +1,6 @@
-def test_table_parser():
+def test_contract_parser():
     # TODO
-    # load data/certificate.XLS
+    # load data/contract_05.414801.pdf
     # extract data
     # check is extracted data correct
     assert False
