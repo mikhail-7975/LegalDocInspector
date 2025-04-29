@@ -18,35 +18,35 @@ def get_company_info_by_inn(inn):
         "region": "",
         "PreventChromeAutocomplete": ""
     }
-    
+
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
         "Accept": "application/json, text/javascript, */*; q=0.01",
         "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
     }
-    
+
     try:
         # Отправляем запрос для получения ID поиска
         response = requests.post(url, data=payload, headers=headers)
         response.raise_for_status()
-        
+
         # Получаем ID из ответа
         search_id = response.json().get('t')
-        
+
         if not search_id:
             return None, None, None
-        
+
         # Шаг 2: Получаем результаты поиска по ID
         result_url = f"https://egrul.nalog.ru/search-result/{search_id}"
-        
+
         # Даем серверу время на обработку запроса
         time.sleep(0.1)
-        
+
         result_response = requests.get(result_url, headers=headers)
         result_response.raise_for_status()
-        
+
         data = result_response.json()
-        
+
         # Проверяем наличие данных
         if 'rows' in data and len(data['rows']) > 0:
             # Берем первую запись (самую релевантную)
@@ -57,7 +57,7 @@ def get_company_info_by_inn(inn):
             return ogrn, company_name, address
         else:
             return None, None, None
-            
+
     except requests.exceptions.RequestException as e:
         print(f"Ошибка при выполнении запроса: {e}")
         return None, None, None
