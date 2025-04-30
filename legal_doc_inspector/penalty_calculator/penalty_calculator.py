@@ -12,18 +12,18 @@ def get_next_workday_after_n_days(start_date, n_days):
     """Возвращает дату, которая наступает через n рабочих дней после start_date"""
     current_date = start_date
     workdays_passed = 0
-    
+
     while workdays_passed < n_days:
         current_date += timedelta(days=1)
         if not holiday_checker.is_holiday_or_weekend(current_date):
             workdays_passed += 1
-            
+
     return current_date
 
 def calculate_penalty(debt, start_date, end_date, consumer_type, payment_amount=0, payment_date=None):
     """
     Расчет пеней в зависимости от типа потребителя и периода просрочки.
-    
+
     :param debt: Сумма долга
     :param start_date: Начало периода просрочки (строка в формате "YYYY-MM-DD")
     :param end_date: Конец периода просрочки (строка в формате "YYYY-MM-DD")
@@ -35,20 +35,20 @@ def calculate_penalty(debt, start_date, end_date, consumer_type, payment_amount=
     # Преобразуем даты начала и конца просрочки в datetime
     start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
     end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
-    
+
     # Если payment_date уже является объектом datetime, преобразование не требуется
     # Если payment_date - строка, преобразуем её в datetime
     if payment_date and isinstance(payment_date, str):
         payment_date = datetime.strptime(payment_date, "%Y-%m-%d").date()
     elif payment_date and isinstance(payment_date, datetime):
         payment_date = payment_date.date()
-    
+
     # Инициализация переменной для хранения суммы пеней
     total_penalty = 0
-    
+
     # Общее количество дней просрочки
     delta = (end_date - start_date).days + 1  # +1 чтобы включить оба конца периода
-    
+
     # Учет оплаты, если она была произведена до или в период просрочки
     if payment_date:
         if payment_date < start_date:
@@ -62,13 +62,13 @@ def calculate_penalty(debt, start_date, end_date, consumer_type, payment_amount=
         else:
             # Если оплата была произведена после окончания периода, она не учитывается
             print(f"Оплата {payment_amount} руб. произведена после окончания периода {end_date.strftime('%Y-%m-%d')} и не учитывается.")
-    
+
     # Определяем подпериоды в зависимости от типа потребителя
     if consumer_type == "Управляющая компания":
         # Подпериод 1: с 1 по 60 день (рабочие дни)
         period1_start = get_next_workday_after_n_days(start_date, 1)  # Первый рабочий день
         period1_end = get_next_workday_after_n_days(period1_start, 59)  # +59 рабочих дней = всего 60
-        
+
         # Рассчитываем фактическое количество дней между датами (включая выходные)
         days1 = (min(period1_end, end_date) - start_date).days + 1
         if days1 > 0:
@@ -76,19 +76,19 @@ def calculate_penalty(debt, start_date, end_date, consumer_type, payment_amount=
             penalty1 = debt * days1 * rate1 * CB_RATE
             total_penalty += penalty1
             print(f"{start_date.strftime('%Y-%m-%d')} -> {period1_end.strftime('%Y-%m-%d')}: {days1} дней, Пени: {penalty1:.2f} руб., Долг: {debt:.2f} руб.")
-        
+
         # Подпериод 2: с 61 по 90 день (рабочие дни)
         if end_date > period1_end:
             period2_start = get_next_workday_after_n_days(period1_end, 1)
             period2_end = get_next_workday_after_n_days(period2_start, 29)  # +29 рабочих дней = всего 30 (61-90)
-            
+
             days2 = (min(period2_end, end_date) - period2_start).days + 1
             if days2 > 0:
                 rate2 = 1 / 170
                 penalty2 = debt * days2 * rate2 * CB_RATE
                 total_penalty += penalty2
                 print(f"{period2_start.strftime('%Y-%m-%d')} -> {period2_end.strftime('%Y-%m-%d')}: {days2} дней, Пени: {penalty2:.2f} руб., Долг: {debt:.2f} руб.")
-        
+
         # Подпериод 3: с 91 дня (рабочие дни)
         if end_date > period2_end:
             period3_start = get_next_workday_after_n_days(period2_end, 1)
@@ -98,31 +98,31 @@ def calculate_penalty(debt, start_date, end_date, consumer_type, payment_amount=
                 penalty3 = debt * days3 * rate3 * CB_RATE
                 total_penalty += penalty3
                 print(f"{period3_start.strftime('%Y-%m-%d')} -> {end_date.strftime('%Y-%m-%d')}: {days3} дней, Пени: {penalty3:.2f} руб., Долг: {debt:.2f} руб.")
-    
+
     elif consumer_type in ["ТСЖ", "ЖСК", "ТСН"]:
         # Подпериод 1: с 1 по 30 день (рабочие дни)
         period1_start = get_next_workday_after_n_days(start_date, 1)  # Первый рабочий день
         period1_end = get_next_workday_after_n_days(period1_start, 29)  # +29 рабочих дней = всего 30
-        
+
         days1 = (min(period1_end, end_date) - start_date).days + 1
         if days1 > 0:
             rate1 = 0  # Пени не начисляются
             penalty1 = debt * days1 * rate1 * CB_RATE
             total_penalty += penalty1
             print(f"{start_date.strftime('%Y-%m-%d')} -> {period1_end.strftime('%Y-%m-%d')}: {days1} дней, Пени: {penalty1:.2f} руб., Долг: {debt:.2f} руб.")
-        
+
         # Подпериод 2: с 31 по 90 день (рабочие дни)
         if end_date > period1_end:
             period2_start = get_next_workday_after_n_days(period1_end, 1)
             period2_end = get_next_workday_after_n_days(period2_start, 59)  # +59 рабочих дней = всего 60 (31-90)
-            
+
             days2 = (min(period2_end, end_date) - period2_start).days + 1
             if days2 > 0:
                 rate2 = 1 / 300
                 penalty2 = debt * days2 * rate2 * CB_RATE
                 total_penalty += penalty2
                 print(f"{period2_start.strftime('%Y-%m-%d')} -> {period2_end.strftime('%Y-%m-%d')}: {days2} дней, Пени: {penalty2:.2f} руб., Долг: {debt:.2f} руб.")
-        
+
         # Подпериод 3: с 91 дня (рабочие дни)
         if end_date > period2_end:
             period3_start = get_next_workday_after_n_days(period2_end, 1)
@@ -132,7 +132,7 @@ def calculate_penalty(debt, start_date, end_date, consumer_type, payment_amount=
                 penalty3 = debt * days3 * rate3 * CB_RATE
                 total_penalty += penalty3
                 print(f"{period3_start.strftime('%Y-%m-%d')} -> {end_date.strftime('%Y-%m-%d')}: {days3} дней, Пени: {penalty3:.2f} руб., Долг: {debt:.2f} руб.")
-    
+
     else:  # Прочие потребители
         # Подпериод 1: с 1 дня (рабочие дни)
         period1_start = get_next_workday_after_n_days(start_date, 1)
@@ -142,7 +142,7 @@ def calculate_penalty(debt, start_date, end_date, consumer_type, payment_amount=
             penalty1 = debt * days1 * rate1 * CB_RATE
             total_penalty += penalty1
             print(f"{period1_start.strftime('%Y-%m-%d')} -> {end_date.strftime('%Y-%m-%d')}: {days1} дней, Пени: {penalty1:.2f} руб., Долг: {debt:.2f} руб.")
-    
+
     return total_penalty, delta
 
 file_path = '08.184032-ТЭ 08.2023-10.2024.XLS'
