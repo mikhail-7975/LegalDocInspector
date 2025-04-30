@@ -15,7 +15,7 @@ class TableParser:
         self.currency_pattern = r"^-?(?:\d+(\.\d{1,2})?|0)$"
         self.month_year_pattern = r'^(0[1-9]|1[0-2])\.(19|20)\d{2}$'
         self.date_pattern = r"^(0[1-9]|[12][0-9]|3[01])\.(0[1-9]|1[0-2])\.(19|20)\d{2}$"
-    
+        self.inn_pattern = r"\b[иИiI][нНnN]{2}\b"
     
     def add_entry(self, data, month_year, invoice_amount, oplata,payments=None):
         """
@@ -40,13 +40,18 @@ class TableParser:
                 "платежи": payments
             }
     
-    def parse_excel_table(self, path_to_table:Path,path_to_save:Path):
+    def find_inn(self,df: pd.DataFrame):
+        matches = df[df.iloc[:,3].str.contains(self.inn_pattern, regex=True, na=False)].index.to_list()[0]
+
+        return df.iloc[matches,4]
+
+    def parse_excel_table(self, path_to_table:Path,path_to_save:Path | None):
         df = pd.read_excel(str(path_to_table))
         column_name = 'ККС' # переделать
         target_value = "ИТОГО ПО ДОГОВОРУ"
         result_dict = {}
-        
-        
+        inn = self.find_inn(df)
+        result_dict['ИНН'] = inn
         
         
         matches = df[df.iloc[:,0].str.contains(self.month_year_pattern, regex=True, na=False)]
@@ -93,11 +98,11 @@ class TableParser:
                         oplata=oplata,
                         payments=payments_list
                     )
-                      
-        file_path = path_to_save  
+        if path_to_save is not None:             
+            file_path = path_to_save  
 
-        with open(file_path, "w", encoding="utf-8") as json_file:
-            json.dump(result_dict, json_file, indent=4, ensure_ascii=False)
-        logging.debug('json с данными справки успешно сохранён')
+            with open(file_path, "w", encoding="utf-8") as json_file:
+                json.dump(result_dict, json_file, indent=4, ensure_ascii=False)
+            logging.debug('json с данными справки успешно сохранён')
         
         return result_dict
