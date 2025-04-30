@@ -67,6 +67,9 @@ class TableParser:
 
         try:
             found_index = df[df[column_name] == target_value].index[0]
+            # принты нужно убрать
+            # можно кинуть эксепшн
+            # можно logging.info и заполнить то что не найдено дефолтными значениями
             print(f"Значение '{target_value}' найдено в строке с индексом: {found_index}")
         except IndexError:
             print(f"Значение '{target_value}' не найдено.")
