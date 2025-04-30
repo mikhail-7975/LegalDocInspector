@@ -10,13 +10,13 @@ import json
 from pathlib import Path
 
 class TableParser:
-    
+
     def __init__(self):
         self.currency_pattern = r"^-?(?:\d+(\.\d{1,2})?|0)$"
         self.month_year_pattern = r'^(0[1-9]|1[0-2])\.(19|20)\d{2}$'
         self.date_pattern = r"^(0[1-9]|[12][0-9]|3[01])\.(0[1-9]|1[0-2])\.(19|20)\d{2}$"
         self.inn_pattern = r"\b[иИiI][нНnN]{2}\b"
-    
+
     def add_entry(self, data, month_year, invoice_amount, oplata,payments=None):
         """
         Добавляет запись в словарь.
@@ -25,7 +25,7 @@ class TableParser:
         :param invoice_amount: Сумма выставленного счёта (float).
         :param payments: Словарь оплат в формате {"dd.mm.yy": float} или None.
         """
-        
+
         if payments is None:
             payments = 0  # Если оплат нет, устанавливаем значение 0
             data[month_year] = {
@@ -33,27 +33,33 @@ class TableParser:
             "оплата": oplata
         }
         else:
-            
+
             data[month_year] = {
                 "выставленный счёт": invoice_amount,
                 "оплата": oplata,
                 "платежи": payments
             }
-    
+
     def find_inn(self,df: pd.DataFrame):
         matches = df[df.iloc[:,3].str.contains(self.inn_pattern, regex=True, na=False)].index.to_list()[0]
 
         return df.iloc[matches,4]
 
-    def parse_excel_table(self, path_to_table:Path,path_to_save:Path | None):
+    def parse_excel_table(self, path_to_table:Path):
+        """
+        input:
+        ...
+        output:
+        ...
+        """
         df = pd.read_excel(str(path_to_table))
         column_name = 'ККС' # переделать
         target_value = "ИТОГО ПО ДОГОВОРУ"
         result_dict = {}
         inn = self.find_inn(df)
         result_dict['ИНН'] = inn
-        
-        
+
+
         matches = df[df.iloc[:,0].str.contains(self.month_year_pattern, regex=True, na=False)]
         matches = matches.drop_duplicates(subset=matches.columns[0], keep='first')
 
@@ -69,28 +75,28 @@ class TableParser:
 
             if i == len(row_indexes_to_search)-1:
                 end_index = found_index
-            
+
             else:
                 end_index = row_indexes_to_search[i+1]
-            
+
             for row_index in range(start_index+1, end_index):
                 month_date = df.iloc[start_index, 0]
                 vystavleny_schet = df.iloc[row_index, 1]
                 oplata = df.iloc[row_index, 3]
-                
-                    
+
+
                 if re.match(self.currency_pattern, str(vystavleny_schet)) and re.match(self.currency_pattern, str(oplata)):
                     # print(f"Найдены валютные значения '{vystavleny_schet}, {oplata}' на строке {row_index}")
                     payments_list = None
                     if int(oplata) > 0:
                         # ищем все платежи с датами
                         payments_list = []
-                         
+
                         for row_index_2 in range(start_index+1,row_index):
                             if re.match(self.date_pattern, str(df.iloc[row_index_2, 2])) and re.match(self.currency_pattern, str(df.iloc[row_index_2, 3])):
-                                
-                                payments_list.append((str(df.iloc[row_index_2, 2]),df.iloc[row_index_2, 3])) 
-                    
+
+                                payments_list.append((str(df.iloc[row_index_2, 2]),df.iloc[row_index_2, 3]))
+
                     self.add_entry(
                         data=result_dict,
                         month_year=month_date,
@@ -98,11 +104,4 @@ class TableParser:
                         oplata=oplata,
                         payments=payments_list
                     )
-        if path_to_save is not None:             
-            file_path = path_to_save  
-
-            with open(file_path, "w", encoding="utf-8") as json_file:
-                json.dump(result_dict, json_file, indent=4, ensure_ascii=False)
-            logging.debug('json с данными справки успешно сохранён')
-        
         return result_dict
