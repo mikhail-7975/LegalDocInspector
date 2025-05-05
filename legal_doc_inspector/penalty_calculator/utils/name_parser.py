@@ -63,15 +63,15 @@ def get_company_info_by_inn(inn):
         return None, None, None
 
 # Пример использования
-inn = input("Введите ИНН организации: ")
-ogrn, company_name, address = get_company_info_by_inn(inn)
+# inn = input("Введите ИНН организации: ")
+# ogrn, company_name, address = get_company_info_by_inn(inn)
 
-if ogrn:
-    print("\n=== Информация о компании ===")
-    if company_name:
-        print(f"Название: {company_name}")
-    print(f"ИНН: {inn}")
-    print(f"ОГРН: {ogrn}")
+# if ogrn:
+#     print("\n=== Информация о компании ===")
+#     if company_name:
+#         print(f"Название: {company_name}")
+#     print(f"ИНН: {inn}")
+#     print(f"ОГРН: {ogrn}")
 
-else:
-    print(f"\nНе удалось найти информацию для ИНН {inn}")
+# else:
+#     print(f"\nНе удалось найти информацию для ИНН {inn}")

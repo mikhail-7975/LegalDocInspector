@@ -47,9 +47,11 @@ class TableParser:
 
     def parse_excel_table(self, path_to_table:Path):
         """
-        input:
+        input: 
+            path_to_table: Путь к справке в формате XLS 
         ...
         output:
+            result_dict: Словарь - результат парсинга таблицы
         ...
         """
         df = pd.read_excel(str(path_to_table))
@@ -65,14 +67,13 @@ class TableParser:
 
         row_indexes_to_search = matches.index.to_list()
 
-        try:
-            found_index = df[df[column_name] == target_value].index[0]
-            # принты нужно убрать
-            # можно кинуть эксепшн
-            # можно logging.info и заполнить то что не найдено дефолтными значениями
-            print(f"Значение '{target_value}' найдено в строке с индексом: {found_index}")
-        except IndexError:
-            print(f"Значение '{target_value}' не найдено.")
+        
+        found_index = df[df[column_name] == target_value].index[0]
+        # принты нужно убрать
+        # можно кинуть эксепшн
+        # можно logging.info и заполнить то что не найдено дефолтными значениями
+        # done
+        
 
         for i,start_index in enumerate(row_indexes_to_search):
 
@@ -86,7 +87,6 @@ class TableParser:
                 month_date = df.iloc[start_index, 0]
                 vystavleny_schet = df.iloc[row_index, 1]
                 oplata = df.iloc[row_index, 3]
-
 
                 if re.match(self.currency_pattern, str(vystavleny_schet)) and re.match(self.currency_pattern, str(oplata)):
                     # print(f"Найдены валютные значения '{vystavleny_schet}, {oplata}' на строке {row_index}")
