@@ -12,7 +12,7 @@ class Penalty_calculator:
     
     def calculate_penalty_from_doc(data: dict,):
         """
-        Принимает результат парсера таблицы, возвращает итоговое пени
+        Принимает результат парсера таблицы, возвращает итоговую сумму неустойи
         """
         pass
     
@@ -57,7 +57,12 @@ class Penalty_calculator:
         №190-ФЗ "о теплоснабжении" статья 15 пункт 9.1
         """
         pass
-        
+    
+    def _check_start_time_for_period(self, date: datetime.date):
+        """
+        принимает дату, проверяет, является ли день рабочим
+        в случае если день не рабочий , то возвращает второй рабочий день после него 
+        """
     def _sum_payments_by_date(self, data: dict):
         temp_result = {}
 
