@@ -1,6 +1,6 @@
 import datetime
 import requests
-from datetime import datetime
+
 from xml.etree import ElementTree as ET
 from typing import Tuple,Dict
 
@@ -329,68 +329,60 @@ class Penalty_calculator:
         """
         url = "https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx"
 
-        # Заголовки
+        # Заголовки запроса
         headers = {
+            "Host": "www.cbr.ru",
             "Content-Type": "text/xml; charset=utf-8",
             "SOAPAction": '"http://web.cbr.ru/KeyRate"'
         }
 
-        # Сегодня и завтра
-        today = datetime.now()
-        tomorrow = datetime(today.year, today.month, today.day + 1) if today.day < 27 else datetime(today.year, today.month + 1, 1)
+        # Тело SOAP-запроса (вставьте нужные даты)
+        today = datetime.datetime.now() - datetime.timedelta(days=1)
+        tomorrow = today + datetime.timedelta(days=1)
 
         from_date = today.strftime("%Y-%m-%dT00:00:00")
         to_date = tomorrow.strftime("%Y-%m-%dT00:00:00")
 
-        # Тело запроса
         body = f"""<?xml version="1.0" encoding="utf-8"?>
-                    <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                                xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-                                xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-                    <soap:Body>
-                        <KeyRate xmlns="http://web.cbr.ru/">
-                        <fromDate>{from_date}</fromDate>
-                        <ToDate>{to_date}</ToDate>
-                        </KeyRate>
-                    </soap:Body>
-                    </soap:Envelope>"""
+        <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                        xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                        xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+            <soap:Body>
+            <KeyRate xmlns="http://web.cbr.ru/">
+                <fromDate>{from_date}</fromDate>
+                <ToDate>{to_date}</ToDate>
+            </KeyRate>
+            </soap:Body>
+        </soap:Envelope>
+        """
 
-        try:
-            response = requests.post(url, data=body, headers=headers)
-            response.raise_for_status()
+        # Отправка POST-запроса
+        response = requests.post(url, data=body, headers=headers)
 
-            # Пространства имён
-            ns = {
-                'soap': 'http://schemas.xmlsoap.org/soap/envelope/',
-                'cbr': 'http://web.cbr.ru/',
-                'xsd': 'http://www.w3.org/2001/XMLSchema',
-                'diffgr': 'urn:schemas-microsoft-com:xml-diffgram-v1'
-            }
+        # Вывод ответа
+        root = ET.fromstring(response.text)
 
-            root = ET.fromstring(response.text)
+        ns = {
+            'soap': 'http://schemas.xmlsoap.org/soap/envelope/',
+            'cbr': 'http://web.cbr.ru/',
+            'diffgr': 'urn:schemas-microsoft-com:xml-diffgram-v1',
+            'msdata': 'urn:schemas-microsoft-com:xml-msdata'
+        }
 
-            # Найдём diffgram внутри KeyRateResult
-            key_rate_result = root.find('.//cbr:KeyRateResult', ns)
-            if key_rate_result is None:
-                return {"error": "KeyRateResult не найден"}
+        kr_records = root.findall('.//KR', ns)
 
-            diffgram = key_rate_result.find('.//diffgr:diffgram', ns)
-            if diffgram is None:
-                return {"error": "diffgram не найден"}
+        for record in kr_records:
+            dt_elem = record.find('DT', ns)
+            rate_elem = record.find('Rate', ns)
 
-            key_rate = diffgram.find('KeyRate')
-            kr = key_rate.find('KR')
-            date_kr, rate_kr = kr.find('DT'), kr.find('Rate')
-            # Находим все записи KeyRecord
-            dt = datetime.fromisoformat(date_kr.text)
-            rate = float(rate_kr.text)
-            return {'date': dt, 'key_rate': rate}
+            if dt_elem is not None and rate_elem is not None:
+                dt_str = dt_elem.text.split('+')[0]  # убираем часовой пояс
+                rate = rate_elem.text
 
-        except requests.RequestException as e:
-            return {"error": "Ошибка HTTP-запроса", "details": str(e)}
-        except ET.ParseError as e:
-            return {"error": "Не удалось разобрать XML", "details": str(e)}
-
+        if rate and dt_str:
+            return datetime.datetime.fromisoformat(dt_str), float(rate)
+        else:
+            return None, None
     def _sum_payments_by_date(self, data: dict):
         temp_result = {}
 
