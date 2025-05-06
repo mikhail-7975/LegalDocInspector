@@ -43,7 +43,9 @@ class Penalty_calculator:
             periods = self._get_penalty_periods_for_type_2(data, month, current_date, need_to_pay, start_date)
 
         if company_type == 'ТСЖ':
-            pass
+            
+            periods = self._get_penalty_periods_for_type_2(data, month, current_date, need_to_pay, start_date)
+        
         return periods
 
     def _get_penalty_periods_for_type_1(self,data: dict, month, current_date: datetime.date, need_to_pay,start_date):
