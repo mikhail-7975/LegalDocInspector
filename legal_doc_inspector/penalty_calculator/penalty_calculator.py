@@ -1,9 +1,11 @@
 import datetime
-
+import requests
+from datetime import datetime
+from xml.etree import ElementTree as ET
 from typing import Tuple,Dict
 
-from utils.HolidayChecker import HolidayChecker
 
+from utils.HolidayChecker import HolidayChecker
 
 class Penalty_calculator:
 
@@ -43,9 +45,9 @@ class Penalty_calculator:
             periods = self._get_penalty_periods_for_type_2(data, month, current_date, need_to_pay, start_date)
 
         if company_type == 'ТСЖ':
-            
+
             periods = self._get_penalty_periods_for_type_3(data, month, current_date, need_to_pay, start_date)
-        
+
         return periods
 
     def _get_penalty_periods_for_type_1(self,data: dict, month, current_date: datetime.date, need_to_pay,start_date):
@@ -325,7 +327,69 @@ class Penalty_calculator:
         """
         возвращает текущую ставку рефинансирования цб рф
         """
-        pass
+        url = "https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx"
+
+        # Заголовки
+        headers = {
+            "Content-Type": "text/xml; charset=utf-8",
+            "SOAPAction": '"http://web.cbr.ru/KeyRate"'
+        }
+
+        # Сегодня и завтра
+        today = datetime.now()
+        tomorrow = datetime(today.year, today.month, today.day + 1) if today.day < 27 else datetime(today.year, today.month + 1, 1)
+
+        from_date = today.strftime("%Y-%m-%dT00:00:00")
+        to_date = tomorrow.strftime("%Y-%m-%dT00:00:00")
+
+        # Тело запроса
+        body = f"""<?xml version="1.0" encoding="utf-8"?>
+                    <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                                xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                                xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                    <soap:Body>
+                        <KeyRate xmlns="http://web.cbr.ru/">
+                        <fromDate>{from_date}</fromDate>
+                        <ToDate>{to_date}</ToDate>
+                        </KeyRate>
+                    </soap:Body>
+                    </soap:Envelope>"""
+
+        try:
+            response = requests.post(url, data=body, headers=headers)
+            response.raise_for_status()
+
+            # Пространства имён
+            ns = {
+                'soap': 'http://schemas.xmlsoap.org/soap/envelope/',
+                'cbr': 'http://web.cbr.ru/',
+                'xsd': 'http://www.w3.org/2001/XMLSchema',
+                'diffgr': 'urn:schemas-microsoft-com:xml-diffgram-v1'
+            }
+
+            root = ET.fromstring(response.text)
+
+            # Найдём diffgram внутри KeyRateResult
+            key_rate_result = root.find('.//cbr:KeyRateResult', ns)
+            if key_rate_result is None:
+                return {"error": "KeyRateResult не найден"}
+
+            diffgram = key_rate_result.find('.//diffgr:diffgram', ns)
+            if diffgram is None:
+                return {"error": "diffgram не найден"}
+
+            key_rate = diffgram.find('KeyRate')
+            kr = key_rate.find('KR')
+            date_kr, rate_kr = kr.find('DT'), kr.find('Rate')
+            # Находим все записи KeyRecord
+            dt = datetime.fromisoformat(date_kr.text)
+            rate = float(rate_kr.text)
+            return {'date': dt, 'key_rate': rate}
+
+        except requests.RequestException as e:
+            return {"error": "Ошибка HTTP-запроса", "details": str(e)}
+        except ET.ParseError as e:
+            return {"error": "Не удалось разобрать XML", "details": str(e)}
 
     def _sum_payments_by_date(self, data: dict):
         temp_result = {}
