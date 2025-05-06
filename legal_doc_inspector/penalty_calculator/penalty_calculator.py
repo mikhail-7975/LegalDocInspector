@@ -44,7 +44,7 @@ class Penalty_calculator:
 
         if company_type == 'ТСЖ':
             
-            periods = self._get_penalty_periods_for_type_2(data, month, current_date, need_to_pay, start_date)
+            periods = self._get_penalty_periods_for_type_3(data, month, current_date, need_to_pay, start_date)
         
         return periods
 
