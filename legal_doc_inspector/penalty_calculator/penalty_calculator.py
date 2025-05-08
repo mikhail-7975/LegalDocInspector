@@ -1,24 +1,63 @@
 import datetime
 import requests
+import re
 
 from xml.etree import ElementTree as ET
 from typing import Tuple,Dict
 
 
-from utils.HolidayChecker import HolidayChecker
+from .utils.HolidayChecker import HolidayChecker
 
 class Penalty_calculator:
 
     def __init__(self):
+        self.path_to_data = None
+        self.cb_key_rate = 9.5 / 100
+        # self.cb_key_rate = self._get_cb_rate()
         pass
 
-    def calculate_penalty_from_doc(data: dict,):
+    def calculate_penalty_from_doc(self, data: dict, company_type, current_date: datetime.date):
         """
-        Принимает результат парсера таблицы, возвращает итоговую сумму неустойи
+        Принимает результат парсера таблицы,
+        для каждого месяца считает пени за каждый подпериод
+        суммирует пени
+        возвращает итоговую сумму неустойки по всем задолженностям
         """
-        pass
+        penalty = 0  # сумма пеней по всем задолженностям
+        # перебираем каждый месяц
+        month_pattern = r'^(0[1-9]|1[0-2])\.(20\d{2}|2100)$'
+        for month in data.keys():
 
-    def get_penalty_periods_from_month(self, data: dict, month, company_type, current_date: datetime.date):
+            if re.match(month_pattern, month):
+
+                periods = self._get_penalty_periods_for_month(data=data,
+                                                              month=month,
+                                                              company_type=company_type,
+                                                              current_date=current_date
+                                                              )
+
+                for period in periods:
+
+                    period_with_calculated_penalty = self._calculate_penalty_for_period(period=period)
+                    print(period_with_calculated_penalty)
+                    penalty += period_with_calculated_penalty['penalty']
+
+            else:
+                continue
+
+        return penalty
+
+
+
+
+
+    def calculate_penalty_and_create_table(self, data: dict):
+        """
+        Принимает результат парсера таблицы, возвращает итоговую сумму неустойки
+        строит docx таблицу с расчётом
+        """
+
+    def _get_penalty_periods_for_month(self, data: dict, month:str, company_type, current_date: datetime.date):
         """
         Принимает данные за месяц, взятые из парсера таблиц
         возвращает список периодов неустойки в формате
@@ -28,15 +67,16 @@ class Penalty_calculator:
         'debt': float - сумма долга,
         'rate': float - доля ставки}
         """
-        # TODO:
 
-        # нужно внести проверку на выходной день
         periods = []
         parsed = datetime.datetime.strptime(month, "%m.%Y")
-        start_date = datetime.date(parsed.year, parsed.month+1, 19)  # дефолтная дата начала просрочки без учёта нерабочих дней
+        next_month = parsed.month+1 if parsed.month != 12 else 1
+        next_year = parsed.year if parsed.month != 12 else parsed.year+1
+        start_date = datetime.date(next_year, next_month, 18)  # дефолтная дата окончания договора без учёта нерабочих дней
+        start_date = self._get_start_date(start_date) # дата начала просрочки с учётом того что договор может истечь в нерабочий день
 
         need_to_pay = data[month]['выставленный счёт']
-        if company_type == "прочие":
+        if company_type == "Прочие":
 
             periods = self._get_penalty_periods_for_type_1(data, month, current_date, need_to_pay, start_date)
 
@@ -50,36 +90,60 @@ class Penalty_calculator:
 
         return periods
 
-    def _get_penalty_periods_for_type_1(self,data: dict, month, current_date: datetime.date, need_to_pay,start_date):
-
+    def _get_penalty_periods_for_type_1(self, data: dict, month, current_date: datetime.date, need_to_pay,start_date):
+        """
+        возвращает список периодов нейстойки для прочих потребителей в формате :
+        {'start': datetime.date - дата начала периода,
+        'end': datetime.date - дата конца периода,
+        'days': int - количество дней,
+        'debt': float - сумма долга,
+        'rate': float - доля ставки}
+        """
         periods = None
 
         if need_to_pay != 0:
-            periods = []
 
-        if data[month]['оплата'] != 0:
+            periods = self._split_period_by_stages(period=(start_date, current_date), debt=need_to_pay , type_of_split= 'Прочие')
 
-            payments_dict = self._sum_payments_by_date(data[month])
-            for date, payment in sorted(payments_dict.items()):
+            if data[month]['оплата'] != 0:
 
-                if date < start_date:
-                    need_to_pay -= payment
-                    continue
-                period = (start_date, date, need_to_pay)
-                need_to_pay -= payment
-                need_to_pay = round(need_to_pay, 2)
-                start_date = date+datetime.timedelta(days=1)
-                periods.append(period)
+                payments_dict = self._sum_payments_by_date(data[month])
+                for date, payment in sorted(payments_dict.items()):
 
-        if need_to_pay != 0:
-            period = (start_date, current_date, need_to_pay)
-            periods.append(period)
+                    # т к сначала всё равно идут наиболее ранние даты которые могут быть ещё до долга, вычитаем из долга, обновляем периоды
+                    if date < start_date:
+                        need_to_pay -= payment
+                        periods = self._split_period_by_stages(period=(start_date, current_date), debt=need_to_pay, type_of_split= 'Прочие')
+                        continue
+
+                    # эта часть кода работает когда уже идут долговые погашения
+                    new_periods = periods.copy()
+                    for i, period in enumerate(periods):
+                        lb = period['start']
+                        ub = period['end']
+
+                        if lb <= date <= ub:
+                            splitted_periods, need_to_pay = self._split_stage_by_date(period, date, payment)
+
+                            new_periods = new_periods[:i] + splitted_periods + new_periods[i+1:]
+                            # обновляем долг для всех следующих периодов
+                            for next_period in new_periods[i+1:]:
+                                next_period['debt'] = need_to_pay
+
+                            periods = new_periods
 
         return periods
 
 
     def _get_penalty_periods_for_type_2(self, data: dict, month, current_date: datetime.date, need_to_pay, start_date):
-
+        """
+        возвращает список периодов нейстойки для  управляющих компаний в формате :
+        {'start': datetime.date - дата начала периода,
+        'end': datetime.date - дата конца периода,
+        'days': int - количество дней,
+        'debt': float - сумма долга,
+        'rate': float - доля ставки}
+        """
         periods = None
 
         if need_to_pay != 0:
@@ -116,7 +180,14 @@ class Penalty_calculator:
         return periods
 
     def _get_penalty_periods_for_type_3(self, data: dict, month, current_date: datetime.date, need_to_pay, start_date):
-
+        """
+        возвращает список периодов нейстойки для ТСЖ\ЖСК в формате :
+        {'start': datetime.date - дата начала периода,
+        'end': datetime.date - дата конца периода,
+        'days': int - количество дней,
+        'debt': float - сумма долга,
+        'rate': float - доля ставки}
+        """
         periods = None
 
         if need_to_pay != 0:
@@ -153,94 +224,118 @@ class Penalty_calculator:
         return periods
 
     def _split_period_by_stages(self, period: Tuple[datetime.date, datetime.date], debt: float, type_of_split):
+        """
+        возвращает список подпериодов нейстойки для потребителей в формате :
+        {'start': datetime.date - дата начала периода,
+        'end': datetime.date - дата конца периода,
+        'days': int - количество дней,
+        'debt': float - сумма долга,
+        'rate': float - доля ставки}
+        """
+
         start_date, end_date = period
         result = []
-        if type_of_split == 'УК':  # 60/30/+inf
-            stage1_start = start_date
-            stage1_end = min(start_date + datetime.timedelta(days=59), end_date)
-            stage1_days = (stage1_end - stage1_start).days + 1
 
-            if stage1_days > 0:
+        match type_of_split:
 
-                result.append({
-                    "start": stage1_start,
-                    "end": stage1_end,
-                    "days": stage1_days,
-                    "debt": debt,
-                    "rate": 1/300
+            case "УК":
+                # 60/30/+inf
+                stage1_start = start_date
+                stage1_end = min(start_date + datetime.timedelta(days=59), end_date)
+                stage1_days = (stage1_end - stage1_start).days + 1
+
+                if stage1_days > 0:
+
+                    result.append({
+                        "start": stage1_start,
+                        "end": stage1_end,
+                        "days": stage1_days,
+                        "debt": debt,
+                        "rate": 1/300
+                        })
+
+                current_start = stage1_end + datetime.timedelta(days=1)
+
+                stage2_end = min(current_start + datetime.timedelta(days=29), end_date)
+                if current_start <= end_date:
+                    stage2_days = (stage2_end - current_start).days + 1
+                    result.append({
+                        "start": current_start,
+                        "end": stage2_end,
+                        "days": stage2_days,
+                        "debt": debt,
+                        "rate": 1/170
+                        })
+                    current_start = stage2_end + datetime.timedelta(days=1)
+                else:
+                    return result
+
+                if current_start <= end_date:
+                    stage3_days = (end_date - current_start).days + 1
+                    result.append({
+                        "start": current_start,
+                        "end": end_date,
+                        "days": stage3_days,
+                        "debt": debt,
+                        "rate": 1/130
                     })
 
-            current_start = stage1_end + datetime.timedelta(days=1)
+            case "ТСЖ":
+                # 30/60/+inf
+                stage1_start = start_date
+                stage1_end = min(start_date + datetime.timedelta(days=29), end_date)
+                stage1_days = (stage1_end - stage1_start).days + 1
 
-            stage2_end = min(current_start + datetime.timedelta(days=29), end_date)
-            if current_start <= end_date:
-                stage2_days = (stage2_end - current_start).days + 1
-                result.append({
-                    "start": current_start,
-                    "end": stage2_end,
-                    "days": stage2_days,
-                    "debt": debt,
-                    "rate": 1/170
+                if stage1_days > 0:
+
+                    result.append({
+                        "start": stage1_start,
+                        "end": stage1_end,
+                        "days": stage1_days,
+                        "debt":debt,
+                        "rate": 0
+                        })
+
+                current_start = stage1_end + datetime.timedelta(days=1)
+
+
+                stage2_end = min(current_start + datetime.timedelta(days=59), end_date)
+                if current_start <= end_date:
+                    stage2_days = (stage2_end - current_start).days + 1
+                    result.append({
+                        "start": current_start,
+                        "end": stage2_end,
+                        "days": stage2_days,
+                        "debt":debt,
+                        "rate": 1/300
+                        })
+                    current_start = stage2_end + datetime.timedelta(days=1)
+                else:
+                    return result
+
+
+                if current_start <= end_date:
+                    stage3_days = (end_date - current_start).days + 1
+                    result.append({
+                        "start": current_start,
+                        "end": end_date,
+                        "days": stage3_days,
+                        "debt":debt,
+                        "rate": 1/130
                     })
-                current_start = stage2_end + datetime.timedelta(days=1)
-            else:
-                return result
 
-            if current_start <= end_date:
-                stage3_days = (end_date - current_start).days + 1
+            case "Прочие":
+                # +inf
+                stage1_start = start_date
+                stage1_end = end_date
+                stage1_days = (stage1_end - stage1_start).days + 1
                 result.append({
-                    "start": current_start,
-                    "end": end_date,
-                    "days": stage3_days,
-                    "debt": debt,
-                    "stage": 1/130
-                })
-
-        if type_of_split == 'ТСЖ':  # 30/60/+inf
-            stage1_start = start_date
-            stage1_end = min(start_date + datetime.timedelta(days=29), end_date)
-            stage1_days = (stage1_end - stage1_start).days + 1
-
-            if stage1_days > 0:
-
-                result.append({
-                    "start": stage1_start,
-                    "end": stage1_end,
-                    "days": stage1_days,
-                    "debt":debt,
-                    "rate": 0
+                        "start": stage1_start,
+                        "end": stage1_end,
+                        "days": stage1_days,
+                        "debt":debt,
+                        "rate": 1/130
                     })
-
-            current_start = stage1_end + datetime.timedelta(days=1)
-
-
-            stage2_end = min(current_start + datetime.timedelta(days=59), end_date)
-            if current_start <= end_date:
-                stage2_days = (stage2_end - current_start).days + 1
-                result.append({
-                    "start": current_start,
-                    "end": stage2_end,
-                    "days": stage2_days,
-                    "debt":debt,
-                    "rate": 1/300
-                    })
-                current_start = stage2_end + datetime.timedelta(days=1)
-            else:
-                return result
-
-
-            if current_start <= end_date:
-                stage3_days = (end_date - current_start).days + 1
-                result.append({
-                    "start": current_start,
-                    "end": end_date,
-                    "days": stage3_days,
-                    "debt":debt,
-                    "stage": 1/130
-                })
-
-
-
 
         return result
 
@@ -291,43 +386,36 @@ class Penalty_calculator:
 
         return result, original_debt - split_payment
 
-    def _calculate_penalty_to_manager_company(self, period: Tuple[datetime.date, datetime.date, float]):
+    def _calculate_penalty_for_period(self, period: dict):
         """
-        Принимает период неустойки, расчитывает сумму пени согласно
-        №190-ФЗ "о теплоснабжении" статья 15 пункт 9.3 (Управляющие компании)
-        """
+        Принимает период в формате:
+        {'start': datetime.date - дата начала периода,
+        'end': datetime.date - дата конца периода,
+        'days': int - количество дней,
+        'debt': float - сумма долга,
+        'rate': float - доля ставки}
 
-        pass
+        Возвращает словарь в формате:
 
-    def _calculate_penalty_to_tsj(self, period: Tuple[datetime.date, datetime.date, float]):
+        {'start': datetime.date - дата начала периода,
+        'end': datetime.date - дата конца периода,
+        'days': int - количество дней,
+        'debt': float - сумма долга,
+        'rate': float - доля ставки,
+        'penalty': float - подсчитанная неустойка}
         """
-        Принимает период неустойки, расчитывает сумму пени согласно
-        №190-ФЗ "о теплоснабжении" статья 15 пункт 9.2 (ТСЖ ЖСК)
-        """
-        pass
+        debt = period['debt']
+        rate = period['rate']
+        count_days = period['days']
 
-    def _calculate_penalty_by_standart_method(self, period: Tuple[datetime.date, datetime.date, float]):
-        """
-        Принимает период неустойки, расчитывает сумма пени согласно
-        №190-ФЗ "о теплоснабжении" статья 15 пункт 9.1 (Прочие потребители)
-        """
-        cb_keyrate = self._get_key_rate()
-        start_date, end_date, amount = period
-        days_count = (end_date - start_date + datetime.timedelta(days=1)).days
-        base_rate = 1/130
-        return days_count * amount * base_rate * cb_keyrate
+        period['penalty'] = round(debt * count_days * rate * self.cb_key_rate, 2)
 
-    def _check_start_time_for_period(self, date: datetime.date):
-        """
-        принимает дату, проверяет, является ли день рабочим
-        в случае если день не рабочий , то возвращает второй рабочий день после него
-        """
+        return period
 
-    def _get_cb_key_rate(self):
-        """
-        возвращает текущую ставку рефинансирования цб рф
-        """
-        url = "https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx"
+
+    def _get_cb_rate(self):
+        # URL сервиса
+        url = "http://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx"
 
         # Заголовки запроса
         headers = {
@@ -380,9 +468,10 @@ class Penalty_calculator:
                 rate = rate_elem.text
 
         if rate and dt_str:
-            return datetime.datetime.fromisoformat(dt_str), float(rate)
+            return datetime.datetime.fromisoformat(dt_str), (float(rate)/100)
         else:
             return None, None
+
     def _sum_payments_by_date(self, data: dict):
         temp_result = {}
 
@@ -399,3 +488,30 @@ class Penalty_calculator:
         final_result = {date_obj: total for date_obj, total in temp_result.items() if total != 0}
         sorted_result = dict(sorted(final_result.items()))
         return sorted_result
+
+    def _is_holiday(self, day: datetime.date):
+
+        url = f"https://isdayoff.ru/{day.strftime('%Y%m%d')}"
+
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            day_type = int(response.text)
+
+            # 0 - рабочий, 1 - выходной, 2 - праздник
+            return day_type in (1, 2)
+        except Exception as e:
+            # print(e)
+            return False
+
+    def _get_start_date(self, day: datetime.date):
+
+        if not self._is_holiday(day):
+            return day + datetime.timedelta(days=1)
+
+        if self._is_holiday(day):
+            while self._is_holiday(day):
+                day = day + datetime.timedelta(days=1)
+
+            return day + datetime.timedelta(days=1)
+
