@@ -16,8 +16,8 @@ class TableParser:
         self.month_year_pattern = r'^(0[1-9]|1[0-2])\.(19|20)\d{2}$'
         self.date_pattern = r"^(0[1-9]|[12][0-9]|3[01])\.(0[1-9]|1[0-2])\.(19|20)\d{2}$"
         self.inn_pattern = r"\b[иИiI][нНnN]{2}\b"
-
-    def add_entry(self, data, month_year, invoice_amount, oplata,payments=None):
+        self.text_month_pattern = r"^(январ[ья]|феврал[ья]|март[а]?|апрел[ья]|ма[йя]|июн[ья]?|июл[ья]?|август[а]?|сентябр[ья]|октябр[ья]|ноябр[ья]|декабр[ья])[ ]{1}(?:19|20|21)\d{2}$"
+    def add_entry(self, data, month_year, invoice_amount, oplata, text_month, payments=None):
         """
         Добавляет запись в словарь.
 
@@ -29,12 +29,14 @@ class TableParser:
         if payments is None:
             payments = 0  # Если оплат нет, устанавливаем значение 0
             data[month_year] = {
+            "месяц оплаты": text_month,
             "выставленный счёт": invoice_amount,
-            "оплата": oplata
+            "оплата": oplata,
         }
         else:
 
             data[month_year] = {
+                "месяц оплаты": text_month,
                 "выставленный счёт": invoice_amount,
                 "оплата": oplata,
                 "платежи": payments
@@ -85,6 +87,8 @@ class TableParser:
 
             for row_index in range(start_index+1, end_index):
                 month_date = df.iloc[start_index, 0]
+                text_month_match_id = df.iloc[:start_index,0].str.contains(self.text_month_pattern, regex=True, na=False).index.to_list()[-1]
+                text_month = df.iloc[text_month_match_id,0]
                 vystavleny_schet = df.iloc[row_index, 1]
                 oplata = df.iloc[row_index, 3]
 
@@ -105,6 +109,7 @@ class TableParser:
                         month_year=month_date,
                         invoice_amount=vystavleny_schet,
                         oplata=oplata,
+                        text_month=text_month,
                         payments=payments_list
                     )
         return result_dict
