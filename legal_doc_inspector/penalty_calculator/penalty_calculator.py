@@ -514,4 +514,3 @@ class Penalty_calculator:
                 day = day + datetime.timedelta(days=1)
 
             return day + datetime.timedelta(days=1)
-
