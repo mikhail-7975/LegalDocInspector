@@ -1,6 +1,11 @@
-def test_table_parser():
-    # TODO
-    # load data/certificate.XLS
-    # extract data
-    # check is extracted data correct
+from legal_doc_inspector.doc_parser.table_parser import TableParser
+
+from pathlib import Path
+
+def test_certificate1():
+    
+    assert False
+
+def est_table_parser():
+    
     assert False
