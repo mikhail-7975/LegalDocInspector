@@ -21,9 +21,9 @@ class Penalty_calculator:
         Принимает результат парсера таблицы,
         для каждого месяца считает пени за каждый подпериод
         суммирует пени
-        возвращает итоговую сумму неустойки по всем задолженностям
+        возвращает список периодов с расчётами
         """
-        penalty = 0  # сумма пеней по всем задолженностям
+        penalty = []  # сумма пеней по всем задолженностям
         # перебираем каждый месяц
         month_pattern = r'^(0[1-9]|1[0-2])\.(20\d{2}|2100)$'
         for month in data.keys():
@@ -40,7 +40,7 @@ class Penalty_calculator:
 
                     period_with_calculated_penalty = self._calculate_penalty_for_period(period=period)
                     print(period_with_calculated_penalty)
-                    penalty += period_with_calculated_penalty['penalty']
+                    penalty.append(period_with_calculated_penalty)
 
             else:
                 continue
@@ -100,7 +100,7 @@ class Penalty_calculator:
         'rate': float - доля ставки}
         """
         periods = None
-
+        payment_month = (data[month]['месяц оплаты'])
         if need_to_pay != 0:
 
             periods = self._split_period_by_stages(period=(start_date, current_date), debt=need_to_pay , type_of_split= 'Прочие')
@@ -131,7 +131,8 @@ class Penalty_calculator:
                                 next_period['debt'] = need_to_pay
 
                             periods = new_periods
-
+        for period in periods:
+            period['month'] = payment_month
         return periods
 
 
@@ -145,6 +146,7 @@ class Penalty_calculator:
         'rate': float - доля ставки}
         """
         periods = None
+        payment_month = (data[month]['месяц оплаты'])
 
         if need_to_pay != 0:
 
@@ -176,7 +178,8 @@ class Penalty_calculator:
                                 next_period['debt'] = need_to_pay
 
                             periods = new_periods
-
+        for period in periods:
+            period['month'] = payment_month
         return periods
 
     def _get_penalty_periods_for_type_3(self, data: dict, month, current_date: datetime.date, need_to_pay, start_date):
@@ -189,6 +192,7 @@ class Penalty_calculator:
         'rate': float - доля ставки}
         """
         periods = None
+        payment_month = (data[month]['месяц оплаты'])
 
         if need_to_pay != 0:
 
@@ -220,7 +224,8 @@ class Penalty_calculator:
                                 next_period['debt'] = need_to_pay
 
                             periods = new_periods
-
+        for period in periods:
+            period['month'] = payment_month    
         return periods
 
     def _split_period_by_stages(self, period: Tuple[datetime.date, datetime.date], debt: float, type_of_split):
