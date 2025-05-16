@@ -18,7 +18,7 @@ python run.py
 ```
 ### Запуск фронтенда 
 ```
-streamlit run ./legal_doc_inspector/app/app.py
+python -m streamlit run ./legal_doc_inspector/app/app.py
 ```
 ## Тестирование
 
