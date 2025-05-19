@@ -3,6 +3,7 @@ import pandas as pd
 import requests
 from datetime import datetime
 
+from docx import Document
 
 st.title("Загрузка и обработка XLS/ZIP файла")
 
@@ -45,3 +46,6 @@ if uploaded_file is not None:
         else:
             st.error(f"Ошибка: {response.status_code}")
             st.text(response.text)
+
+
+def create_docx_from_json(data)

@@ -39,7 +39,7 @@ class Penalty_calculator:
                 for period in periods:
 
                     period_with_calculated_penalty = self._calculate_penalty_for_period(period=period)
-                    print(period_with_calculated_penalty)
+                    # print(period_with_calculated_penalty)
                     penalty.append(period_with_calculated_penalty)
 
             else:
@@ -100,6 +100,8 @@ class Penalty_calculator:
         'rate': float - доля ставки}
         """
         periods = None
+        payments_dict = None
+
         payment_month = (data[month]['месяц оплаты'])
         if need_to_pay != 0:
 
@@ -133,6 +135,7 @@ class Penalty_calculator:
                             periods = new_periods
         for period in periods:
             period['month'] = payment_month
+            period['payments'] = payments_dict if payments_dict is not None else None
         return periods
 
 
@@ -146,6 +149,8 @@ class Penalty_calculator:
         'rate': float - доля ставки}
         """
         periods = None
+        payments_dict = None
+
         payment_month = (data[month]['месяц оплаты'])
 
         if need_to_pay != 0:
@@ -180,6 +185,8 @@ class Penalty_calculator:
                             periods = new_periods
         for period in periods:
             period['month'] = payment_month
+            period['payments'] = payments_dict if payments_dict is not None else None
+
         return periods
 
     def _get_penalty_periods_for_type_3(self, data: dict, month, current_date: datetime.date, need_to_pay, start_date):
@@ -192,6 +199,7 @@ class Penalty_calculator:
         'rate': float - доля ставки}
         """
         periods = None
+        payments_dict = None
         payment_month = (data[month]['месяц оплаты'])
 
         if need_to_pay != 0:
@@ -226,6 +234,8 @@ class Penalty_calculator:
                             periods = new_periods
         for period in periods:
             period['month'] = payment_month    
+            period['payments'] = payments_dict if payments_dict is not None else None
+
         return periods
 
     def _split_period_by_stages(self, period: Tuple[datetime.date, datetime.date], debt: float, type_of_split):
