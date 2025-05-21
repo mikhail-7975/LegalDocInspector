@@ -5,13 +5,6 @@ import torch
 from sentence_transformers import util
 from pdf2image import convert_from_path  
 
-def extract_text(pdf_path):
-    with pdfplumber.open(pdf_path) as pdf:
-        text = ""
-        for page in pdf.pages:
-            text += page.extract_text() or ""
-        return text.strip()
-
 def extract_images(pdf_path):
     images = convert_from_path(pdf_path)
     ocr_text = ""
@@ -20,19 +13,12 @@ def extract_images(pdf_path):
     return ocr_text.strip()
 
 def create_prompt(pdf_path):
-    '''
-    Функция принимает путь до документа формата pdf, возвращает текст
-    '''
-    text = extract_text(pdf_path)
-    images_text = extract_images(pdf_path)
+    text = extract_images(pdf_path)
     
     prompt = "Документ содержит следующую информацию:\n\n"
     if text:
         prompt += f"Основной текст:\n{text}\n\n"
-    if images_text:
-        prompt += f"Текст с изображений:\n{images_text}\n\n"
     return prompt
-import re
 
 def split_by_points(text):
     '''
@@ -61,3 +47,22 @@ def retrieve_relevant_chunks(query, embedding_model, chunk_embeddings, chunks, t
     cos_scores = util.cos_sim(query_embedding, chunk_embeddings)[0]
     top_indices = torch.topk(cos_scores, k=top_k).indices.tolist()
     return [chunks[i] for i in top_indices]
+
+
+def get_conversation_for_contract(chunks, question):
+    '''
+    Функция для создания запроса для модели
+    '''
+    conversation = [
+        {
+            "role": "system",
+            "content": [
+                {"type": "text", "text": f"Ты - ассистент для обработка документов. Вот фрагменты документа: {chunks}. Тебе нужно точно ответить на вопросы пользовтаеля по его содержанию"}
+            ],
+        },
+        {
+            "role": "user",
+            "content": [{"type": "text", "text": f"{question}"}],
+        }
+    ]
+    return conversation
