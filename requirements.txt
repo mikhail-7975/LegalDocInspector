@@ -6,3 +6,6 @@ workalendar==17.0.0
 streamlit==1.45.0
 pyyaml==6.0.2
 python-docx==1.1.2
+langchain-community==0.3.24
+git+https://github.com/huggingface/transformers.git @v4.51.3-Qwen2.5-Omni-preview
+torch>=2.1.0
