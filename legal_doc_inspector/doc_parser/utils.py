@@ -1,24 +1,6 @@
-import pdfplumber  
-import pytesseract
 import re
 import torch
 from sentence_transformers import util
-from pdf2image import convert_from_path  
-
-def extract_images(pdf_path):
-    images = convert_from_path(pdf_path)
-    ocr_text = ""
-    for image in images:
-        ocr_text += pytesseract.image_to_string(image, lang="rus")  
-    return ocr_text.strip()
-
-def create_prompt(pdf_path):
-    text = extract_images(pdf_path)
-    
-    prompt = "Документ содержит следующую информацию:\n\n"
-    if text:
-        prompt += f"Основной текст:\n{text}\n\n"
-    return prompt
 
 def split_by_points(text):
     '''
@@ -38,13 +20,12 @@ def split_by_points(text):
         )
     return result
 
-def retrieve_relevant_chunks(query, embedding_model, chunk_embeddings, chunks, top_k=3):
+def retrieve_relevant_chunks(question_embedding, chunk_embeddings, chunks, top_k=3):
     '''
     Функция принимает вопрос, модель, список фрагментов текста в виде эмбеддингов и простой список фрагментов. 
     возвращает top-k ближайших к вопросу фрагментов
     '''
-    query_embedding = embedding_model.encode([query], convert_to_tensor=True)
-    cos_scores = util.cos_sim(query_embedding, chunk_embeddings)[0]
+    cos_scores = util.cos_sim(question_embedding, chunk_embeddings)[0]
     top_indices = torch.topk(cos_scores, k=top_k).indices.tolist()
     return [chunks[i] for i in top_indices]
 
