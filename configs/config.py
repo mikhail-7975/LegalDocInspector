@@ -20,8 +20,6 @@ def load_yaml_config(filename: str) -> AppConfig:
         config_data = yaml.safe_load(f)
 
     return AppConfig(
-        database_host=config_data["database"]["host"],
-        database_port=config_data["database"]["port"],
-        debug_mode=config_data["debug_mode"],
-        allowed_users=config_data["allowed_users"],
+        save_data_folder=config_data['save_data_folder'],
+        debug_mode=config_data['debug']
     )
