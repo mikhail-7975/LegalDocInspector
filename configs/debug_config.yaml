@@ -1,2 +1,2 @@
-save_data_folder : /home/kirill/neurolumber/LegalDocInspector/data
+save_data_folder : /tmp
 debug : True
