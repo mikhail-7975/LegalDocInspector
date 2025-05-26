@@ -229,7 +229,7 @@ class PenaltyTableCreator:
             return "0"
         
     def create_penalty_table_from_json(self, name, data, contract_number, start_date, end_date):
-        table = self._create_table_title(contract_number,start_date,end_date)
+        table = self._create_table_title(contract_number, start_date, end_date)
         list_of_periods = self.group_by_month(data)
-        table = self._create_penalty_table(table,list_of_periods)
+        table = self._create_penalty_table(table, list_of_periods)
         self.save_doc(name)
