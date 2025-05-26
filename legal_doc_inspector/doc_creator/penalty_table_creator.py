@@ -1,14 +1,19 @@
+from collections import defaultdict
+from pathlib import Path
+from datetime import date
+
+from docx.table import Table
 from docx import Document
 from docx.shared import Pt
 from docx.enum.section import WD_ORIENT
 
-class Penalty_table_creator:
+class PenaltyTableCreator:
     
     def __init__(self):
         self.doc = Document()
     
-    def _save_doc(self, name:str):
-        self.doc.save(name)
+    def save_doc(self, path_to_save:Path):
+        self.doc.save(str(path_to_save))
     
     def _create_table_title(self, contract_number:str, start_date, end_date ):
         doc = self.doc
@@ -78,19 +83,153 @@ class Penalty_table_creator:
         
         return table
     
-    def _create_month_periods_for_table(self, list_of_dicts):
+    def group_by_month(self, data):
+        """
+        принимает результат калькулятора пени, 
+        возвращает периоды оплат и просрочек для каждого месяца
+        """
+
+        grouped = defaultdict(lambda: {'payments': [], 'periods': []})
+
+        # Группируем платежи и периоды по месяцу
+        for entry in data:
+            month_key = entry['month']
+            if 'payments' in entry:
+                grouped[month_key]['payments'].append(entry['payments'])
+            # Убираем лишние поля перед добавлением периода
+            period_data = {
+                k: v for k, v in entry.items()
+                if k not in ('payments', 'month')
+            }
+            grouped[month_key]['periods'].append(period_data)
+
+        result = []
+        for month, items in grouped.items():
+            combined = []
+            # Сначала добавляем все платежи
+            payments_seen = set()
+            
+            for payment in items['payments']:
+                if payment is None:
+                    continue
+                
+                for key, value in payment.items():
+                    if key not in payments_seen:
+                        print(key)
+                        payments_seen.add(key)
+                        combined.append({'type': 'payment', 'data': {key:value}})
+                
+                
+            # Затем добавляем все периоды
+            for period in items['periods']:
+                combined.append({'type': 'period', 'data': period})
+
+            def get_sort_key(event):
+                if event['type'] == 'payment':
+                    # Берём единственную дату из ключей
+                    return next(iter(event['data'].keys()))
+                else:
+                    return event['data']['start']
+                
+            combined.sort(key=get_sort_key)
+
+            result.append({month: combined})
+
+
+        return result
+
+    
+    def _create_penalty_table(self, table:Table, list_dict_of_months):
+        """
+        принимает таблицу в документе и  результат group by month,
+        добавляет в таблицу строки периодов для каждого месяца
+        """
+        for month_dict in list_dict_of_months:
+            month_key, periods_and_payments  = next(iter(month_dict.items()))
+            new_rows_for_month = []
+            itogo = 0
+            for period_or_payment in periods_and_payments:
+                if period_or_payment['type'] == 'period':
+                    data = period_or_payment['data']
+                    new_row = table.add_row()
+                    new_row_cells = new_row.cells
+                    debt = data['debt']
+                    start_date = data['start']
+                    end_date = data['end']
+                    days_count = data['days']
+                    rate = data['rate']
+                    rate = self._rate_float_to_decimal(rate)
+                    penalty = data['penalty']
+                    itogo+=penalty
+
+                    start_date = start_date.strftime("%d.%m.%Y")
+                    end_date = end_date.strftime("%d.%m.%Y")
+
+                    new_row_cells[0].merge(new_row_cells[1])
+                    new_row_cells[2].merge(new_row_cells[3])
+
+                    new_row_cells[2].text = f'{debt}'
+
+                    new_row_cells[4].text = f'{start_date}'
+                    new_row_cells[5].text = f'{end_date}'
+                    new_row_cells[6].text = f'{days_count}'
+
+                    new_row_cells[7].text = '9,50%'
+                    new_row_cells[8].text = rate
+
+                    new_row_cells[9].text = f'{debt} × {days_count} × {rate} × 9,5%'
+                    new_row_cells[10].text = f'{penalty} р.'
+                    new_rows_for_month.append(new_row)
+
+                if period_or_payment['type'] == 'payment':
+                    data = period_or_payment['data']
+                    new_row = table.add_row()
+                    new_row_cells = new_row.cells
+                    date_of_payment, amount = next(iter(data.items()))
+                    date_of_payment = date_of_payment.strftime("%d.%m.%Y")
+
+                    new_row_cells[0].merge(new_row_cells[1])
+                    new_row_cells[2].merge(new_row_cells[3])
+
+                    new_row_cells[2].text = f'-{amount}'
+
+                    new_row_cells[4].text = f'{date_of_payment}'
+                    new_row_cells[5].merge(new_row_cells[10])
+                    new_row_cells[5].text = "погашение части долга"
+                    new_rows_for_month.append(new_row)
+            
+            itog_row = table.add_row()
+            itog_row_cells = itog_row.cells
+            itog_row_cells[0].merge(itog_row_cells[1])
+            itog_row_cells[2].merge(itog_row_cells[3])
+            itog_row_cells[9].text = 'Итого'
+            itog_row_cells[10].text = f'{itogo} р.'
+            new_rows_for_month.append(itog_row)
+            new_rows_for_month[0].cells[0].merge(new_rows_for_month[-1].cells[0])
+            new_rows_for_month[0].cells[0].text = f'{month_key}'
         
-        # для каждого периода список строк
-        month_period = dict()
+        return table
+    
+    def _rate_float_to_decimal(self,rate):
+        """
+        переводит число с плавающей точкой в обыкновенную дробь
+        """
+        first = 1/300
+        second = 1/170
+        third = 1/130
+        fourth = 0
         
-        for period_dict in 
-    
-    def _create_penalty_table(self, table, json):
+        if rate==first:    
+            return "1/300"
+        if rate==second:
+            return "1/170"
+        if rate==third:
+            return "1/130"
+        if rate==fourth:
+            return "0"
         
-        pass
-    
-    
-    def _create_month_subtable(self,table):
-        pass
-    
-    
+    def create_penalty_table_from_json(self, name, data, contract_number, start_date, end_date):
+        table = self._create_table_title(contract_number,start_date,end_date)
+        list_of_periods = self.group_by_month(data)
+        table = self._create_penalty_table(table,list_of_periods)
+        self.save_doc(name)

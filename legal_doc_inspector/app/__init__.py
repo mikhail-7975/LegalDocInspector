@@ -6,7 +6,7 @@ def create_app():
 
     with app.app_context():
         # Import parts of our application
-        from . import server
+        from . import routes
 
         @app.before_request
         def add_doc_processors():
