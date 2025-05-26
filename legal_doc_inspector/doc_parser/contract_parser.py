@@ -2,11 +2,10 @@ from .utils import split_by_points, retrieve_relevant_chunks
 
 import pytesseract
 import re
-from sentence_transformers import SentenceTransformer, util
-from transformers import Qwen2_5OmniForConditionalGeneration, Qwen2_5OmniProcessor
+from sentence_transformers import SentenceTransformer
 from pdf2image import convert_from_path  
 
-class contract_parser:
+class ContractParser:
     def __init__(self):
         self.embedding_model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
         # self.model = Qwen2_5OmniForConditionalGeneration.from_pretrained(

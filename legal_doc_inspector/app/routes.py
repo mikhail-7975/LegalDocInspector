@@ -10,6 +10,8 @@ from legal_doc_inspector.doc_parser.table_parser import TableParser
 from legal_doc_inspector.penalty_calculator.penalty_calculator import Penalty_calculator
 from legal_doc_inspector.doc_creator.penalty_table_creator import PenaltyTableCreator
 
+from legal_doc_inspector.doc_parser.contract_parser import ContractParser
+
 from pathlib import Path
 from datetime import datetime,date
 from werkzeug.utils import secure_filename
@@ -54,6 +56,26 @@ def parse():
     with open(str(Path(folder, "index.json"))) as json_file:
         data['results_of_data_saving'] = json.load(json_file)
 
+    result_dict = TableParser().parse_excel_table(data['results_of_data_saving']['certificate_file'])
+    result_dict = Penalty_calculator().calculate_penalty_from_doc(data=result_dict,
+                                                                    company_type=company_type,
+                                                                    current_date=date_request)
+    
+
+    contract_text_chunks = ContractParser.pdf_to_text('data/contract_05.414801.pdf')
+    usluga_type = ContractParser.find_info(contract_text_chunks, 'Какой тип услуги указан в договоре? Выбери: вода или отопление, ответь одним словом?')
+    prosrochka_date = ContractParser.find_info(contract_text_chunks, '5.5. Исполнитель в срок до 18-го числа месяца, следующего за расчетным, производит') # сам вопрос я переделаю, пока так чтобы точно находило
+
+    data['results_of_table_parsing'] = PenaltyTableCreator().create_penalty_table_from_json(
+            name = Path(folder,'расчёт к иску.docx') ,
+            data=result_dict,
+            start_date='тут должна быть дата',
+            end_date='тут должна была быть дата',
+            contract_number="тут должно было быть номер контракта"
+        )
+    data['contract_info'] = {}
+    data['contract_info']['usluga_type'] = usluga_type
+    data['contract_info']['prosrochka_date'] = prosrochka_date 
 
     # парсинг таблиц и создание документа с расчётом к иску
     table_creator = PenaltyTableCreator()
