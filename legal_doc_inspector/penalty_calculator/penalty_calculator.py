@@ -21,9 +21,9 @@ class Penalty_calculator:
         Принимает результат парсера таблицы,
         для каждого месяца считает пени за каждый подпериод
         суммирует пени
-        возвращает итоговую сумму неустойки по всем задолженностям
+        возвращает список периодов с расчётами
         """
-        penalty = 0  # сумма пеней по всем задолженностям
+        penalty = []  # сумма пеней по всем задолженностям
         # перебираем каждый месяц
         month_pattern = r'^(0[1-9]|1[0-2])\.(20\d{2}|2100)$'
         for month in data.keys():
@@ -39,8 +39,8 @@ class Penalty_calculator:
                 for period in periods:
 
                     period_with_calculated_penalty = self._calculate_penalty_for_period(period=period)
-                    print(period_with_calculated_penalty)
-                    penalty += period_with_calculated_penalty['penalty']
+                    # print(period_with_calculated_penalty)
+                    penalty.append(period_with_calculated_penalty)
 
             else:
                 continue
@@ -100,7 +100,9 @@ class Penalty_calculator:
         'rate': float - доля ставки}
         """
         periods = None
+        payments_dict = None
 
+        payment_month = (data[month]['месяц оплаты'])
         if need_to_pay != 0:
 
             periods = self._split_period_by_stages(period=(start_date, current_date), debt=need_to_pay , type_of_split= 'Прочие')
@@ -131,7 +133,9 @@ class Penalty_calculator:
                                 next_period['debt'] = need_to_pay
 
                             periods = new_periods
-
+        for period in periods:
+            period['month'] = payment_month
+            period['payments'] = payments_dict if payments_dict is not None else None
         return periods
 
 
@@ -145,6 +149,9 @@ class Penalty_calculator:
         'rate': float - доля ставки}
         """
         periods = None
+        payments_dict = None
+
+        payment_month = (data[month]['месяц оплаты'])
 
         if need_to_pay != 0:
 
@@ -176,6 +183,9 @@ class Penalty_calculator:
                                 next_period['debt'] = need_to_pay
 
                             periods = new_periods
+        for period in periods:
+            period['month'] = payment_month
+            period['payments'] = payments_dict if payments_dict is not None else None
 
         return periods
 
@@ -189,6 +199,8 @@ class Penalty_calculator:
         'rate': float - доля ставки}
         """
         periods = None
+        payments_dict = None
+        payment_month = (data[month]['месяц оплаты'])
 
         if need_to_pay != 0:
 
@@ -220,6 +232,9 @@ class Penalty_calculator:
                                 next_period['debt'] = need_to_pay
 
                             periods = new_periods
+        for period in periods:
+            period['month'] = payment_month    
+            period['payments'] = payments_dict if payments_dict is not None else None
 
         return periods
 

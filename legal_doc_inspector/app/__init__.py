@@ -1,5 +1,5 @@
 from flask import Flask, g
-
+from configs.config import load_yaml_config
 
 def create_app():
     app = Flask(__name__)
@@ -9,6 +9,9 @@ def create_app():
         from . import routes
 
         @app.before_request
+        def add_configs():
+            if "config" not in g:
+                g.config = load_yaml_config('configs/debug_config.yaml')
         def add_doc_processors():
             pass
 

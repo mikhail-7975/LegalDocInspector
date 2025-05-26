@@ -175,3 +175,5 @@ cython_debug/
 .qodo
 *.ipynb
 *lock*
+data/*/
+
