@@ -1,9 +1,11 @@
 import tempfile
 import zipfile
 import json
+
 from configs.config import AppConfig, load_yaml_config
 from legal_doc_inspector.doc_parser.table_parser import TableParser 
 from legal_doc_inspector.penalty_calculator.penalty_calculator import Penalty_calculator
+from legal_doc_inspector.doc_creator.penalty_table_creator import PenaltyTableCreator
 
 from pathlib import Path
 from datetime import datetime,date
@@ -62,12 +64,21 @@ def parse():
 
     
     with open(str(Path(folder, "index.json"))) as json_file:
-        data = json.load(json_file)
+        data['results_of_data_saving'] = json.load(json_file)
 
-    # result_dict = TableParser().parse_excel_table()
-    # result_dict = Penalty_calculator().calculate_penalty_from_doc(data=result_dict,
-    #                                                                 company_type=company_type,
-    #                                                                 current_date=date_request)
+    result_dict = TableParser().parse_excel_table(data['results_of_data_saving']['certificate_file'])
+    result_dict = Penalty_calculator().calculate_penalty_from_doc(data=result_dict,
+                                                                    company_type=company_type,
+                                                                    current_date=date_request)
+    
+    data['results_of_table_parsing'] = PenaltyTableCreator().create_penalty_table_from_json(
+            name = Path(folder,'расчёт к иску.docx') ,
+            data=result_dict,
+            start_date='тут должна быть дата',
+            end_date='тут должна была быть дата',
+            contract_number="тут должно было быть номер контракта"
+        )
+
     return jsonify(data) , 200
 
     # except Exception as e:

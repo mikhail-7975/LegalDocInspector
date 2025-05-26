@@ -233,3 +233,24 @@ class PenaltyTableCreator:
         list_of_periods = self.group_by_month(data)
         table = self._create_penalty_table(table, list_of_periods)
         self.save_doc(name)
+
+        return self.convert_datetime_keys(list_of_periods)
+    
+    def convert_datetime_keys(self,obj):
+        if isinstance(obj, dict):
+            new_dict = {}
+            for k, v in obj.items():
+                # Преобразуем ключ, если он datetime/date
+                new_key = k
+                if isinstance(k, date):
+                    new_key = k.strftime("%d.%m.%Y")
+                
+                new_value = self.convert_datetime_keys(v)
+                new_dict[new_key] = new_value
+            return new_dict
+        elif isinstance(obj, list):
+            return [self.convert_datetime_keys(item) for item in obj]
+        elif isinstance(obj, date):
+            return obj.strftime("%d.%m.%Y")
+        else:
+            return obj
