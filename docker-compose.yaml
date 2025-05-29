@@ -1,0 +1,11 @@
+version: '3.10'
+
+services:
+  agent:
+    build: .
+    container_name: doc_parser
+    ports:
+      - "5001:5001"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4

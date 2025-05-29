@@ -1,5 +1,6 @@
 import re
-import torch
+#import torch
+import numpy as mp
 from sentence_transformers import util
 
 def split_by_points(text):
@@ -26,7 +27,8 @@ def retrieve_relevant_chunks(question_embedding, chunk_embeddings, chunks, top_k
     возвращает top-k ближайших к вопросу фрагментов
     '''
     cos_scores = util.cos_sim(question_embedding, chunk_embeddings)[0]
-    top_indices = torch.topk(cos_scores, k=top_k).indices.tolist()
+    #top_indices = torch.topk(cos_scores, k=top_k).indices.tolist()
+    top_indices = np.argsort(cos_scores)[-top_k:][::-1]
     return [chunks[i] for i in top_indices]
 
 
