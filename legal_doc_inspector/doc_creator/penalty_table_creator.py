@@ -18,8 +18,74 @@ class PenaltyTableCreator:
     def save_doc(self, path_to_save:Path):
         self.doc.save(str(path_to_save))
     
+    def create_penalty_table_from_json(self, name, data, contract_number, start_date, end_date):
+        self._create_document_title()
+        table = self._create_table_title(contract_number, start_date, end_date)
+        list_of_periods = self.group_by_month(data)
+        table = self._create_penalty_table(table, list_of_periods)
+        self.save_doc(name)
+
+        return self.convert_datetime_keys(list_of_periods)
+
+    def _create_document_title(self):
+
+        paragraph = self.doc.add_paragraph()
+        run = paragraph.add_run('Приложение к исковому заявлению')
+        run.font.name = 'Times New Roman'
+        element = run._element
+        rPr = element.get_or_add_rPr()
+        rFonts = rPr.get_or_add_rFonts()
+        rFonts.set(qn('w:ascii'), 'Times New Roman')
+        rFonts.set(qn('w:hAnsi'), 'Times New Roman')
+        rFonts.set(qn('w:eastAsia'), 'Times New Roman')  
+        rFonts.set(qn('w:cs'), 'Times New Roman')
+        run.font.size = Pt(12)
+        paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
+        paragraph = self.doc.add_paragraph()
+        run = paragraph.add_run('РАСЧЕТ СУММЫ НЕУСТОЙКИ (ПЕНЕЙ) И ОБЩЕЙ ЦЕНЫ ИСКА')
+        run.font.name = 'Times New Roman'
+        run.bold = True
+        element = run._element
+        rPr = element.get_or_add_rPr()
+        rFonts = rPr.get_or_add_rFonts()
+        rFonts.set(qn('w:ascii'), 'Times New Roman')
+        rFonts.set(qn('w:hAnsi'), 'Times New Roman')
+        rFonts.set(qn('w:eastAsia'), 'Times New Roman')  
+        rFonts.set(qn('w:cs'), 'Times New Roman')
+        run.font.size = Pt(12)
+        paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
 
     def _create_table_title(self, contract_number:str, start_date, end_date ):
+        
+        paragraph = self.doc.add_paragraph()
+        run = paragraph.add_run('I.   РАСЧЕТ СУММЫ НЕУСТОЙКИ (ПЕНЕЙ)')
+        run.font.name = 'Times New Roman'
+        run.bold = True
+        element = run._element
+        rPr = element.get_or_add_rPr()
+        rFonts = rPr.get_or_add_rFonts()
+        rFonts.set(qn('w:ascii'), 'Times New Roman')
+        rFonts.set(qn('w:hAnsi'), 'Times New Roman')
+        rFonts.set(qn('w:eastAsia'), 'Times New Roman')  
+        rFonts.set(qn('w:cs'), 'Times New Roman')
+        run.font.size = Pt(12)
+        paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        
+        paragraph = self.doc.add_paragraph()
+        run = paragraph.add_run(f'Исходя из размера Основного долга и Периода задолженности, неустойка по состоянию на {end_date} составляет:')
+        run.font.name = 'Times New Roman'
+        element = run._element
+        rPr = element.get_or_add_rPr()
+        rFonts = rPr.get_or_add_rFonts()
+        rFonts.set(qn('w:ascii'), 'Times New Roman')
+        rFonts.set(qn('w:hAnsi'), 'Times New Roman')
+        rFonts.set(qn('w:eastAsia'), 'Times New Roman')  
+        rFonts.set(qn('w:cs'), 'Times New Roman')
+        run.font.size = Pt(12)
+        paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        
         doc = self.doc
         
         section = doc.sections[0]
@@ -211,6 +277,8 @@ class PenaltyTableCreator:
         принимает таблицу в документе и  результат group by month,
         добавляет в таблицу строки периодов для каждого месяца
         """
+        all_debt = 0
+        all_penalty = 0
         for month_dict in list_dict_of_months:
             month_key, periods_and_payments  = next(iter(month_dict.items()))
             new_rows_for_month = []
@@ -281,7 +349,7 @@ class PenaltyTableCreator:
                     self._put_text_into_table_cell(text=f'{date_of_payment}',
                                                    cell=new_row_cells[4])
                     
-                    self._put_text_into_table_cell(text="погашение части долга",
+                    self._put_text_into_table_cell(text="Погашение части долга",
                                                    need_italic=True,
                                                    cell=new_row_cells[5],
                                                    orient='left')
@@ -318,6 +386,13 @@ class PenaltyTableCreator:
             self._apply_width_for_column(table.columns[9], 5)
             self._apply_width_for_column(table.columns[2], 0.7)
 
+            all_penalty+=itogo
+            all_debt = 
+        first_row = table.add_row()
+        second_row = table.add_row()
+        self._apply_height_for_row(first_row, 0.65)
+        self._apply_height_for_row(second_row, 0.65)
+
         return table
     
 
@@ -340,13 +415,6 @@ class PenaltyTableCreator:
             return "0"
         
 
-    def create_penalty_table_from_json(self, name, data, contract_number, start_date, end_date):
-        table = self._create_table_title(contract_number, start_date, end_date)
-        list_of_periods = self.group_by_month(data)
-        table = self._create_penalty_table(table, list_of_periods)
-        self.save_doc(name)
-
-        return self.convert_datetime_keys(list_of_periods)
     
 
     def convert_datetime_keys(self, obj):
