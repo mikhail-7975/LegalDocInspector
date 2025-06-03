@@ -8,6 +8,7 @@ from legal_doc_inspector.penalty_calculator.penalty_calculator import Penalty_ca
 from legal_doc_inspector.doc_creator.penalty_table_creator import PenaltyTableCreator
 
 from legal_doc_inspector.doc_parser.contract_parser import ContractParser
+from legal_doc_inspector.doc_parser.zip_parser import ZipParser
 
 from pathlib import Path
 from datetime import datetime,date
@@ -73,10 +74,15 @@ def parse():
                                                                     company_type=company_type,
                                                                     current_date=date_request)
     
-
+    # Договор
     contract_text_chunks = ContractParser.pdf_to_text('data/contract_05.414801.pdf')
     usluga_type = ContractParser.find_info(contract_text_chunks, 'Какой тип услуги указан в договоре? Выбери: вода или отопление, ответь одним словом?')
     prosrochka_date = ContractParser.find_info(contract_text_chunks, '5.5. Исполнитель в срок до 18-го числа месяца, следующего за расчетным, производит') # сам вопрос я переделаю, пока так чтобы точно находило
+
+    # Zip архив
+    zip_docs_texts = ZipParser.get_texts(archive_folder)
+    zip_names = ZipParser.find_names(zip_docs_texts)
+
 
     data['results_of_table_parsing'] = PenaltyTableCreator().create_penalty_table_from_json(
             name = Path(folder,'расчёт к иску.docx') ,
@@ -88,6 +94,8 @@ def parse():
     data['contract_info'] = {}
     data['contract_info']['usluga_type'] = usluga_type
     data['contract_info']['prosrochka_date'] = prosrochka_date 
+
+    data['zip_names'] = zip_names
 
     return jsonify(data) , 200
 

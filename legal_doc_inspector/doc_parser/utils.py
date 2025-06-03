@@ -1,6 +1,8 @@
 import re
-#import torch
+import pytesseract
 import numpy as mp
+import os
+from pdf2image import convert_from_path  
 from sentence_transformers import util
 
 def split_by_points(text):
@@ -46,6 +48,43 @@ def get_conversation_for_contract(chunks, question):
         {
             "role": "user",
             "content": [{"type": "text", "text": f"{question}"}],
+        }
+    ]
+    return conversation
+
+
+def get_text_for_zip(pdf_path):
+    images = convert_from_path(pdf_path)
+    ocr_text = ""
+    if images:
+        ocr_text += pytesseract.image_to_string(images[0], lang="rus")  
+    text = ocr_text.strip()
+    clean_text = re.sub(r"\x0c", "", text)
+    return clean_text
+
+def get_pdf_files(directory):
+    files = os.listdir(directory)
+    pdf_files = [
+        os.path.abspath(os.path.join(directory, f)) 
+        for f in files 
+        if f.lower().endswith('.pdf')
+    ]
+    return pdf_files
+
+def get_conversation_for_zip(value):
+    '''
+    Функция для создания запроса для llm
+    '''
+    conversation = [
+        {
+            "role": "system",
+            "content": [
+                {"type": "text", "text": f"Ты - ассистент для обработка документов. Вот фрагменты документа: {value}. Тебе нужно точно ответить на вопросы пользовтаеля по его содержанию"}
+            ],
+        },
+        {
+            "role": "user",
+            "content": [{"type": "text", "text": "Напиши название документа которое ты нашел в его фрагментах"}],
         }
     ]
     return conversation
