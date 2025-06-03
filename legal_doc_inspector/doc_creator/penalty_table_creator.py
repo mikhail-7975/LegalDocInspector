@@ -30,60 +30,122 @@ class PenaltyTableCreator:
         # создание титульника таблицы
 
         table = doc.add_table(rows=1, cols=11)
-
+        table.style = 'Table Grid'
         # Получаем первую строку
+        self._apply_height_for_row(table.rows[0],0.6)
         row_cells = table.rows[0].cells
         # Устанавливаем альбомную ориентацию
         # Объединяем первые две ячейки
         row_cells[0].merge(row_cells[2])
-        row_cells[0].text = 'Информация о расчёте'
+
+        self._put_text_into_table_cell('Информация о расчёте',
+                                        row_cells[0],
+                                        need_gray_bgc=True,
+                                        orient='left')
+
         row_cells[3].merge(row_cells[10])
-        row_cells[3].text = 'тут должен быть номер договора'
+    
+
+        self._put_text_into_table_cell(text=f'{contract_number}',
+                                       cell=row_cells[3],
+                                       orient='left',
+                                       need_bold=True)
 
         secondrow = table.add_row()
+        self._apply_height_for_row(secondrow, 0.6)
         row_cells = secondrow.cells
         row_cells[0].merge(row_cells[1])
-        row_cells[0].text = "Начало просрочки"
+
+        self._put_text_into_table_cell(text="Начало просрочки",
+                                       cell=row_cells[0],
+                                       need_gray_bgc=True,
+                                       orient='left'
+                                       )
         row_cells[2].merge(row_cells[4])
-        row_cells[2].text = "тут будет дата начала просрочки"
+
+        self._put_text_into_table_cell(text=f'{start_date}',
+                                       cell=row_cells[2],
+                                       orient='left')
+
         row_cells[5].merge(row_cells[6])
-        row_cells[5].text = "конец просрочки"
+
+        self._put_text_into_table_cell(text="конец просрочки",
+                                       cell=row_cells[5],
+                                       orient='left',
+                                       need_gray_bgc=True)
+
         row_cells[7].merge(row_cells[10])
-        row_cells[7].text = "тут будет дата конца просрочки"
+
+        self._put_text_into_table_cell(text=f'{end_date}',
+                                       cell=row_cells[7],
+                                       orient='left')
 
         third_row = table.add_row()
+        self._apply_height_for_row(third_row, 0.6)
         fourth_row = table.add_row()
+        self._apply_height_for_row(fourth_row, 0.6)
         up_row_cells = third_row.cells
         down_row_cells = fourth_row.cells
 
         up_row_cells[0].merge(up_row_cells[1])
         down_row_cells[0].merge(down_row_cells[1])
         up_row_cells[0].merge(down_row_cells[0])
-        up_row_cells[0].text = 'месяц'
+
+        self._put_text_into_table_cell(text='Месяц',
+                                       need_bold=True,
+                                       cell=up_row_cells[0])
 
         up_row_cells[2].merge(up_row_cells[3])
         down_row_cells[2].merge(down_row_cells[3])
         up_row_cells[2].merge(down_row_cells[2])
-        up_row_cells[2].text = 'долг'
+
+        self._put_text_into_table_cell(text='Долг',
+                                       need_bold=True,
+                                       cell=up_row_cells[2])
 
         up_row_cells[4].merge(up_row_cells[6])
-        up_row_cells[4].text = 'период просрочки'
 
-        down_row_cells[4].text = 'с'
-        down_row_cells[5].text = 'по'
-        down_row_cells[6].text = 'дней'
+        self._put_text_into_table_cell(text='Период просрочки',
+                                       cell=up_row_cells[4],
+                                       need_bold=True)
+
+
+        self._put_text_into_table_cell(text='с',
+                                       need_bold=True,
+                                       cell=down_row_cells[4])
+
+        self._put_text_into_table_cell(text='по',
+                                       need_bold=True,
+                                       cell=down_row_cells[5])
+
+        self._put_text_into_table_cell(text='дней',
+                                       need_bold=True,
+                                       cell=down_row_cells[6])
+
 
         up_row_cells[7].merge(down_row_cells[7])
-        up_row_cells[7].text = 'ставка'
+
+        self._put_text_into_table_cell(text='Ставка',
+                                       need_bold=True,
+                                       cell=up_row_cells[7])
 
         up_row_cells[8].merge(down_row_cells[8])
-        up_row_cells[8].text = 'доля ставки'
+
+        self._put_text_into_table_cell(text='Доля ставки',
+                                       need_bold=True,
+                                       cell=up_row_cells[8])
 
         up_row_cells[9].merge(down_row_cells[9])
-        up_row_cells[9].text = 'формула'
+
+        self._put_text_into_table_cell(text="Формула",
+                                       need_bold=True,
+                                       cell=up_row_cells[9])
 
         up_row_cells[10].merge(down_row_cells[10])
-        up_row_cells[10].text = 'пени'
+
+        self._put_text_into_table_cell(text="Пени",
+                                       need_bold=True,
+                                       cell=up_row_cells[10])
         
         return table
     
@@ -157,6 +219,7 @@ class PenaltyTableCreator:
                 if period_or_payment['type'] == 'period':
                     data = period_or_payment['data']
                     new_row = table.add_row()
+                    self._apply_height_for_row(new_row, 0.65)
                     new_row_cells = new_row.cells
                     debt = data['debt']
                     start_date = data['start']
@@ -204,6 +267,8 @@ class PenaltyTableCreator:
                 if period_or_payment['type'] == 'payment':
                     data = period_or_payment['data']
                     new_row = table.add_row()
+                    self._apply_height_for_row(new_row, 0.65)
+
                     new_row_cells = new_row.cells
                     date_of_payment, amount = next(iter(data.items()))
                     date_of_payment = date_of_payment.strftime("%d.%m.%Y")
@@ -217,6 +282,7 @@ class PenaltyTableCreator:
                                                    cell=new_row_cells[4])
                     
                     self._put_text_into_table_cell(text="погашение части долга",
+                                                   need_italic=True,
                                                    cell=new_row_cells[5],
                                                    orient='left')
                     new_row_cells[5].merge(new_row_cells[10])
@@ -229,11 +295,13 @@ class PenaltyTableCreator:
             self._put_text_into_table_cell(text="Итого",
                                            cell=itog_row_cells[9],
                                            need_bold=True,
+                                           need_gray_bgc=True,
                                            orient='right')
             
             self._put_text_into_table_cell(text=f'{itogo} р.',
                                            cell=itog_row_cells[10],
                                            need_bold=True,
+                                           need_gray_bgc=True,
                                            orient='right')
             
             new_rows_for_month.append(itog_row)
@@ -243,7 +311,13 @@ class PenaltyTableCreator:
                                            cell=new_rows_for_month[0].cells[0],
                                            need_bold=True,
                                            need_vertical_orient=True)
+
+
             self._set_row_bottom_border(new_rows_for_month[-1])
+
+            self._apply_width_for_column(table.columns[9], 5)
+            self._apply_width_for_column(table.columns[2], 0.7)
+
         return table
     
 
@@ -295,7 +369,7 @@ class PenaltyTableCreator:
             return obj
         
 
-    def _put_text_into_table_cell(self, text:str, cell:_Cell, need_bold=False, need_italic=False, orient="center", need_vertical_orient=False, need_gray_bgc=False):
+    def _put_text_into_table_cell(self, text:str, cell:_Cell, font_size=9, need_bold=False, need_italic=False, orient="center", need_vertical_orient=True, need_gray_bgc=False):
         paragraph = cell.paragraphs[0]
         run = paragraph.add_run(text)
         run.bold = need_bold
@@ -310,7 +384,7 @@ class PenaltyTableCreator:
         rFonts.set(qn('w:eastAsia'), 'Times New Roman')  
         rFonts.set(qn('w:cs'), 'Times New Roman')
         # run._element.rPr.rFonts.set('w:eastAsia', 'Times New Roman')  # для корректного отображения в Word
-        run.font.size = Pt(9)
+        run.font.size = Pt(font_size)
 
         match orient:
             case "center":
@@ -369,11 +443,11 @@ class PenaltyTableCreator:
         tr.append(tc_borders)
     
 
-    def _apply_height_for_table(self, table:Table, height:float):
-        for row in table.rows:
-            row.height = Cm(height)
+    def _apply_height_for_row(self, row:_Row, height:float):
+        row.height = Cm(height)
         
-        return table
+        
+        
     
     def _apply_width_for_column(self, column:_Column, width:float):
         column.width = Cm(width)
