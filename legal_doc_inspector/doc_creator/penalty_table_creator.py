@@ -283,6 +283,7 @@ class PenaltyTableCreator:
             month_key, periods_and_payments  = next(iter(month_dict.items()))
             new_rows_for_month = []
             itogo = 0
+            last_month_debt = 0
             for period_or_payment in periods_and_payments:
                 if period_or_payment['type'] == 'period':
                     data = period_or_payment['data']
@@ -290,6 +291,7 @@ class PenaltyTableCreator:
                     self._apply_height_for_row(new_row, 0.65)
                     new_row_cells = new_row.cells
                     debt = data['debt']
+                    last_month_debt = debt
                     start_date = data['start']
                     end_date = data['end']
                     days_count = data['days']
@@ -305,7 +307,7 @@ class PenaltyTableCreator:
                     new_row_cells[2].merge(new_row_cells[3])
 
                     
-                    self._put_text_into_table_cell(text=f'{debt}',
+                    self._put_text_into_table_cell(text=f'{self.format_float_to_currency(debt)}',
                                                    cell=new_row_cells[2],)
 
                     self._put_text_into_table_cell(text=f'{start_date}',
@@ -323,10 +325,10 @@ class PenaltyTableCreator:
                     self._put_text_into_table_cell(text=rate,
                                                    cell=new_row_cells[8])
                     
-                    self._put_text_into_table_cell(text=f'{debt} × {days_count} × {rate} × 9,5%',
+                    self._put_text_into_table_cell(text=f'{self.format_float_to_currency(debt)} × {days_count} × {rate} × 9,5%',
                                                    cell=new_row_cells[9])
 
-                    self._put_text_into_table_cell(text=f'{penalty} р.',
+                    self._put_text_into_table_cell(text=f'{self.format_float_to_currency(penalty)} р.',
                                                    cell=new_row_cells[10],
                                                    orient='right')
 
@@ -343,7 +345,7 @@ class PenaltyTableCreator:
 
                     new_row_cells[0].merge(new_row_cells[1])
                     new_row_cells[2].merge(new_row_cells[3])
-                    self._put_text_into_table_cell(text=f'-{amount}',
+                    self._put_text_into_table_cell(text=f'-{self.format_float_to_currency(amount)}',
                                                    cell=new_row_cells[2])
 
                     self._put_text_into_table_cell(text=f'{date_of_payment}',
@@ -353,6 +355,7 @@ class PenaltyTableCreator:
                                                    need_italic=True,
                                                    cell=new_row_cells[5],
                                                    orient='left')
+                    
                     new_row_cells[5].merge(new_row_cells[10])
                     new_rows_for_month.append(new_row)
             
@@ -366,7 +369,7 @@ class PenaltyTableCreator:
                                            need_gray_bgc=True,
                                            orient='right')
             
-            self._put_text_into_table_cell(text=f'{itogo} р.',
+            self._put_text_into_table_cell(text=f'{self.format_float_to_currency(itogo)} р.',
                                            cell=itog_row_cells[10],
                                            need_bold=True,
                                            need_gray_bgc=True,
@@ -387,11 +390,24 @@ class PenaltyTableCreator:
             self._apply_width_for_column(table.columns[2], 0.7)
 
             all_penalty+=itogo
-            all_debt = 
+            all_debt += last_month_debt
+
         first_row = table.add_row()
         second_row = table.add_row()
         self._apply_height_for_row(first_row, 0.65)
         self._apply_height_for_row(second_row, 0.65)
+        
+        first_row_cells = first_row.cells
+        first_row_cells[0].merge(first_row_cells[-1])
+        self._put_text_into_table_cell(text=f'Сумма основного долга: {self.format_float_to_currency(all_debt)} руб.',
+                                       cell=first_row_cells[0],
+                                       orient='right')
+        
+        second_row_cells = second_row.cells
+        second_row_cells[0].merge(second_row_cells[-1])
+        self._put_text_into_table_cell(text=f'Сумма пеней по всем задолженностям: {self.format_float_to_currency(all_penalty)} руб.',
+                                       cell=second_row_cells[0],
+                                       orient='right')
 
         return table
     
@@ -514,7 +530,20 @@ class PenaltyTableCreator:
     def _apply_height_for_row(self, row:_Row, height:float):
         row.height = Cm(height)
         
-        
+    def format_float_to_currency(self, value: float) -> str:
+        value = round(value, 2)  # избегаем ошибок округления
+        rubbles = int(value)
+        kopecks = int(round(value - rubbles, 2) * 100)
+
+        # Форматируем рубли
+        rubbles_str = str(rubbles)
+        formatted = ''
+        for i, digit in enumerate(rubbles_str[::-1]):
+            if i % 3 == 0 and i != 0:
+                formatted = ' ' + formatted
+            formatted = digit + formatted
+
+        return f"{formatted},{kopecks:02d}"
         
     
     def _apply_width_for_column(self, column:_Column, width:float):
