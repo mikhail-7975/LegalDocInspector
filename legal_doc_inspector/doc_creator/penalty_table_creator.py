@@ -22,10 +22,114 @@ class PenaltyTableCreator:
         self._create_document_title()
         table = self._create_table_title(contract_number, start_date, end_date)
         list_of_periods = self.group_by_month(data)
-        table = self._create_penalty_table(table, list_of_periods)
-        self.save_doc(name)
+        table , contract_number, start_date, end_date, all_debt, all_penalty = self._create_penalty_table(table, list_of_periods,contract_number)
 
-        return self.convert_datetime_keys(list_of_periods)
+        return contract_number, start_date, end_date, all_debt, all_penalty
+
+
+    def create_result_table(self, list_of_tables_info:list[tuple], name:Path):
+
+        paragraph = self.doc.add_paragraph()
+        run = paragraph.add_run('II.   РАСЧЕТ ОБЩЕЙ ЦЕНЫ ИСКА')
+        run.font.name = 'Times New Roman'
+        run.bold = True
+        element = run._element
+        rPr = element.get_or_add_rPr()
+        rFonts = rPr.get_or_add_rFonts()
+        rFonts.set(qn('w:ascii'), 'Times New Roman')
+        rFonts.set(qn('w:hAnsi'), 'Times New Roman')
+        rFonts.set(qn('w:eastAsia'), 'Times New Roman')  
+        rFonts.set(qn('w:cs'), 'Times New Roman')
+        run.font.size = Pt(12)
+        paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        table = self.doc.add_table(rows=1, cols=5)
+        table.style = "Table Grid"
+        title_row_cells = table.rows[0].cells
+        self._put_text_into_table_cell(text='Реквизиты (номер) договора',
+                                       cell=title_row_cells[0],
+                                       font_size=12,
+                                       need_bold=True)
+        
+        self._put_text_into_table_cell(text='Период',
+                                       cell=title_row_cells[1],
+                                       font_size=12,
+                                       need_bold=True)
+        
+        self._put_text_into_table_cell(text='Задолженность (основной долг), руб.',
+                                       cell=title_row_cells[2],
+                                       font_size=12,
+                                       need_bold=True)
+        
+        self._put_text_into_table_cell(text='Неустойка,руб.',
+                                       cell=title_row_cells[3],
+                                       font_size=12,
+                                       need_bold=True)
+        
+        self._put_text_into_table_cell(text='Итого по договору(неустойка + основной долг), сумма, руб.',
+                                       cell=title_row_cells[4],
+                                       font_size=12,
+                                       need_bold=True)
+        all_debt = 0
+        all_penalty = 0
+
+        for contract_number, start_date, end_date, debt, penalty in list_of_tables_info:
+
+            row = table.add_row()
+            row_cells = row.cells
+
+            self._put_text_into_table_cell(text=f'{contract_number}',
+                                           font_size=11,
+                                           cell=row_cells[0],
+                                           need_bold=True)
+            
+            self._put_text_into_table_cell(text=f'{start_date}-{end_date}',
+                                           font_size=11,
+                                           cell=row_cells[1])
+            
+            self._put_text_into_table_cell(text=f'{self.format_float_to_currency(debt)}',
+                                           cell=row_cells[2],
+                                           font_size=11)
+            
+            self._put_text_into_table_cell(text=f'{self.format_float_to_currency(penalty)}',
+                                           cell=row_cells[3],
+                                           font_size=11)
+            
+            self._put_text_into_table_cell(text=f'{self.format_float_to_currency(float(debt) + float(penalty))}',
+                                           cell=row_cells[4],
+                                           font_size=11)
+            
+            all_debt+=float(debt)
+            all_penalty+=float(penalty)
+
+        result_row = table.add_row()
+
+        result_row_cells = result_row.cells
+
+        result_row_cells[0].merge(result_row_cells[1])
+
+        self._put_text_into_table_cell(text="ИТОГО",
+                                       font_size=11,
+                                       cell=result_row_cells[0],
+                                       need_bold=True,
+                                       orient='right')
+        
+        self._put_text_into_table_cell(text=f'{self.format_float_to_currency(all_debt)}',
+                                       font_size=11,
+                                       need_bold=True,
+                                       cell=result_row_cells[2])
+        
+        self._put_text_into_table_cell(text=f'{self.format_float_to_currency(all_penalty)}',
+                                       font_size=11,
+                                       need_bold=True,
+                                       cell=result_row_cells[3])
+        
+        self._put_text_into_table_cell(text=f'{self.format_float_to_currency(float(all_debt) + float(all_penalty))}',
+                                       font_size=11,
+                                       need_bold=True,
+                                       cell=result_row_cells[4])
+
+        self.save_doc(name)
 
     def _create_document_title(self):
 
@@ -97,11 +201,9 @@ class PenaltyTableCreator:
 
         table = doc.add_table(rows=1, cols=11)
         table.style = 'Table Grid'
-        # Получаем первую строку
         self._apply_height_for_row(table.rows[0],0.6)
         row_cells = table.rows[0].cells
-        # Устанавливаем альбомную ориентацию
-        # Объединяем первые две ячейки
+        
         row_cells[0].merge(row_cells[2])
 
         self._put_text_into_table_cell('Информация о расчёте',
@@ -272,7 +374,7 @@ class PenaltyTableCreator:
         return result
 
     
-    def _create_penalty_table(self, table:Table, list_dict_of_months):
+    def _create_penalty_table(self, table:Table, list_dict_of_months, contract_number):
         """
         принимает таблицу в документе и  результат group by month,
         добавляет в таблицу строки периодов для каждого месяца
@@ -409,7 +511,8 @@ class PenaltyTableCreator:
                                        cell=second_row_cells[0],
                                        orient='right')
 
-        return table
+        return table, contract_number, start_date, end_date, all_debt, all_penalty
+
     
 
     def _rate_float_to_decimal(self,rate):
