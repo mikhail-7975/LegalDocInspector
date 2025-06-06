@@ -13,16 +13,17 @@ class PenaltyTableCreator:
     
     def __init__(self):
         self.doc = Document()
-    
+        self._create_document_title()
+
 
     def save_doc(self, path_to_save:Path):
         self.doc.save(str(path_to_save))
     
     def create_penalty_table_from_json(self, name, data, contract_number, start_date, end_date):
-        self._create_document_title()
+        
         table = self._create_table_title(contract_number, start_date, end_date)
         list_of_periods = self.group_by_month(data)
-        table , contract_number, start_date, end_date, all_debt, all_penalty = self._create_penalty_table(table, list_of_periods,contract_number)
+        table , contract_number, all_debt, all_penalty = self._create_penalty_table(table, list_of_periods,contract_number)
 
         return contract_number, start_date, end_date, all_debt, all_penalty
 
@@ -30,7 +31,7 @@ class PenaltyTableCreator:
     def create_result_table(self, list_of_tables_info:list[tuple], name:Path):
 
         paragraph = self.doc.add_paragraph()
-        run = paragraph.add_run('II.   РАСЧЕТ ОБЩЕЙ ЦЕНЫ ИСКА')
+        run = paragraph.add_run('\n \n \nII.   РАСЧЕТ ОБЩЕЙ ЦЕНЫ ИСКА')
         run.font.name = 'Times New Roman'
         run.bold = True
         element = run._element
@@ -160,9 +161,6 @@ class PenaltyTableCreator:
         run.font.size = Pt(12)
         paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-
-    def _create_table_title(self, contract_number:str, start_date, end_date ):
-        
         paragraph = self.doc.add_paragraph()
         run = paragraph.add_run('I.   РАСЧЕТ СУММЫ НЕУСТОЙКИ (ПЕНЕЙ)')
         run.font.name = 'Times New Roman'
@@ -176,6 +174,9 @@ class PenaltyTableCreator:
         rFonts.set(qn('w:cs'), 'Times New Roman')
         run.font.size = Pt(12)
         paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+
+    def _create_table_title(self, contract_number:str, start_date, end_date ):
         
         paragraph = self.doc.add_paragraph()
         run = paragraph.add_run(f'Исходя из размера Основного долга и Периода задолженности, неустойка по состоянию на {end_date} составляет:')
@@ -511,7 +512,7 @@ class PenaltyTableCreator:
                                        cell=second_row_cells[0],
                                        orient='right')
 
-        return table, contract_number, start_date, end_date, all_debt, all_penalty
+        return table, contract_number, all_debt, all_penalty
 
     
 
