@@ -3,11 +3,11 @@ from configs.config import load_yaml_config
 
 def create_app():
     app = Flask(__name__)
-
+    
     with app.app_context():
         # Import parts of our application
         from . import routes
-
+        
         @app.before_request
         def add_configs():
             if "config" not in g:
