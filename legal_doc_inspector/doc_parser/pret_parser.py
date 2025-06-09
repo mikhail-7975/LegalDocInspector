@@ -1,6 +1,6 @@
 import re
 import pytesseract  
-
+from .utils import get_conversation_for_claim
 from pdf2image import convert_from_path  
 
 class PretParser:
@@ -12,32 +12,27 @@ class PretParser:
         '''
         Принимает путь до pdf файла, возвращает строку
         '''
-        images = convert_from_path(pdf_path)
-        pdf_text = ""
-        for image in images:
-            pdf_text += pytesseract.image_to_string(image, lang="rus")  
-        pdf_text = re.sub(r"\x0c", "", pdf_text)  
-        return pdf_text
+        images = convert_from_path(pdf_path, dpi=200)  
+        ocr_text = ""
+        if images:
+            image = images[0] 
+            width, height = image.size
+            center_x = width // 2
+            center_y = height // 3
+            left_upper = image.crop((0, 0, center_x, center_y))
+            right_upper = image.crop((center_x, 0, width, center_y))
+            bottom_part = image.crop((0, center_y, width, height))
+            ocr_text += pytesseract.image_to_string(left_upper, lang="rus+eng") + "\n"
+            ocr_text += pytesseract.image_to_string(right_upper, lang="rus+eng") + "\n"
+            ocr_text += pytesseract.image_to_string(bottom_part, lang="rus+eng") + "\n"
+        return ocr_text.strip()
     
-    def find_info(self, pdf_text):
+    def find_info(self, pdf_text, question):
         '''
         Принимает строку, возвращает словарь ответ нейросети (str)
         '''
-        conversation = [
-            {
-                "role": "system",
-                "content": [
-                    {"type": "text", "text": f"Ты - ассистент для обработка документов. Вот фрагменты документа: {pdf_text}. Тебе нужно точно ответить на вопросы пользовтаеля по его содержанию"}
-                ],
-            },
-            {
-                "role": "user",
-                "content": [{"type": "text", "text": "Какие в документе есть данные истца?"},
-                            {"type": "text", "text": "Какой номер претензии?"},
-                            {"type": "text", "text": "Какая дата претензии?"},
-                            {"type": "text", "text": "Какой адрес ответчика?"}]
-            }
-        ]
+        conversation = get_conversation_for_claim(pdf_text, question)
+        
         inputs = self.processor.apply_chat_template(
             conversation,
             add_generation_prompt=True,
