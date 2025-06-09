@@ -85,3 +85,21 @@ def get_conversation_for_zip(value):
         }
     ]
     return conversation
+
+def get_conversation_for_claim(pdf_text, question):
+    '''
+    Функция для создания запроса для llm
+    '''
+    conversation = [
+        {
+            "role": "system",
+            "content": [
+            {"type": "text", "text": f"Ты - ассистент для обработки документов. Вот фрагменты документа: {pdf_text}. Он представляет из себя претензию. Тебе нужно точно ответить на вопросы пользовтаеля по его содержанию"}
+            ],
+        },
+        {
+            "role": "user",
+            "content": [{"type": "text", "text": f"{question}"}],
+        }
+    ]
+    return conversation

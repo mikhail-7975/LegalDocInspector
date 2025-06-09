@@ -27,7 +27,7 @@ from transformers import Qwen2_5OmniForConditionalGeneration, Qwen2_5OmniProcess
 model = Qwen2_5OmniForConditionalGeneration.from_pretrained(
     "Qwen/Qwen2.5-Omni-3B",
     torch_dtype="auto",
-    device_map="cpu",
+    device_map="auto",
     enable_audio_output=False,
 )
 processor = Qwen2_5OmniProcessor.from_pretrained("Qwen/Qwen2.5-Omni-3B")
@@ -73,17 +73,26 @@ def parse():
                                                                     current_date=date_request)
     # Договор
     contract_text_chunks = contract_parser.pdf_to_text(uploaded_files['contract_file'])
-    usluga_type = contract_parser.find_info(contract_text_chunks, 'Какой тип услуги указан в договоре? Выбери: вода или отопление, ответь одним словом?', Usluga = True)
+    usluga_type = contract_parser.find_info(contract_text_chunks, 'Какой тип услуги указан в договоре? Выбери: вода, отопление или оба, ответь одним словом?', Usluga = True)
     prosrochka_date = contract_parser.find_info(contract_text_chunks, 'В какой срок исполнитель должен произвести оплату?', Usluga = False) 
+
+    if (usluga_type == "Оба." or usluga_type == "Оба"): usluga_type = 'тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))'
+    if (usluga_type == "Вода." or usluga_type == "Вода"): usluga_type = 'горячую воду (ГВС))'
+    if (usluga_type == "Отопление." or usluga_type == "Отопление"): usluga_type = 'тепловую энергию/теплоноситель (ТЭ)'
 
     # Zip архив
     zip_docs_texts = zip_parser.get_texts(archive_folder)
     zip_names = zip_parser.find_names(zip_docs_texts)
 
     # Претензия
-    pret_text = pret_patser.pdf_to_text(uploaded_files['claim_file'])
-    pret_res = pret_patser.find_info(pret_text)
-
+    
+    claim_text = pret_patser.pdf_to_text(uploaded_files['claim_file'])
+    otv_adress = pret_patser.find_info(claim_text, "найди адрес ответчика?")
+    ist_data = pret_patser.find_info(claim_text, 'найди все данные истца?')
+    claim_date = pret_patser.find_info(claim_text, 'найди дату претензии? напиши только дату в формате дата:')
+    claim_number = pret_patser.find_info(claim_text, 'найди номер претензии? напиши только номер в формате номер:')
+    claim_number = ''.join(filter(str.isdigit, claim_number))
+    
     data['results_of_table_parsing'] = PenaltyTableCreator().create_penalty_table_from_json(
             name = Path(folder,'расчёт к иску.docx') ,
             data=result_dict,
@@ -133,7 +142,11 @@ def parse():
     ) , 200
     data['zip_names'] = zip_names
 
-    data['claim_info'] = pret_res
+    data['claim_info'] = {}
+    data['claim_info']["otv_adress"] = otv_adress.split("адрес:")[-1].strip()
+    data['claim_info']["ist_data"] = ist_data
+    data['claim_info']["claim_date"] = claim_date
+    data['claim_info']["claim_number"] = claim_number.split()
     return jsonify(data) , 200
 
     # except Exception as e:
