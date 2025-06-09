@@ -9,6 +9,7 @@ from legal_doc_inspector.doc_creator.penalty_table_creator import PenaltyTableCr
 
 from legal_doc_inspector.doc_parser.contract_parser import ContractParser
 from legal_doc_inspector.doc_parser.zip_parser import ZipParser
+from legal_doc_inspector.doc_parser.pret_parser import PretParser
 
 from pathlib import Path
 from datetime import datetime,date
@@ -18,9 +19,18 @@ import pandas as pd
 from flask import Flask,Response,jsonify
 from flask import current_app as app
 from flask import g, render_template, request
+from transformers import Qwen2_5OmniForConditionalGeneration, Qwen2_5OmniProcessor
 
-
-
+model = Qwen2_5OmniForConditionalGeneration.from_pretrained(
+    "Qwen/Qwen2.5-Omni-3B",
+    torch_dtype="auto",
+    device_map="cpu",
+    enable_audio_output=False,
+)
+processor = Qwen2_5OmniProcessor.from_pretrained("Qwen/Qwen2.5-Omni-3B")
+zip_parser = ZipParser(model, processor)
+contract_parser = ContractParser(model, processor)
+pret_patser = PretParser(model, processor)
 
 @app.route("/")
 def home():
@@ -73,16 +83,18 @@ def parse():
     result_dict = Penalty_calculator().calculate_penalty_from_doc(data=result_dict,
                                                                     company_type=company_type,
                                                                     current_date=date_request)
-    
     # Договор
-    contract_text_chunks = ContractParser.pdf_to_text('data/contract_05.414801.pdf')
-    usluga_type = ContractParser.find_info(contract_text_chunks, 'Какой тип услуги указан в договоре? Выбери: вода или отопление, ответь одним словом?')
-    prosrochka_date = ContractParser.find_info(contract_text_chunks, '5.5. Исполнитель в срок до 18-го числа месяца, следующего за расчетным, производит') # сам вопрос я переделаю, пока так чтобы точно находило
+    contract_text_chunks = contract_parser.pdf_to_text(uploaded_files['contract_file'])
+    usluga_type = contract_parser.find_info(contract_text_chunks, 'Какой тип услуги указан в договоре? Выбери: вода или отопление, ответь одним словом?', Usluga = True)
+    prosrochka_date = contract_parser.find_info(contract_text_chunks, 'В какой срок исполнитель должен произвести оплату?', Usluga = False) 
 
     # Zip архив
-    zip_docs_texts = ZipParser.get_texts(archive_folder)
-    zip_names = ZipParser.find_names(zip_docs_texts)
+    zip_docs_texts = zip_parser.get_texts(archive_folder)
+    zip_names = zip_parser.find_names(zip_docs_texts)
 
+    # Претензия
+    pret_text = pret_patser.pdf_to_text(uploaded_files['claim_file'])
+    pret_res = pret_patser.find_info(pret_text)
 
     data['results_of_table_parsing'] = PenaltyTableCreator().create_penalty_table_from_json(
             name = Path(folder,'расчёт к иску.docx') ,
@@ -91,12 +103,14 @@ def parse():
             end_date='тут должна была быть дата',
             contract_number="тут должно было быть номер контракта"
         )
+    
     data['contract_info'] = {}
     data['contract_info']['usluga_type'] = usluga_type
     data['contract_info']['prosrochka_date'] = prosrochka_date 
 
     data['zip_names'] = zip_names
 
+    data['claim_info'] = pret_res
     return jsonify(data) , 200
 
     # except Exception as e:

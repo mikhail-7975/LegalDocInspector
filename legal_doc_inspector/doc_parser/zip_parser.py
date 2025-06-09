@@ -1,17 +1,11 @@
-from transformers import Qwen2_5OmniForConditionalGeneration, Qwen2_5OmniProcessor
 from sentence_splitter import SentenceSplitter
 from .utils import get_text_for_zip, get_pdf_files, get_conversation_for_zip
 
 class ZipParser:
-    def __init__(self):
-        self.model = Qwen2_5OmniForConditionalGeneration.from_pretrained(
-            "Qwen/Qwen2.5-Omni-3B",
-            torch_dtype="auto",
-            device_map="auto",
-            enable_audio_output=False,
-        )
+    def __init__(self, model, processor):
+        self.model = model
 
-        self.processor = Qwen2_5OmniProcessor.from_pretrained("Qwen/Qwen2.5-Omni-3B")
+        self.processor = processor
         self.splitter = SentenceSplitter(language='ru')
 
     def get_texts (self, docs_path):
@@ -24,7 +18,7 @@ class ZipParser:
             pdf_text = get_text_for_zip(path)
             sentences = self.splitter.split(pdf_text)
             sentences = list(filter(None, sentences))  
-            pdf_chunks['path'] = sentences
+            pdf_chunks[path] = sentences
         return pdf_chunks
     
     def find_names(self, docs_json):
@@ -32,7 +26,7 @@ class ZipParser:
         Принимает словарь {документ: [предложения]}, возвращает словарь {документ: название}
         '''
         result = {}
-        for key, value in docs_json:
+        for key, value in docs_json.items():
 
             conversation = get_conversation_for_zip(value)
             inputs = self.processor.apply_chat_template(

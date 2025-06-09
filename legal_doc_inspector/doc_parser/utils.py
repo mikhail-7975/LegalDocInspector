@@ -1,6 +1,6 @@
 import re
 import pytesseract
-import numpy as mp
+import numpy as np
 import os
 from pdf2image import convert_from_path  
 from sentence_transformers import util
@@ -9,11 +9,8 @@ def split_by_points(text):
     '''
     Функция принимает текст и разделяет его по пунктам, возвращает список текстов
     '''
-    text = re.sub(r'\s+', ' ', text).strip()
-    pattern = r'(\n\d+[\.]?\d*[\.\)]?\s|' \
-              r'\n[а-я][\)\.]|\n[А-Я][\)\.]|\n[ivx]+\.[\d\.]+)'
+    pattern = r'(\n\d+[\.)]?|\n[а-я]\)|\n[А-Я]\.)'    
     parts = re.split(pattern, text)
-    print(parts)
     result = []
     for i in range(1, len(parts), 2):
         point_number = parts[i].strip()
@@ -23,13 +20,13 @@ def split_by_points(text):
         )
     return result
 
-def retrieve_relevant_chunks(question_embedding, chunk_embeddings, chunks, top_k=3):
+def retrieve_relevant_chunks(question_embedding, chunk_embeddings, chunks, top_k=5):
     '''
     Функция принимает вопрос, модель, список фрагментов текста в виде эмбеддингов и простой список фрагментов. 
     возвращает top-k ближайших к вопросу фрагментов
     '''
     cos_scores = util.cos_sim(question_embedding, chunk_embeddings)[0]
-    #top_indices = torch.topk(cos_scores, k=top_k).indices.tolist()
+    cos_scores = cos_scores.numpy().tolist()
     top_indices = np.argsort(cos_scores)[-top_k:][::-1]
     return [chunks[i] for i in top_indices]
 
@@ -42,7 +39,7 @@ def get_conversation_for_contract(chunks, question):
         {
             "role": "system",
             "content": [
-                {"type": "text", "text": f"Ты - ассистент для обработка документов. Вот фрагменты документа: {chunks}. Тебе нужно точно ответить на вопросы пользовтаеля по его содержанию"}
+                {"type": "text", "text": f"Ты - ассистент для обработки документов. Вот фрагменты документа: {chunks}. Тебе нужно точно ответить на вопросы пользовтаеля по его содержанию"}
             ],
         },
         {
