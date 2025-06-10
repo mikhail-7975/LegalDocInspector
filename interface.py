@@ -12,7 +12,18 @@ st.title("Загрузка и обработка документов")
 
 # Загрузчик файла
 
-date_selected = st.date_input("Выберите дату")
+col1, col2 = st.columns(2)
+
+with col1:
+    date_selected = st.date_input("Выберите дату конца просрочки",
+                                  format='DD.MM.YYYY')
+
+with col2:
+    day_of_penalty = st.number_input(label="Выберите число месяца, которое является последним днём оплаты счёта",
+                                     value=18,
+                                     min_value=1,
+                                     max_value=31)
+
 company_type = st.selectbox("Выберите тип компании", ["Прочие", "УК", "ТСЖ"])
 
 st.text("Поле для договора")
@@ -66,18 +77,20 @@ if zip_uploaded_file is not None or claim_uploaded_file is not None or contract_
         
         data = {
             "date": date_selected.strftime("%Y-%m-%d"),  # форматируем дату
-            "company_type": company_type
+            "company_type": company_type,
+            "day_of_penalty":day_of_penalty
         }
 
-        if len(files) < 3:
+        if len(files) < 1:
             st.error("Загружены не все файлы")
 
         
         else:
-            response = requests.post("http://localhost:5001/parse",
-                                    files=files,
-                                    data= data
-                                    )
+            with st.spinner(text="Ваш запрос обрабатывается, пожалуйста, подождите"):
+                response = requests.post("http://localhost:5001/parse",
+                                        files=files,
+                                        data= data
+                                        )
             
             if response.status_code == 200:
                 file_data = BytesIO(response.content)

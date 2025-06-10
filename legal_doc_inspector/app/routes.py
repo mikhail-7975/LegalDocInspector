@@ -35,7 +35,7 @@ def parse():
     date_request = request.form.get('date')
     date_request = date.fromisoformat(date_request)
     company_type = request.form.get('company_type')
-
+    day_of_penalty = request.form.get('day_of_penalty')
     allowed_keys = {'zip_file':r'zip_file$', 'claim_file':r'claim_file*', 'contract_file':r'contract_file*', 'certificate_file':r'certificate_file*'}
     uploaded_files = defaultdict(lambda: [])
 
@@ -65,7 +65,8 @@ def parse():
         parsing_table_result = TableParser().parse_excel_table(table_path)
         result_dict = Penalty_calculator().calculate_penalty_from_doc(data=parsing_table_result,
                                                                         company_type=company_type,
-                                                                        current_date=date_request)
+                                                                        current_date=date_request,
+                                                                        day_of_penalty=day_of_penalty)
     
         contract_number, start_date, end_date, all_debt, all_penalty = table_creator.create_penalty_table_from_json(
                 name = Path(folder,'расчёт к иску.docx') ,
