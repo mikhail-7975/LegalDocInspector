@@ -43,6 +43,7 @@ def home():
 
 @app.route("/parse", methods = ['POST'])
 def parse():
+
     current_config = g.config
     save_data_folder = Path(current_config.save_data_folder)
 
@@ -68,31 +69,29 @@ def parse():
     with open(str(Path(folder, "index.json"))) as json_file:
         data['results_of_data_saving'] = json.load(json_file)
 
-    result_dict = TableParser().parse_excel_table(data['results_of_data_saving']['certificate_file'])
-    result_dict = Penalty_calculator().calculate_penalty_from_doc(data=result_dict,
-                                                                    company_type=company_type,
-                                                                    current_date=date_request)
+    pdf_pars_dict = dict()
+
     # Договор
-    service_type, overdue_date = parse_contract (uploaded_files['contract_file'], contract_parser)
+    for i, contract_file in enumerate(uploaded_files['contract_file']):
+        service_type, overdue_date = parse_contract (contract_file, contract_parser)
+        pdf_pars_dict[f'contract_{i}'] = {}
+        pdf_pars_dict[f'contract_{i}']['service_type'] = service_type
+        pdf_pars_dict[f'contract_{i}']['overdue_date'] = overdue_date
 
     # Zip архив
-    zip_names = parse_zip(archive_folder, zip_parser)
+    for i, folder in enumerate(uploaded_files['zip files']):
+        zip_names = parse_zip(folder, zip_parser)
+        pdf_pars_dict[f'zip_{i}'] = zip_names
+        
 
     # Претензия
-    defendant_adress, plaintiff_data, claim_number, claim_date = parse_claim(uploaded_files['claim_file'], claim_parser)
-
-    data['results_of_table_parsing'] = PenaltyTableCreator().create_penalty_table_from_json(
-            name = Path(folder,'расчёт к иску.docx') ,
-            data=result_dict,
-            start_date='тут должна быть дата',
-            end_date='тут должна была быть дата',
-            contract_number="тут должно было быть номер контракта"
-        )
+    for i, claim_file in enumerate(uploaded_files['claim_file']):
+        defendant_adress, plaintiff_data, claim_number, claim_date = parse_claim(claim_file, claim_parser)
+        pdf_pars_dict[f'claim_{i}'] = {}
+        pdf_pars_dict[f'claim_{i}']['defendant_adress'] = defendant_adress
+        pdf_pars_dict[f'claim_{i}']['plaintiff_data'] = plaintiff_data
+        pdf_pars_dict[f'claim_{i}']['claim_number'] = claim_number
     
-    data['contract_info'] = {}
-    data['contract_info']['service_type'] = service_type
-    data['contract_info']['overdue_date'] = overdue_date 
-
     # парсинг таблиц и создание документа с расчётом к иску
     table_creator = PenaltyTableCreator()
     list_of_tables_info = []
@@ -116,30 +115,16 @@ def parse():
         
         
         list_of_tables_info.append((contract_number, start_date, end_date, all_debt, all_penalty))
-    
-    table_creator.create_result_table(list_of_tables_info,Path(folder,'расчёт к иску.docx'))
-
+        
     bio = io.BytesIO()
     table_creator.doc.save(bio)
     bio.seek(0)
-
     return send_file(
         bio,
         as_attachment=True,
         download_name='расчёт_к_иску.docx'
     ) , 200
-    data['zip_names'] = zip_names
 
-    data['claim_info'] = {}
-    data['claim_info']["defendant_adress"] = defendant_adress
-    data['claim_info']["plaintiff_data"] = plaintiff_data
-    data['claim_info']["claim_date"] = claim_date
-    data['claim_info']["claim_number"] = claim_number
-    return jsonify(data) , 200
-
-    # except Exception as e:
-    #     print(e)
-    #     return jsonify({"error": str(e)}), 500
 
 @app.route("/create_doc", methods = ['POST'])
 def create_doc():
