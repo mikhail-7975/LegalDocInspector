@@ -42,24 +42,9 @@ def parse():
     folder = Path(save_data_folder, secure_filename(f"documents_from_request_{datetime.now()}"))
     folder.mkdir(exist_ok=True, parents=True)
 
-    for file_key in request.files:
-        for dest_key, pattern in allowed_keys.items():
-            if re.match(pattern,file_key):
-                file = request.files[file_key]
-                filename = secure_filename(file.filename)
-                if filename and dest_key != 'zip_file':
-                    file.save(Path(folder, filename))
-                    uploaded_files[dest_key].append(str(Path(folder, filename)))
-                
-                if filename and dest_key == "zip_file":
-                    archive_folder = Path(folder, "archive")
-                    archive_folder.mkdir(parents=True, exist_ok=True)
-                    with tempfile.TemporaryDirectory() as temp_dir:
-                        path_to_archive = Path(temp_dir, secure_filename(file.filename)) 
-                        file.save(path_to_archive)
-                        with zipfile.ZipFile(path_to_archive, 'r') as zip_ref:
-                            zip_ref.extractall(archive_folder)
-                    uploaded_files[dest_key].append(str(archive_folder))
+    uploaded_files = get_request_files(allowed_keys=allowed_keys,
+                      path_to_folder=folder,
+                      uploaded_files=uploaded_files)
 
     data = dict()
     with open(str(Path(folder, "index.json")),"w") as json_file:
@@ -114,3 +99,27 @@ def create_doc():
     # TODO
     # add a file download when navigating to the endpoint in the browser
     return "create_doc endpoint"
+
+
+
+def get_request_files(allowed_keys:dict, path_to_folder:Path, uploaded_files:defaultdict):
+    for file_key in request.files:
+        for dest_key, pattern in allowed_keys.items():
+            if re.match(pattern,file_key):
+                file = request.files[file_key]
+                filename = secure_filename(file.filename)
+                if filename and dest_key != 'zip_file':
+                    file.save(Path(path_to_folder, filename))
+                    uploaded_files[dest_key].append(str(Path(path_to_folder, filename)))
+                
+                if filename and dest_key == "zip_file":
+                    archive_folder = Path(path_to_folder, "archive")
+                    archive_folder.mkdir(parents=True, exist_ok=True)
+                    with tempfile.TemporaryDirectory() as temp_dir:
+                        path_to_archive = Path(temp_dir, secure_filename(file.filename)) 
+                        file.save(path_to_archive)
+                        with zipfile.ZipFile(path_to_archive, 'r') as zip_ref:
+                            zip_ref.extractall(archive_folder)
+                    uploaded_files[dest_key].append(str(archive_folder))
+    
+    return uploaded_files
