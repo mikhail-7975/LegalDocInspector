@@ -21,7 +21,7 @@ python run.py
 ### Запуск фронтенда 
 
 ```
-python -m streamlit run ./legal_doc_inspector/app/app.py
+python -m streamlit run interface.py
 ```
 
 ## Тестирование
