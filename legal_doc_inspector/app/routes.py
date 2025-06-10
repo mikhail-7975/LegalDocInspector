@@ -62,8 +62,8 @@ def parse():
     for table_path in data['results_of_data_saving']['certificate_file']:
 
 
-        result_dict = TableParser().parse_excel_table(table_path)
-        result_dict = Penalty_calculator().calculate_penalty_from_doc(data=result_dict,
+        parsing_table_result = TableParser().parse_excel_table(table_path)
+        result_dict = Penalty_calculator().calculate_penalty_from_doc(data=parsing_table_result,
                                                                         company_type=company_type,
                                                                         current_date=date_request)
     
@@ -72,7 +72,7 @@ def parse():
                 data=result_dict,
                 start_date=result_dict[0]['start'].strftime("%d.%m.%Y"),
                 end_date=date_request.strftime('%d.%m.%Y'),
-                contract_number="в будущем тут будет номер контракта",
+                contract_number=parsing_table_result['номер договора'],
             )
         
         
