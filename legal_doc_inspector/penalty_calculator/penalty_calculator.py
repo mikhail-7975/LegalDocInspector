@@ -16,7 +16,7 @@ class Penalty_calculator:
         # self.cb_key_rate = self._get_cb_rate()
         pass
 
-    def calculate_penalty_from_doc(self, data: dict, company_type, current_date: datetime.date):
+    def calculate_penalty_from_doc(self, data: dict, company_type, current_date: datetime.date, day_of_penalty:int):
         """
         Принимает результат парсера таблицы,
         для каждого месяца считает пени за каждый подпериод
@@ -33,7 +33,8 @@ class Penalty_calculator:
                 periods = self._get_penalty_periods_for_month(data=data,
                                                               month=month,
                                                               company_type=company_type,
-                                                              current_date=current_date
+                                                              current_date=current_date,
+                                                              day_of_penalty=day_of_penalty
                                                               )
 
                 for period in periods:
@@ -57,7 +58,7 @@ class Penalty_calculator:
         строит docx таблицу с расчётом
         """
 
-    def _get_penalty_periods_for_month(self, data: dict, month:str, company_type, current_date: datetime.date):
+    def _get_penalty_periods_for_month(self, data: dict, month:str, company_type, current_date: datetime.date, day_of_penalty:int):
         """
         Принимает данные за месяц, взятые из парсера таблиц
         возвращает список периодов неустойки в формате
@@ -72,7 +73,7 @@ class Penalty_calculator:
         parsed = datetime.datetime.strptime(month, "%m.%Y")
         next_month = parsed.month+1 if parsed.month != 12 else 1
         next_year = parsed.year if parsed.month != 12 else parsed.year+1
-        start_date = datetime.date(next_year, next_month, 18)  # дефолтная дата окончания договора без учёта нерабочих дней
+        start_date = datetime.date(next_year, next_month, int(day_of_penalty))  # дефолтная дата окончания договора без учёта нерабочих дней
         start_date = self._get_start_date(start_date) # дата начала просрочки с учётом того что договор может истечь в нерабочий день
 
         need_to_pay = data[month]['выставленный счёт']

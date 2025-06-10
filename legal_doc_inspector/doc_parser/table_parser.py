@@ -17,6 +17,7 @@ class TableParser:
         self.date_pattern = r"^(0[1-9]|[12][0-9]|3[01])\.(0[1-9]|1[0-2])\.(19|20)\d{2}$"
         self.inn_pattern = r"\b[иИiI][нНnN]{2}\b"
         self.text_month_pattern = r"^(январ[ья]|феврал[ья]|март[а]?|апрел[ья]|ма[йя]|июн[ья]?|июл[ья]?|август[а]?|сентябр[ья]|октябр[ья]|ноябр[ья]|декабр[ья])[ ]{1}(?:19|20|21)\d{2}$"
+        self.number_pattern = r"№ :"
     def add_entry(self, data, month_year, invoice_amount, oplata, text_month, payments=None):
         """
         Добавляет запись в словарь.
@@ -42,11 +43,24 @@ class TableParser:
                 "платежи": payments
             }
 
-    def find_inn(self,df: pd.DataFrame):
+    def _find_inn(self, df: pd.DataFrame):
         matches = df[df.iloc[:,3].str.contains(self.inn_pattern, regex=True, na=False)].index.to_list()[0]
 
         return df.iloc[matches,4]
+    
+    def _parse_contract_number(self, df: pd.DataFrame):
 
+        matches = df[df.iloc[:,0].str.contains(self.number_pattern, regex=True, na=False)].index.to_list()[0]
+
+        contract_number = df.iloc[matches,1]
+
+        matches = df[df.iloc[:,1].str.contains(self.date_pattern, regex=True, na=False)].index.to_list()[0]
+
+        contract_date = df.iloc[matches,1]
+        
+        return contract_number + " от " + contract_date 
+
+    
     def parse_excel_table(self, path_to_table:Path):
         """
         input: 
@@ -60,9 +74,10 @@ class TableParser:
         column_name = 'ККС' # переделать
         target_value = "ИТОГО ПО ДОГОВОРУ"
         result_dict = {}
-        inn = self.find_inn(df)
+        inn = self._find_inn(df)
+        contract_number = self._parse_contract_number(df)
         result_dict['ИНН'] = inn
-
+        result_dict['номер договора'] = contract_number
 
         matches = df[df.iloc[:,0].str.contains(self.month_year_pattern, regex=True, na=False)]
         matches = matches.drop_duplicates(subset=matches.columns[0], keep='first')
