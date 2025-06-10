@@ -6,9 +6,9 @@ from sentence_transformers import SentenceTransformer
 from pdf2image import convert_from_path  
 
 class ContractParser:
-    def __init__(self, model, processor):
+    def __init__(self, llm_model, processor):
         self.embedding_model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
-        self.model = model
+        self.llm_model = llm_model
 
         self.processor = processor
 
@@ -24,7 +24,7 @@ class ContractParser:
         chunks = split_by_points(pdf_text)
         return chunks
     
-    def find_info(self, chunks, question, Usluga):
+    def find_info(self, chunks, question, service_flag):
         '''
         Принимает список строк (разделенный текст), список строк (наиболее подходящие отрывки текста) 
         '''
@@ -32,9 +32,7 @@ class ContractParser:
         question_embedding = self.embedding_model.encode([question], convert_to_tensor=True, device='cpu')
         relevant_chunks = retrieve_relevant_chunks(question_embedding, chunk_embeddings, chunks)
 
-
-        # ToDo:
-        if Usluga == False:
+        if service_flag == False:
             question = "В каком фрагменте указан срок исполнитель должен произвести оплату?"
 
         conversation = get_conversation_for_contract(relevant_chunks, question)
@@ -45,8 +43,8 @@ class ContractParser:
             return_dict=True,
             return_tensors="pt",
             padding=True,
-        ).to(self.model.device)
-        text_ids = self.model.generate(**inputs)
+        ).to(self.llm_model.device)
+        text_ids = self.llm_model.generate(**inputs)
         text = self.processor.batch_decode(text_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)
         response = text[0].split("assistant", 1)[-1].strip()        
         return response
