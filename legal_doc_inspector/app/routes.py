@@ -6,13 +6,14 @@ import io
 from collections import defaultdict
 
 from configs.config import AppConfig, load_yaml_config
+from .llm_functions import parse_contract, parse_zip, parse_claim
 from legal_doc_inspector.doc_parser.table_parser import TableParser 
 from legal_doc_inspector.penalty_calculator.penalty_calculator import Penalty_calculator
 from legal_doc_inspector.doc_creator.penalty_table_creator import PenaltyTableCreator
 
 from legal_doc_inspector.doc_parser.contract_parser import ContractParser
 from legal_doc_inspector.doc_parser.zip_parser import ZipParser
-from legal_doc_inspector.doc_parser.pret_parser import PretParser
+from legal_doc_inspector.doc_parser.claim_parser import ClaimParser
 
 from pathlib import Path
 from datetime import datetime,date
@@ -33,7 +34,7 @@ model = Qwen2_5OmniForConditionalGeneration.from_pretrained(
 processor = Qwen2_5OmniProcessor.from_pretrained("Qwen/Qwen2.5-Omni-3B")
 zip_parser = ZipParser(model, processor)
 contract_parser = ContractParser(model, processor)
-pret_patser = PretParser(model, processor)
+claim_parser = ClaimParser(model, processor)
 
 @app.route("/")
 def home():
@@ -72,27 +73,14 @@ def parse():
                                                                     company_type=company_type,
                                                                     current_date=date_request)
     # Договор
-    contract_text_chunks = contract_parser.pdf_to_text(uploaded_files['contract_file'])
-    usluga_type = contract_parser.find_info(contract_text_chunks, 'Какой тип услуги указан в договоре? Выбери: вода, отопление или оба, ответь одним словом?', Usluga = True)
-    prosrochka_date = contract_parser.find_info(contract_text_chunks, 'В какой срок исполнитель должен произвести оплату?', Usluga = False) 
-
-    if (usluga_type == "Оба." or usluga_type == "Оба"): usluga_type = 'тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))'
-    if (usluga_type == "Вода." or usluga_type == "Вода"): usluga_type = 'горячую воду (ГВС))'
-    if (usluga_type == "Отопление." or usluga_type == "Отопление"): usluga_type = 'тепловую энергию/теплоноситель (ТЭ)'
+    service_type, overdue_date = parse_contract (uploaded_files['contract_file'], contract_parser)
 
     # Zip архив
-    zip_docs_texts = zip_parser.get_texts(archive_folder)
-    zip_names = zip_parser.find_names(zip_docs_texts)
+    zip_names = parse_zip(archive_folder, zip_parser)
 
     # Претензия
-    
-    claim_text = pret_patser.pdf_to_text(uploaded_files['claim_file'])
-    otv_adress = pret_patser.find_info(claim_text, "найди адрес ответчика?")
-    ist_data = pret_patser.find_info(claim_text, 'найди все данные истца?')
-    claim_date = pret_patser.find_info(claim_text, 'найди дату претензии? напиши только дату в формате дата:')
-    claim_number = pret_patser.find_info(claim_text, 'найди номер претензии? напиши только номер в формате номер:')
-    claim_number = ''.join(filter(str.isdigit, claim_number))
-    
+    defendant_adress, plaintiff_data, claim_number, claim_date = parse_claim(uploaded_files['claim_file'], claim_parser)
+
     data['results_of_table_parsing'] = PenaltyTableCreator().create_penalty_table_from_json(
             name = Path(folder,'расчёт к иску.docx') ,
             data=result_dict,
@@ -102,8 +90,8 @@ def parse():
         )
     
     data['contract_info'] = {}
-    data['contract_info']['usluga_type'] = usluga_type
-    data['contract_info']['prosrochka_date'] = prosrochka_date 
+    data['contract_info']['service_type'] = service_type
+    data['contract_info']['overdue_date'] = overdue_date 
 
     # парсинг таблиц и создание документа с расчётом к иску
     table_creator = PenaltyTableCreator()
@@ -143,10 +131,10 @@ def parse():
     data['zip_names'] = zip_names
 
     data['claim_info'] = {}
-    data['claim_info']["otv_adress"] = otv_adress.split("адрес:")[-1].strip()
-    data['claim_info']["ist_data"] = ist_data
+    data['claim_info']["defendant_adress"] = defendant_adress
+    data['claim_info']["plaintiff_data"] = plaintiff_data
     data['claim_info']["claim_date"] = claim_date
-    data['claim_info']["claim_number"] = claim_number.split()
+    data['claim_info']["claim_number"] = claim_number
     return jsonify(data) , 200
 
     # except Exception as e:

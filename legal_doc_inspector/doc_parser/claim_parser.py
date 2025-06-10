@@ -3,7 +3,7 @@ import pytesseract
 from .utils import get_conversation_for_claim
 from pdf2image import convert_from_path  
 
-class PretParser:
+class ClaimParser:
     def __init__(self, model, processor):
         self.model = model
         self.processor = processor
@@ -29,7 +29,7 @@ class PretParser:
     
     def find_info(self, pdf_text, question):
         '''
-        Принимает строку, возвращает словарь ответ нейросети (str)
+        Принимает строку, возвращает ответ нейросети (str)
         '''
         conversation = get_conversation_for_claim(pdf_text, question)
         
