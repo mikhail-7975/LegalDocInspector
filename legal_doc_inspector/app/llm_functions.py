@@ -16,7 +16,7 @@ def parse_zip (archive_folder, zip_parser):
 
 def parse_claim (file, parser):
     claim_text = parser.pdf_to_text(file)
-    defendant_adress = parser.find_info(claim_text, "найди адрес ответчика?")
+    defendant_adress = parser.find_info(claim_text, "найди адрес ответчика и адрес истца?")
     defendant_adress = defendant_adress.split("адрес:")[-1].strip()
     plaintiff_data = parser.find_info(claim_text, 'найди все данные истца?')
     claim_date = parser.find_info(claim_text, 'найди дату претензии? напиши только дату в формате дата:')
