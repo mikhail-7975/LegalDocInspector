@@ -92,19 +92,28 @@ def parse():
         pdf_pars_dict[f'claim_{i}']['plaintiff_data'] = plaintiff_data
         pdf_pars_dict[f'claim_{i}']['claim_number'] = claim_number
     
-    # парсинг таблиц и создание документа с расчётом к иску
+     # парсинг таблиц и создание документа с расчётом к иску
     table_creator = PenaltyTableCreator()
+    table_parser = TableParser()
+    penalty_calculator = Penalty_calculator()
+
     list_of_tables_info = []
+
+    result_dict_json = []
+
+    parsing_table_results = []
 
     for table_path in data['results_of_data_saving']['certificate_file']:
 
 
-        parsing_table_result = TableParser().parse_excel_table(table_path)
-        result_dict = Penalty_calculator().calculate_penalty_from_doc(data=parsing_table_result,
+        parsing_table_result = table_parser.parse_excel_table(table_path)
+        result_dict = penalty_calculator.calculate_penalty_from_doc(data=parsing_table_result,
                                                                         company_type=company_type,
                                                                         current_date=date_request,
                                                                         day_of_penalty=day_of_penalty)
-    
+
+        result_dict_json.append(table_creator.convert_datetime_keys(table_creator.group_by_month(result_dict)))
+        
         contract_number, start_date, end_date, all_debt, all_penalty = table_creator.create_penalty_table_from_json(
                 name = Path(folder,'расчёт к иску.docx') ,
                 data=result_dict,
@@ -115,15 +124,24 @@ def parse():
         
         
         list_of_tables_info.append((contract_number, start_date, end_date, all_debt, all_penalty))
-        
+    
+    table_creator.create_result_table(list_of_tables_info,Path(folder,'расчёт к иску.docx'))
+
     bio = io.BytesIO()
     table_creator.doc.save(bio)
     bio.seek(0)
-    return send_file(
-        bio,
-        as_attachment=True,
-        download_name='расчёт_к_иску.docx'
-    ) , 200
+
+    uploaded_files['lawsuit_calculating'] = str(Path(folder,'расчёт к иску.docx'))
+
+    result_json = dict()
+    result_json['files_table']  = uploaded_files
+    result_json['result_of_penalty_calculator'] = result_dict_json
+    result_json['result_of_llm_parsers'] = pdf_pars_dict
+
+    with open(str(Path(folder, "index.json")),"w") as json_file:
+        json.dump(uploaded_files, json_file)
+
+    return jsonify(result_json) , 200
 
 
 @app.route("/create_doc", methods = ['POST'])
