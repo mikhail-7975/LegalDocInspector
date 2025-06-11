@@ -86,7 +86,7 @@ def get_conversation_for_zip(value):
     ]
     return conversation
 
-def get_conversation_for_claim(pdf_text, question):
+def get_conversation_for_claim(pdf_text):
     '''
     Функция для создания запроса для llm
     '''
@@ -94,12 +94,15 @@ def get_conversation_for_claim(pdf_text, question):
         {
             "role": "system",
             "content": [
-            {"type": "text", "text": f"Ты - ассистент для обработки документов. Вот фрагменты документа: {pdf_text}. Он представляет из себя претензию. Тебе нужно точно ответить на вопросы пользовтаеля по его содержанию"}
+                {"type": "text", "text": f"Ты - ассистент для обработки документов. Вот текст документа: {pdf_text}. Он представляет из себя претензию. Тебе нужно точно ответить на вопросы пользовтаеля по его содержанию\
+                    для инн используй формат истец/ответчик: инн"}
             ],
         },
         {
             "role": "user",
-            "content": [{"type": "text", "text": f"{question}"}],
+            "content": [{"type": "text", "text": "Какие инн у ответчика и истца?"},
+                        {"type": "text", "text": "Какая дата претензии?"},
+                        {"type": "text", "text": "Какой номер претензии?"}]
         }
     ]
     return conversation

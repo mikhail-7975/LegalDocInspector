@@ -16,10 +16,12 @@ def parse_zip (archive_folder, zip_parser):
 
 def parse_claim (file, parser):
     claim_text = parser.pdf_to_text(file)
-    defendant_adress = parser.find_info(claim_text, "найди адрес ответчика и адрес истца?")
-    defendant_adress = defendant_adress.split("адрес:")[-1].strip()
-    plaintiff_data = parser.find_info(claim_text, 'найди все данные истца?')
-    claim_date = parser.find_info(claim_text, 'найди дату претензии? напиши только дату в формате дата:')
-    claim_number = parser.find_info(claim_text, 'найди номер претензии? напиши только номер в формате номер:')
-    claim_number = ''.join(filter(str.isdigit, claim_number))
-    return defendant_adress, plaintiff_data, claim_number, claim_date
+    res = parser.find_info (claim_text)
+    lines = res.split('\n')
+    parsed_lines = [line.split(':', 1)[1].strip() if ':' in line else line for line in lines]
+
+    defendant_inn = parsed_lines[1]
+    plaintiff_inn = parsed_lines[0]
+    claim_number = parsed_lines[3]
+    claim_date = parsed_lines[2]
+    return defendant_inn, plaintiff_inn, claim_number, claim_date

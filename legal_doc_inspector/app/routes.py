@@ -86,11 +86,15 @@ def parse():
 
     # Претензия
     for i, claim_file in enumerate(uploaded_files['claim_file']):
-        defendant_adress, plaintiff_data, claim_number, claim_date = parse_claim(claim_file, claim_parser)
+        defendant_inn, plaintiff_inn, claim_number, claim_date = parse_claim(claim_file, claim_parser)
         pdf_pars_dict[f'claim_{i}'] = {}
-        pdf_pars_dict[f'claim_{i}']['defendant_adress'] = defendant_adress
-        pdf_pars_dict[f'claim_{i}']['plaintiff_data'] = plaintiff_data
+        pdf_pars_dict[f'claim_{i}']['plaintiff_inn'] = plaintiff_inn
         pdf_pars_dict[f'claim_{i}']['claim_number'] = claim_number
+        pdf_pars_dict[f'claim_{i}']['claim_date'] = claim_date
+
+        #TODO   <- КАЙТЕН ЕБАТЬ:
+        # Получить все данные истца из API по инну
+
     
      # парсинг таблиц и создание документа с расчётом к иску
     table_creator = PenaltyTableCreator()
