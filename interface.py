@@ -1,6 +1,7 @@
 import requests
 from datetime import datetime
 from io import BytesIO
+from urllib.parse import quote
 
 import streamlit as st
 import pandas as pd
@@ -35,7 +36,8 @@ debt_certificate_file = st.file_uploader("Выберите Excel справку 
 st.text("Поле для ZIP архива с приложением к иску")
 zip_uploaded_file = st.file_uploader("Выберите ZIP файл")
 
-if zip_uploaded_file is not None or claim_uploaded_file is not None or contract_uploaded_file is not None or debt_certificate_file is not None:    
+if zip_uploaded_file is not None or len(claim_uploaded_file)!=0 or len(contract_uploaded_file)!=0 or len(debt_certificate_file) !=0:    
+
     files = {}
 
 
@@ -45,7 +47,7 @@ if zip_uploaded_file is not None or claim_uploaded_file is not None or contract_
         if zip_uploaded_file:
             zip_uploaded_file.seek(0)
             files["zip_file"] = (zip_uploaded_file.name, zip_uploaded_file)
-        
+
         if claim_uploaded_file:
             if isinstance(claim_uploaded_file, list):
                 for i, file in enumerate(claim_uploaded_file):
@@ -93,14 +95,16 @@ if zip_uploaded_file is not None or claim_uploaded_file is not None or contract_
                                         )
             
             if response.status_code == 200:
-                file_data = BytesIO(response.content)
+                result = response.json()
 
                 st.success("Файл успешно обработан!")
-                st.download_button(
-                    label="⬇️ Скачать расчёт к иску",
-                    data=file_data,
-                    file_name="расчёт_к_иску.docx"
-                )
+                st.text("Результат обработки документов")
+                st.json(result)
+                # st.download_button(
+                #     label="⬇️ Скачать расчёт к иску",
+                #     data=file_data,
+                #     file_name="расчёт_к_иску.docx"
+                # )
                 
                 
             else:

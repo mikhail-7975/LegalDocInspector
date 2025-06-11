@@ -7,6 +7,7 @@ import logging
 import pandas as pd
 import re
 import json
+import datetime
 from pathlib import Path
 
 class TableParser:
@@ -54,11 +55,13 @@ class TableParser:
 
         contract_number = df.iloc[matches,1]
 
-        matches = df[df.iloc[:,1].str.contains(self.date_pattern, regex=True, na=False)].index.to_list()[0]
+        matches = df[df.iloc[:,0].str.contains(r'Дата :', regex=True, na=False)].index.to_list()[0]
 
         contract_date = df.iloc[matches,1]
-        
-        return contract_number + " от " + contract_date 
+        if isinstance(contract_date,datetime.datetime):
+            contract_date = contract_date.strftime("%d.%m.%Y")
+            
+        return contract_number + " от " + contract_date
 
     
     def parse_excel_table(self, path_to_table:Path):
