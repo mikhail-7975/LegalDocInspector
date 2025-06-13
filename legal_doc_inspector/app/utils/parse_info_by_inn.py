@@ -8,5 +8,6 @@ def parse_html(inn):
     address = soup.find('div', {'id': 'address'}).text.strip()
     kpp = soup.find('div', {'id': 'kpp'}).text.strip()
     ogrn = soup.find('span', {'id': 'ogrn'}).text.strip()
-    name = soup.find('h1', {'id': 'short_name'}).text.strip()
-    return name, address, kpp, ogrn
+    short_name = soup.find('h1', {'id': 'short_name'}).text.strip()
+    full_name = soup.find('h2', {'id': 'full_name'}).text.strip().title()
+    return full_name, short_name, address, kpp, ogrn
