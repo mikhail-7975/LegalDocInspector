@@ -103,7 +103,12 @@ if zip_uploaded_file is not None or len(claim_uploaded_file)!=0 or len(contract_
 
                 st.markdown("## Заполение информации для генерациии иска (поля которые будут далее, можно отредактировать)")
 
-              
+                for key, value in result['result_of_llm_parsers'].items():
+                    if "claim" in key:
+                        plaintiff_info_parsed = value['plaintiff_info']
+
+
+
 
                 court_info = {}
                 plaintiff_info = {}
@@ -117,19 +122,19 @@ if zip_uploaded_file is not None or len(claim_uploaded_file)!=0 or len(contract_
                 
                 st.markdown("### Данные об Истце")
                 plaintiff_info['name'] = st.text_input(label="Название Истца", value="Публичное акционерное общество «Московская объединенная энергетическая компания» ")
-                plaintiff_info['addres'] = st.text_input(label="Адрес Истца", value='119526, г. Москва, проспект Вернадского, д. 101, к. 3, эт/каб 20/2017')
+                plaintiff_info['addres'] = st.text_input(label="Адрес Истца", value=f'{plaintiff_info_parsed['plaintiff_address']}')
                 plaintiff_info['correspondency_addres'] = st.text_input(label='Адрес для направления корреспонденции', value="121596, г. Москва, ул. Горбунова, д. 2, стр. 3, офис В613 (МГКА «КДЗП»)")
                 # эти данные надо парсить
-                plaintiff_info['inn'] = st.text_input(label='ИНН Истца', value='7720518494')
-                plaintiff_info['ogrn'] = st.text_input(label='ОГРН Истца', value='7720518494')
+                plaintiff_info['inn'] = st.text_input(label='ИНН Истца', value=f'{plaintiff_info_parsed['plaintiff_inn']}')
+                plaintiff_info['ogrn'] = st.text_input(label='ОГРН Истца', value=f'{plaintiff_info_parsed['plaintiff_ogrn']}')
 
 
                 st.markdown("### Данные об ответчике")
                 #все эти данные надо парсить
-                defendant_info['name'] = st.text_input(label="Название ответчика", value='Жилищно-строительный кооператив «ФЕДЕРАЦИЯ-2»')
-                defendant_info['addres'] = st.text_input(label="Адрес ответчика", value='109378, г. Москва, б-р Есенинский, д. 3')
-                defendant_info['inn'] = st.text_input(label="ИНН ответчика", value='7721064162')
-                defendant_info['ogrn'] = st.text_input(label="ОГРН ответчика", value='1037721027002')
+                defendant_info['name'] = st.text_input(label="Название ответчика", value=f'{result['results_of_name_parser']['defendant_info']['name']}')
+                defendant_info['addres'] = st.text_input(label="Адрес ответчика", value=f'{result['results_of_name_parser']['defendant_info']['address']}')
+                defendant_info['inn'] = st.text_input(label="ИНН ответчика", value=f'{result['results_of_name_parser']['defendant_info']['inn']}')
+                defendant_info['ogrn'] = st.text_input(label="ОГРН ответчика", value=f'{result['results_of_name_parser']['defendant_info']['ogrn']}')
                 
                 st.markdown("### Данные о договоре")
                 lawsuit_info['cost'] = st.text_input(label="Цена иска", value=f'{1000} р.')
@@ -142,7 +147,7 @@ if zip_uploaded_file is not None or len(claim_uploaded_file)!=0 or len(contract_
                     if "contract" in key:
                         service_type_info.append(result['result_of_llm_parsers'][key]['service_type'])
                     if "claim" in key:
-                        claims.append(f"№ {result['result_of_llm_parsers'][key]['claim_number']} от ТУТ ДОЛЖНА БЫТЬ ЕЩЁ ДАТА")
+                        claims.append(f"№ {result['result_of_llm_parsers'][key]['claim_number']} от {result['result_of_llm_parsers'][key]['claim_date']}")
 
                 st.markdown(f"### Данные об услуге, полученные из договоров\n {"\n".join(f" - {elem}" for elem in service_type_info)}")
                 lawsuit_info['service_type'] = st.selectbox("Выберите вид услугии", ["ГВС + ТЭ", "ТЭ", "ГВС"])
@@ -151,13 +156,21 @@ if zip_uploaded_file is not None or len(claim_uploaded_file)!=0 or len(contract_
                 st.markdown(f"номера и даты претензий\n {"\n".join(f"- {claim}" for claim in claims)}")
                 lawsuit_info['claims'] = claims 
                 
+                st.markdown(f"### Создание документов")
+                col1, col2, = st.columns(2)
+                with col1:
+                    if st.button(label="Создать Иск"):
+                        response = requests.post("http://localhost:5001/create_doc",
+                                            
+                                            
+                                            )
 
-                # st.download_button(
-                #     label="⬇️ Скачать расчёт к иску",
-                #     data=file_data,
-                #     file_name="расчёт_к_иску.docx"
-                # )
-                
+                with col2:
+                    if st.button(label="Создать расчёт к иску"):
+                        response = requests.post("http://localhost:5001/create_calculating_table",
+                                        
+                                        
+                                        )
                 
             else:
                 st.error(f"Ошибка: {response.status_code}")
