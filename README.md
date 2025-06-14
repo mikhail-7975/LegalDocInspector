@@ -22,7 +22,7 @@ python run.py
 ### Запуск фронтенда 
 
 ```
-python -m streamlit run interface.py
+python -m streamlit run streamlit/interface.py
 ```
 
 ## Тестирование
