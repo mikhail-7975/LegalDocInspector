@@ -20,8 +20,8 @@ def parse_claim (file, parser):
     lines = res.split('\n')
     parsed_lines = [line.split(':', 1)[1].strip() if ':' in line else line for line in lines]
 
-    defendant_inn = parsed_lines[1]
     plaintiff_inn = parsed_lines[0]
-    claim_number = parsed_lines[3]
-    claim_date = parsed_lines[2]
-    return defendant_inn, plaintiff_inn, claim_number, claim_date
+    claim_date = parsed_lines[1]
+    claim_number = parsed_lines[2]
+    return plaintiff_inn, claim_number, claim_date
+
