@@ -147,7 +147,8 @@ if st.session_state.form_data['flag']:
 
     
     st.markdown("### Данные об Истце")
-    plaintiff_info['name'] = st.text_input(label="Название Истца", value="Публичное акционерное общество «Московская объединенная энергетическая компания» ")
+    plaintiff_info['full_name'] = st.text_input(label="Название Истца", value="Публичное акционерное общество «Московская объединенная энергетическая компания» ")
+    plaintiff_info['short_name'] = st.text_input(label="Название Истца(аббревиатура)", value="ПАО \"МОЭК\"")
     plaintiff_info['addres'] = st.text_input(label="Адрес Истца", value=f'{plaintiff_info_parsed['plaintiff_address']}')
     plaintiff_info['correspondency_addres'] = st.text_input(label='Адрес для направления корреспонденции', value="121596, г. Москва, ул. Горбунова, д. 2, стр. 3, офис В613 (МГКА «КДЗП»)")
     # эти данные надо парсить
@@ -157,7 +158,8 @@ if st.session_state.form_data['flag']:
 
     st.markdown("### Данные об ответчике")
     #все эти данные надо парсить
-    defendant_info['name'] = st.text_input(label="Название ответчика", value=f'{result['results_of_name_parser']['defendant_info']['full_name']}')
+    defendant_info['full_name'] = st.text_input(label="Название ответчика", value=f'{result['results_of_name_parser']['defendant_info']['full_name']}')
+    defendant_info['short_name'] = st.text_input(label="Название ответчика(аббревиатура)", value=f'{result['results_of_name_parser']['defendant_info']['short_name']}')
     defendant_info['addres'] = st.text_input(label="Адрес ответчика", value=f'{result['results_of_name_parser']['defendant_info']['address']}')
     defendant_info['inn'] = st.text_input(label="ИНН ответчика", value=f'{result['results_of_name_parser']['defendant_info']['inn']}')
     defendant_info['ogrn'] = st.text_input(label="ОГРН ответчика", value=f'{result['results_of_name_parser']['defendant_info']['ogrn']}')
