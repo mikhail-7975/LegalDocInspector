@@ -1,7 +1,9 @@
 from pathlib import Path
 
 import docx
+from docx.text.paragraph import Paragraph
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.table import WD_ROW_HEIGHT_RULE
 from docx.table import Table, _Cell, _Row, _Column
 from docx import Document
 from docx.shared import Pt, Cm
@@ -17,19 +19,23 @@ class LawsuitCreator:
         self.doc = docx.Document()
         self.data_json = data_json
 
-    def create_lawsuit(self, path_to_save:Path):
-        self._create_title()
+    def create_lawsuit(self, info_json, path_to_save:Path):
+        self._create_title(info_json=info_json)
+        self.create_first_part_of_lawsuit(info_json=info_json)
         self._save_doc(str(path_to_save))
 
     def _save_doc(self, name:str):
         self.doc.save(name)
     
-    def _create_title(self): 
+    def _create_title(self, info_json): 
         
         table = self.doc.add_table(rows=7, cols=2)
         table.style = "Normal Table"
         table_rows = table.rows
-        self.set_table_width(table, 19)
+        self.set_table_width(table, 17)
+        for row in table.rows:
+            row.height_rule = WD_ROW_HEIGHT_RULE.AT_LEAST
+
 
         self._put_text_into_table_cell(text="В",
                                        cell=table_rows[0].cells[0],
@@ -37,39 +43,408 @@ class LawsuitCreator:
                                        need_bold=True,
                                        need_vertical_orient=False)
         
-        self._put_text_into_table_cell(text="Арбитражный суд города Москвы\n",
+        self._put_text_into_table_cell(text=f"{info_json['court_info']['name']}\n",
                                        cell=table_rows[0].cells[1],
                                        orient='left',
                                        need_bold=True)
         
-        self._put_text_into_table_cell(text="115225, г. Москва, ул. Большая Тульская, д. 17\n",
+        self._put_text_into_table_cell(text=f"{info_json['court_info']['addres']}",
                                        cell=table_rows[0].cells[1],
                                        orient='left')
         
         self._set_cell_vertical_alignment(cell=table_rows[0].cells[1])
 
-        self._put_text_into_table_cell(text="Истец",
+        self._put_text_into_table_cell(text="Истец:",
                                        cell=table_rows[1].cells[0],
                                        orient='right',
                                        need_bold=True,
                                        need_vertical_orient=False)
         
-        self._put_text_into_table_cell(text="Публичное акционерное общество\n «Московская объединенная энергетическая компания» \n",
+        self._put_text_into_table_cell(text=f"{info_json['plaintiff_info']['full_name']}\n",
                                        cell=table_rows[1].cells[1],
                                        orient='left',
                                        need_bold=True)
         
-        self._put_text_into_table_cell(text="(ОГРН 1047796974092, ИНН 7720518494)",
+        self._put_text_into_table_cell(text=f"(ОГРН {info_json['plaintiff_info']['ogrn']}, ИНН {info_json['plaintiff_info']['inn']})",
                                        cell=table_rows[1].cells[1],
                                        orient='left',
                                        need_bold=False)
+        
+        self._put_text_into_table_cell(text="Адрес:",
+                                       cell=table_rows[2].cells[0],
+                                       orient='right',
+                                       need_bold=True,
+                                       need_vertical_orient=False)
+        
+        self._put_text_into_table_cell(text=f"{info_json['plaintiff_info']['addres']}",
+                                       cell=table_rows[2].cells[1],
+                                       orient='left',
+                                       need_bold=True)
+        
+        self._put_text_into_table_cell(text="Адрес для направления корреспонденции:",
+                                       cell=table_rows[3].cells[0],
+                                       orient='right',
+                                       need_bold=True,
+                                       need_underline=True,
+                                       need_vertical_orient=False)
+        
+        self._put_text_into_table_cell(text=f"{info_json['plaintiff_info']['correspondency_addres']}",
+                                       cell=table_rows[3].cells[1],
+                                       orient='left',
+                                       need_bold=True)
+
+        self._put_text_into_table_cell(text="Ответчик:",
+                                       cell=table_rows[4].cells[0],
+                                       orient='right',
+                                       need_bold=True,
+                                       need_vertical_orient=False)
+
+        self._put_text_into_table_cell(text=f"{info_json['defendant_info']['full_name']}\n",
+                                       cell=table_rows[4].cells[1],
+                                       orient='left',
+                                       need_bold=True)
+        
+        self._put_text_into_table_cell(text="Адрес:",
+                                       cell=table_rows[5].cells[0],
+                                       orient='right',
+                                       need_bold=True,
+                                       need_vertical_orient=False)
+
+        self._put_text_into_table_cell(text=f"{info_json['defendant_info']['addres']}",
+                                       cell=table_rows[5].cells[1],
+                                       orient='left',
+                                       need_bold=True)
+        
+        self._put_text_into_table_cell(text=f"(ОГРН {info_json['defendant_info']['ogrn']}, ИНН {info_json['defendant_info']['inn']})",
+                                       cell=table_rows[4].cells[1],
+                                       orient='left',
+                                       need_bold=False,
+                                       need_vertical_orient=False)
+        
+        self._put_text_into_table_cell(text=f"Цена иска: {info_json['lawsuit_info']['cost']}\n",
+                                       cell=table_rows[6].cells[1],
+                                       orient='left',
+                                       need_bold=True,
+                                       need_vertical_orient=False)
+        
+        self._put_text_into_table_cell(text=f"Госпошлина: {info_json['lawsuit_info']['tax']}",
+                                       cell=table_rows[6].cells[1],
+                                       orient='left',
+                                       need_bold=True,
+                                       need_vertical_orient=False)
+        
+        
+
+        par = self._add_paragraph_with_run(text="\nИСКОВОЕ ЗАЯВЛЕНИЕ\n",
+                                           need_bold=True,
+                                           orient='center')
+        
+        service_type = self._get_service_type1(info=info_json['lawsuit_info']['service_type'])
+        
+        self._add_run_to_paragraph(text=f'о взыскании задолженности {service_type}',
+                                   paragraph=par,
+                                   need_bold=True)
+        
 
 
-    def _put_text_into_table_cell(self, text:str, cell:_Cell, font_size=12, need_bold=False, need_italic=False, orient="center", need_vertical_orient=True, need_gray_bgc=False):
+    def create_first_part_of_lawsuit(self, info_json):
+        self._add_paragraph_with_run(text="\n1.  Основной долг.\n",
+                                     need_bold=True)
+        
+        par = self._add_paragraph_with_run(text='Между организацией ')
+
+        self._add_run_to_paragraph(text=f'{info_json['plaintiff_info']['full_name']} ',
+                                   need_bold=True,
+                                   paragraph=par)
+        
+        self._add_run_to_paragraph(text=f"(далее - {info_json['plaintiff_info']['short_name']}, Истец) и ",
+                                   paragraph=par)
+
+        self._add_run_to_paragraph(text=f'{info_json['defendant_info']['short_name']} ',
+                                   paragraph=par,
+                                   need_bold=True)
+        
+        contract_type = self._get_contract_type(info_json=info_json)
+
+        self._add_run_to_paragraph(text=f'(далее - Ответчик) были заключены следующие договоры (далее - {contract_type}), предметом которых является подача (поставка) Истцом Ответчику ',
+                                   paragraph=par)
+        
+        service_type = self._get_service_type2(info_json=info_json)
+        
+        self._add_run_to_paragraph(text=f'{service_type} на условиях, определённых {"Договором" if contract_type=='Договор' else "Договорами"}:',
+                                   paragraph=par)
+        
+
+        table = self._create_table_of_contracts_info(info_json)
+        
+        self.set_table_width(table, 17)
+
+        par = self._add_paragraph_with_run(text="Поставка (подача) ресурсов производилась на условиях, определенных Договорами, за плату согласно действующим тарифам.")
+
+        par = self._add_paragraph_with_run(text=f'{info_json['plaintiff_info']['short_name']} свои обязательства по Договорам исполнило в полном объеме, поставив ресурсы ')
+
+        service_type = self._get_service_type3(info_json=info_json)
+
+        self._add_run_to_paragraph(text=f'{service_type} в соответствии с принятыми на себя обязательствами. Точки поставки (адреса) указаны в названных Договорах.',
+                                   paragraph=par)
+
+        par = self._add_paragraph_with_run(text='В соответствии с условиями Договоров в период, указанный в соответствующей графе вышеизложенной таблицы (далее – Период), Истец поставил Ответчику через присоединенную сеть в соответствии с Договорами тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС), а Ответчик, соответственно, обязан оплатить полученные ресурсы на основании указанных Договоров и установленных тарифов для соответствующих групп потребителей.')
+
+        par = self._add_paragraph_with_run(text='За Ответчиком по названным Договорам образовалась задолженность за потребленные ресурсы (тепловую энергию и/или теплоноситель и горячую воду) в сумме ')
+
+        self._add_run_to_paragraph(text=f'{info_json['table_info']['all_debt']} ',
+                                   paragraph=par,
+                                   need_bold=True)
+        
+        self._add_run_to_paragraph(text='руб. за указанный выше Период.',
+                                   paragraph=par,)
+        
+        par = self._add_paragraph_with_run(text='Договорами (в том числе раздел 5, пункт 5.5 каждого Договора), определены порядок и сроки взаиморасчетов за потребленные ресурсы, которые существенно нарушены Ответчиком. ')
+
+        par = self._add_paragraph_with_run(text='Факт поставки тепловой энергии/теплоносителя, горячей воды в указанном в настоящем Иске количестве подтверждается соответствующими документами, прилагаемыми к настоящему иску, в том числе: актами приема-передачи энергоресурсов, счетами на оплату, счетами-фактурами.')
+
+        par = self._add_paragraph_with_run(text=f'Таким образом, Истец свои обязательства по Договорам исполнил надлежащим образом и в полном объеме, поставив Ответчику {service_type[1:-1]} в соответствии с принятыми на себя обязательствами в отношении количества, качества и сроков ее поставки. Ответчик оплату в полном размере не произвел.')
+
+        par = self._add_paragraph_with_run(text='В соответствии с п. 1 ст. 539 Гражданского кодекса Российской Федерации (далее – «ГК РФ») по договору энергоснабжения энергоснабжающая организация обязуется подавать абоненту (потребителю) через присоединенную сеть энергию, а абонент обязуется оплачивать принятую энергию, а также соблюдать предусмотренный договором режим ее потребления, обеспечивать безопасность эксплуатации находящихся в его ведении энергетических сетей и исправность используемых им приборов и оборудования, связанных с потреблением энергии.')
+
+        par = self._add_paragraph_with_run(text='Согласно п. 1 ст. 544 ГК РФ оплата энергии производится за фактически принятое абонентом количество энергии в соответствии с данными учета энергии, если иное не предусмотрено законом, иными правовыми актами или соглашением сторон договора энергоснабжения (купли-продажи (поставки) энергии).')
+
+        par = self._add_paragraph_with_run(text="В силу ст. ст. 309, 310 ГК РФ обязательства должны исполняться надлежащим образом в соответствии с условиями обязательства и требованиями закона, иных правовых актов. Односторонний отказ от исполнения обязательства и одностороннее изменение его условий не допускаются за исключением случаев, предусмотренных действующим законодательством.")
+
+    def _get_service_type3(self, info_json):
+        contracts = []
+        result = ''
+        was1, was2, was3 = 0, 0, 0
+        for key, value in info_json['table_info'].items():
+            if '№' in key:
+                contracts.append(key)
+
+        for contract_name in contracts:
+            if "ТЭ" in contract_name and not was2:
+                was2 = 1
+                if was3:
+                    result = result + ' и тепловую энергию/теплоноситель (ТЭ)'
+                else:
+                    result = result + 'тепловую энергию/теплоноситель (ТЭ)'
+            if "ГВС" in contract_name and not was3:
+                was3 = 1
+                if was2:
+                    result = result = ' и горячую воду(ГВС)'
+                else:
+                    result = result + 'горячую воду (ГВС)'
+
+        return f'({result})' 
+    def _get_service_type2(self, info_json):
+        contracts = []
+        result = ''
+        was1, was2, was3 = 0, 0, 0
+        for key, value in info_json['table_info'].items():
+            if '№' in key:
+                contracts.append(key)
+
+        for contract_name in contracts:
+            if "СОИ" in contract_name and not was1:
+                was1 = 1
+                result = result + 'горячей воды для целей содержания общего имущества в многоквартирных домах (далее - СОИ), '
+            if "ТЭ" in contract_name and not was2:
+                was2 = 1
+                result = result + 'тепловой энергии и/или теплоносителя (далее – ТЭ), '
+            if "ГВС" in contract_name and not was3:
+                was3 = 1
+                result = result + 'горячей воды через присоединенные сети горячего водоснабжения (далее – ГВС), '
+
+        return result
+
+    def _get_contract_type(self, info_json, is_dog=True):
+        contracts = []
+        for key, value in info_json['table_info'].items():
+            if '№' in key:
+                contracts.append(key)
+        if len(contracts) > 1 and is_dog : 
+            return 'Договоры'
+        else :
+            return 'Договор'
+        
+        
+    def _create_table_of_contracts_info(self, info_json):
+        table = self.doc.add_table(rows=1, cols=5)
+        title_row_cells = table.rows[0].cells
+        table.style = "Table Grid"
+        self._put_text_into_table_cell(text='Реквизиты\n(номер) договора',
+                                       cell=title_row_cells[0],
+                                       font_size=11,
+                                       need_bold=True)
+        
+        self._put_text_into_table_cell(text='Период',
+                                       cell=title_row_cells[1],
+                                        font_size=11,
+                                       need_bold=True)
+        
+        self._put_text_into_table_cell(text='Задолженность\n(основной долг),\nруб.',
+                                       cell=title_row_cells[2],
+                                       font_size=11,
+                                       need_bold=True)
+        
+        self._put_text_into_table_cell(text='Срок оплаты',
+                                        cell=title_row_cells[3],
+                                        font_size=11,
+                                        need_bold=True)
+        
+        self._put_text_into_table_cell(text='Пункт договора',
+                                       cell=title_row_cells[4],
+                                       font_size=11,
+                                       need_bold=True)
+        
+        last_day = info_json['lawsuit_info']['last_day']
+        x = '5.5'
+        contracts = []
+        for key, value in info_json['table_info'].items():
+            if '№' in key:
+                contracts.append((key, info_json['table_info'][key]))
+
+        for contract_name, contract in contracts:
+            row = table.add_row()
+            row_cells = row.cells
+            self._put_text_into_table_cell(text=f'{contract_name}',
+                                       cell=row_cells[0],
+                                       font_size=11,
+                                       need_bold=True)
+            
+            self._put_text_into_table_cell(text=f'{contract['contract_periods']}',
+                                       cell=row_cells[1],
+                                        font_size=11,)
+            
+            self._put_text_into_table_cell(text=f'{contract['debt']}',
+                                       cell=row_cells[2],
+                                       font_size=11,)
+            
+            self._put_text_into_table_cell(text=f'{last_day}',
+                                        cell=row_cells[3],
+                                        font_size=9,)
+            
+            self._put_text_into_table_cell(text=f'{x}',
+                                       cell=row_cells[4],
+                                       font_size=11,)
+
+        result_row = table.add_row()
+        result_row_cells = result_row.cells
+
+        result_row_cells[0].merge(result_row_cells[1])
+        result_row_cells[3].merge(result_row_cells[4])
+
+        self._put_text_into_table_cell(text='Сумма:',
+                                       cell=result_row_cells[0],
+                                       font_size=11,
+                                       orient='right',
+                                       need_bold=True)
+        
+        self._put_text_into_table_cell(text=f'{info_json['table_info']['all_debt']}',
+                                       cell=result_row_cells[2],
+                                       font_size=11,
+                                       need_bold=True)
+
+        for row in table.rows:
+            row.height_rule = WD_ROW_HEIGHT_RULE.AT_LEAST
+
+        return table
+
+    def _get_service_type1(self, info):
+
+        match info:
+            case "ГВС + ТЭ":
+                return "за тепловую энергию и поставку горячей воды"
+            
+            case "ГВС":
+                return "за поставку горячей воды"
+
+            case "ТЭ":
+                return "за тепловую энергию и/или теплоноситель"
+        
+    def _add_paragraph_with_run(self, text:str,
+                                left_indent = 0, 
+                                right_indent = -1, 
+                                first_line_indent =1.25, 
+                                font_size=12, 
+                                need_underline=False, 
+                                need_bold=False, 
+                                need_italic=False, 
+                                orient="left" ):
+       
+        paragraph = self.doc.add_paragraph()
+        paragraph.paragraph_format.space_after = Pt(0)
+        paragraph.paragraph_format.space_before = Pt(0)
+        paragraph.paragraph_format.first_line_indent = Cm(first_line_indent)
+        paragraph.paragraph_format.left_indent = Cm(left_indent)
+        paragraph.paragraph_format.right_indent = Cm(right_indent)
+        run = paragraph.add_run(text)
+        run.bold = need_bold
+        run.italic = need_italic
+        run.underline = need_underline
+        run.font.name = 'Times New Roman'
+        element = run._element
+        rPr = element.get_or_add_rPr()
+        rFonts = rPr.get_or_add_rFonts()
+        rFonts.set(qn('w:ascii'), 'Times New Roman')
+        rFonts.set(qn('w:hAnsi'), 'Times New Roman')
+        rFonts.set(qn('w:eastAsia'), 'Times New Roman')  
+        rFonts.set(qn('w:cs'), 'Times New Roman')
+        run.font.size = Pt(font_size)
+
+        match orient:
+            case "center":
+                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            case "left":
+                paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            case "right":
+                paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
+        return paragraph
+    
+    def _add_run_to_paragraph(self,
+                            text:str,
+                            paragraph: Paragraph,
+                            font_size=12, 
+                            need_underline=False, 
+                            need_bold=False, 
+                            need_italic=False):
+        
+        run = paragraph.add_run(text)
+        run.bold = need_bold
+        run.italic = need_italic
+        run.underline = need_underline
+        run.font.name = 'Times New Roman'
+        element = run._element
+        rPr = element.get_or_add_rPr()
+        rFonts = rPr.get_or_add_rFonts()
+        rFonts.set(qn('w:ascii'), 'Times New Roman')
+        rFonts.set(qn('w:hAnsi'), 'Times New Roman')
+        rFonts.set(qn('w:eastAsia'), 'Times New Roman')  
+        rFonts.set(qn('w:cs'), 'Times New Roman')
+        run.font.size = Pt(font_size)
+
+        return paragraph
+        
+                             
+        
+
+
+
+    def _put_text_into_table_cell(self, 
+                                  text:str, 
+                                  cell:_Cell, 
+                                  font_size=12, 
+                                  need_underline=False, 
+                                  need_bold=False, 
+                                  need_italic=False, 
+                                  orient="center", 
+                                  need_vertical_orient=True, 
+                                  need_gray_bgc=False):
+        
         paragraph = cell.paragraphs[0]
         run = paragraph.add_run(text)
         run.bold = need_bold
         run.italic = need_italic
+        run.underline = need_underline
         run.font.name = 'Times New Roman'
 
         element = run._element
