@@ -202,11 +202,10 @@ if st.session_state.form_data['flag']:
                                 )
             
             if first_response.status_code == 200:
-                result = first_response.json()
+                lawsuit = BytesIO(first_response.content)
+                st.session_state.form_data['lawsuit'] = lawsuit
 
-                st.success("расчёт к иску успешно обработан!")
-                st.text("Результат обработки документов")
-                st.json(result)
+                
             
             else:
                 st.error(f"Ошибка: {first_response.status_code}")
@@ -232,6 +231,14 @@ if st.session_state.form_data['flag']:
             #     if st.button(label="Создать Иск"):
 if st.session_state.form_data['flag2']:             
     col1, col2, = st.columns(2)
+
+    with col1:
+        st.download_button(
+            label="Скачать иск",
+            data=st.session_state.form_data['lawsuit'],
+            file_name="Иск.docx",
+            
+        )
 
     with col2:
         st.download_button(
