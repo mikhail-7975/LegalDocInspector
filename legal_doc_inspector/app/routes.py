@@ -6,6 +6,10 @@ import tempfile
 import zipfile
 from collections import defaultdict
 from datetime import date, datetime
+
+# from legal_doc_inspector.doc_parser.contract_parser import ContractParser
+# from legal_doc_inspector.doc_parser.zip_parser import ZipParser
+# from legal_doc_inspector.doc_parser.claim_parser import ClaimParser
 from pathlib import Path
 
 import pandas as pd
@@ -22,11 +26,13 @@ from transformers import (
 from werkzeug.utils import secure_filename
 
 from configs.config import AppConfig, load_yaml_config
+from legal_doc_inspector.doc_creator.lawsuit_creator import LawsuitCreator
 from legal_doc_inspector.doc_creator.penalty_table_creator import PenaltyTableCreator
 from legal_doc_inspector.doc_parser.claim_parser import ClaimParser
 from legal_doc_inspector.doc_parser.contract_parser import ContractParser
 from legal_doc_inspector.doc_parser.html_parser import parse_html
 
+# from .llm_functions import parse_contract, parse_zip, parse_claim
 # from .llm_functions import parse_contract, parse_zip, parse_claim
 from legal_doc_inspector.doc_parser.table_parser import TableParser
 from legal_doc_inspector.doc_parser.zip_parser import ZipParser
@@ -54,22 +60,6 @@ def home():
 
 @app.route("/parse", methods=["POST"])
 def parse():
-<<<<<<< HEAD
-    # для дебага без использования видеокарты
-    with open(str("data/response_json_example.json")) as json_file:
-        data = json.load(json_file)
-        # print(type(data))
-        data["results_of_name_parser"] = {}
-        data["results_of_name_parser"]["defendant_info"] = {}
-        data["results_of_name_parser"]["defendant_info"]["inn"] = "7721064162"
-        name, address, kpp, ogrn = parse_html(7721064162)
-        data["results_of_name_parser"]["defendant_info"]["name"] = name
-        data["results_of_name_parser"]["defendant_info"]["address"] = address
-        data["results_of_name_parser"]["defendant_info"]["kpp"] = kpp
-        data["results_of_name_parser"]["defendant_info"]["ogrn"] = ogrn
-        return jsonify(data), 200
-
-=======
     #для дебага без использования видеокарты
     json_example = {}
     with open(str('data/response_json_example.json')) as json_file:
@@ -77,7 +67,6 @@ def parse():
         # print(type(data))
 
     
->>>>>>> af6fecf (remade parse endpoint to respond more information)
     current_config = g.config
     save_data_folder = Path(current_config.save_data_folder)
 
@@ -219,8 +208,11 @@ def parse():
 @app.route("/create_doc", methods=["POST"])
 def create_doc():
     request_json = request.json
-
-    return jsonify(request_json), 200
+    lawsuit_creator = LawsuitCreator(dict())
+    path_to_save = find_parent_dir_with_name(Path(request_json['files_info']['lawsuit_calculating']),'documents_from_request')
+    file = lawsuit_creator.create_lawsuit(request_json, Path(path_to_save,'ИСК.docx'))
+    print(file)
+    return send_file(file, as_attachment=True), 200
 
 
 @app.route("/create_calculating_table", methods=["POST"])
@@ -265,5 +257,17 @@ def get_request_files(
                                 zip_info.filename = file_name
                                 zip_ref.extract(zip_info, archive_folder)
                     uploaded_files[dest_key].append(str(archive_folder))
-
+    
     return uploaded_files
+
+
+def find_parent_dir_with_name(start_path: Path, target_name: str) -> Path | None:
+    """
+    Поднимается по родительским директориям,
+    пока не найдёт папку с нужным именем.
+    Возвращает её путь или None, если не найдено.
+    """
+    for parent in [start_path, *start_path.parents]:
+        if target_name in parent.name:
+            return parent
+    return None
