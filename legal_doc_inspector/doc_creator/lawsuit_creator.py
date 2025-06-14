@@ -23,6 +23,7 @@ class LawsuitCreator:
         self._create_title(info_json=info_json)
         self.create_first_part_of_lawsuit(info_json=info_json)
         self.create_second_part_of_lawsuit(info_json=info_json)
+        self.create_third_part_of_lawsuit(info_json=info_json)
         self._save_doc(str(path_to_save))
 
     def _save_doc(self, name:str):
@@ -145,9 +146,158 @@ class LawsuitCreator:
         self._add_run_to_paragraph(text=f'о взыскании задолженности {service_type}',
                                    paragraph=par,
                                    need_bold=True)
+    
+    def create_third_part_of_lawsuit(self, info_json):
+        self._add_paragraph_with_run(text="\n3.  Неустойка.\n",
+                                     need_bold=True)
+        ##TODO
+        # я думаю что этот параграф зависит от того что за тип компании
+        self._add_paragraph_with_run(text='В соответствии с частью 9.2 статьи 15 Федерального закона от 27.07.2010 № 190-ФЗ «О теплоснабжении» товарищества собственников жилья, жилищные, жилищно-строительные и иные специализированные потребительские кооперативы, созданные в целях удовлетворения потребностей граждан в жилье, приобретающие тепловую энергию (мощность) и (или) теплоноситель для целей предоставления коммунальных услуг, в случае несвоевременной и (или) неполной оплаты тепловой энергии (мощности) и (или) теплоносителя уплачивают единой теплоснабжающей организации (теплоснабжающей организации) пени в размере одной трехсотой ставки рефинансирования Центрального банка Российской Федерации, действующей на день фактической оплаты, от не выплаченной в срок суммы за каждый день просрочки начиная с тридцать первого дня, следующего за днем наступления установленного срока оплаты, по день фактической оплаты, произведенной в течение девяноста календарных дней со дня наступления установленного срока оплаты, либо до истечения девяноста календарных дней после дня наступления установленного срока оплаты, если в девяностодневный срок оплата не произведена. Начиная с девяносто первого дня, следующего за днем наступления установленного срока оплаты, по день фактической оплаты пени уплачиваются в размере одной стотридцатой ставки рефинансирования Центрального банка Российской Федерации, действующей на день фактической оплаты, от не выплаченной в срок суммы за каждый день просрочки.')
+        
+        self._add_paragraph_with_run(text='Согласно части 6.3 статьи 13 Федерального закона от 07.12.2011 № 416-ФЗ «О водоснабжении и водоотведении» товарищества собственников жилья, жилищные, жилищно-строительные и иные специализированные потребительские кооперативы, созданные в целях удовлетворения потребностей граждан в жилье, приобретающие горячую, питьевую и (или) техническую воду для целей предоставления коммунальных услуг, в случае несвоевременной и (или) неполной оплаты воды уплачивают организации, осуществляющей горячее водоснабжение, холодное водоснабжение, пени в размере одной трехсотой ставки рефинансирования Центрального банка Российской Федерации, действующей на день фактической оплаты, от не выплаченной в срок суммы за каждый день просрочки начиная с тридцать первого дня, следующего за днем наступления установленного срока оплаты, по день фактической оплаты, произведенной в течение девяноста календарных дней со дня наступления установленного срока оплаты, либо до истечения девяноста календарных дней после дня наступления установленного срока оплаты, если в девяностодневный срок оплата не произведена. Начиная с девяносто первого дня, следующего за днем наступления установленного срока оплаты, по день фактической оплаты пени уплачиваются в размере одной стотридцатой ставки рефинансирования Центрального банка Российской Федерации, действующей на день фактической оплаты, от не выплаченной в срок суммы за каждый день просрочки.')
+
+        par = self._add_paragraph_with_run(text='Исходя из размера Основного долга и Периода задолженности ')
+        self._add_run_to_paragraph(text='неустойка ',
+                                   paragraph=par,
+                                   need_bold=True)
+        
+        self._add_run_to_paragraph('по Договорам составляет:',
+                                   paragraph=par)
+
+        self._create_penalty_table(info_json)
+
+        par = self._add_paragraph_with_run(text='Расчет суммы неустойки прилагается к настоящему исковому заявлению.',
+                                           need_bold=True)
+        
+        par = self._add_paragraph_with_run(text='Таким образом, общая ')
+
+        self._add_run_to_paragraph(text="цена иска ",
+                                   paragraph=par,
+                                   need_underline=True)
+        
+        self._add_run_to_paragraph(text='составляет ',
+                                   paragraph=par)
+
+        self._add_run_to_paragraph(text=f'{info_json['lawsuit_info']['cost']} ',
+                                   paragraph=par,
+                                   need_bold=True)
+        
+        # self._add_run_to_paragraph(text='руб.',
+        #                            paragraph=par)
+        
+        par = self._add_paragraph_with_run(text='размер ')
+
+        self._add_run_to_paragraph(text='государственной пошлины ',
+                                   need_underline=True,
+                                   paragraph=par)
+        
+        self._add_run_to_paragraph(text='составляет ',
+                                   paragraph=par)
+
+        self._add_run_to_paragraph(text=f'{info_json['lawsuit_info']['tax']}\n',
+                                   paragraph=par,
+                                   need_bold=True)
+        
+        par = self._add_paragraph_with_run(text='На основании вышеизложенного, в соответствии со статьями 309, 310, 395, 539, 541, 544 Гражданского кодекса РФ, ст. 15 Федерального закона от 27.07.2010 № 190-ФЗ «О теплоснабжении», ст. 13 Федерального закона от 07.12.2011 № 416-ФЗ «О водоснабжении и водоотведении», статьями 4, 125 Арбитражного процессуального кодекса Российской Федерации,')
+        # self._add_run_to_paragraph(text='руб.',
+        #                            paragraph=par)
+        
+        
+
+    def _create_penalty_table(self, info_json):
+
+        table = self.doc.add_table(rows=1, cols=5)
+
+        title_row_cells = table.rows[0].cells
+        table.style = "Table Grid"
+        self._put_text_into_table_cell(text='Реквизиты\n(номер) договора',
+                                       cell=title_row_cells[0],
+                                       font_size=10.5,
+                                       need_bold=True)
+        
+        self._put_text_into_table_cell(text='Период',
+                                       cell=title_row_cells[1],
+                                        font_size=10.5,
+                                       need_bold=True)
+        
+        self._put_text_into_table_cell(text='Задолженность\n(основной долг),\nруб.',
+                                       cell=title_row_cells[2],
+                                       font_size=10.5,
+                                       need_bold=True)
+        
+        self._put_text_into_table_cell(text='Неустойка руб.',
+                                        cell=title_row_cells[3],
+                                        font_size=10.5,
+                                        need_bold=True)
+        
+        self._put_text_into_table_cell(text='Итого по договору (неустойка + основной долг), сумма, руб.',
+                                       cell=title_row_cells[4],
+                                       font_size=10.5,
+                                       need_bold=True)
+        contracts = []
+        for key, value in info_json['table_info'].items():
+            if '№' in key:
+                contracts.append((key, info_json['table_info'][key]))
+
+        for contract_name, contract in contracts:
+            row = table.add_row()
+            row_cells = row.cells
+            self._put_text_into_table_cell(text=f'{contract_name}',
+                                       cell=row_cells[0],
+                                       font_size=10.5,
+                                       need_bold=True)
+            
+            self._put_text_into_table_cell(text=f'{contract['contract_periods']}',
+                                       cell=row_cells[1],
+                                        font_size=10.5,)
+            
+            self._put_text_into_table_cell(text=f'{contract['debt']}',
+                                       cell=row_cells[2],
+                                       font_size=10.5,)
+            
+            self._put_text_into_table_cell(text=f'{contract['penalty']}',
+                                        cell=row_cells[3],
+                                        font_size=10.5,)
+            
+            self._put_text_into_table_cell(text=f'{contract['debt_penalty']}',
+                                       cell=row_cells[4],
+                                       font_size=10.5,)
+
+        result_row = table.add_row()
+        result_row_cells = result_row.cells
+
+        result_row_cells[0].merge(result_row_cells[1])
+
+
+        self._put_text_into_table_cell(text='ИТОГО:',
+                                       cell=result_row_cells[0],
+                                       font_size=10.5,
+                                       orient='right',
+                                       need_bold=True)
+        
+        self._put_text_into_table_cell(text=f'{info_json['table_info']['all_debt']}',
+                                       cell=result_row_cells[2],
+                                       font_size=10.5,
+                                       need_bold=True)
+        
+        self._put_text_into_table_cell(text=f'{info_json['table_info']['all_penalty']}',
+                                       cell=result_row_cells[3],
+                                       font_size=10.5,
+                                       need_bold=True)
+        
+        self._put_text_into_table_cell(text=f'{info_json['table_info']['cost_of_lawsuit']}',
+                                       cell=result_row_cells[4],
+                                       font_size=10.5,
+                                       need_bold=True)
+
+        for row in table.rows:
+            row.height_rule = WD_ROW_HEIGHT_RULE.AT_LEAST
+
+        return table
+
         
     def create_second_part_of_lawsuit(self, info_json):
-        self._add_paragraph_with_run(text="\n2.  Соблюдение претензионного порядка..\n",
+        self._add_paragraph_with_run(text="\n2.  Соблюдение претензионного порядка.\n",
                                      need_bold=True)
         
         service_type = self._get_service_type4(info=info_json['lawsuit_info']['service_type'])
