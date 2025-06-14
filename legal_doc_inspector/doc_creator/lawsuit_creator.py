@@ -1,4 +1,5 @@
 from pathlib import Path
+import datetime
 
 import docx
 from docx.text.paragraph import Paragraph
@@ -24,7 +25,11 @@ class LawsuitCreator:
         self.create_first_part_of_lawsuit(info_json=info_json)
         self.create_second_part_of_lawsuit(info_json=info_json)
         self.create_third_part_of_lawsuit(info_json=info_json)
+        self.create_court_asking(info_json=info_json)
+        self.create_applications(info_json=info_json)
         self._save_doc(str(path_to_save))
+
+        return str(path_to_save.resolve())
 
     def _save_doc(self, name:str):
         self.doc.save(name)
@@ -147,6 +152,94 @@ class LawsuitCreator:
                                    paragraph=par,
                                    need_bold=True)
     
+    def create_court_asking(self, info_json):
+
+        self._add_paragraph_with_run(text="\nПРОСИМ СУД\n",
+                                     need_bold=True,
+                                     orient='center')
+        
+        par1 = self._add_paragraph_with_run(text="1.    Взыскать",
+                                            need_bold=True)
+
+        
+
+        self._add_run_to_paragraph(text=f"с Организации \"{info_json['defendant_info']['full_name']}\" (ИНН {info_json['defendant_info']['inn']} ОГРН {info_json['defendant_info']['ogrn']}) ",
+                                   paragraph=par1)
+        
+        self._add_run_to_paragraph(text=f'в пользу Организации \"{info_json['plaintiff_info']['full_name']}\" (ИНН {info_json['plaintiff_info']['inn']} ОГРН {info_json['plaintiff_info']['ogrn']}) ',
+                                   paragraph=par1)
+        
+        self._add_run_to_paragraph(text='задолженность (основной долг) и неустойку по Договорам в общем размере ',
+                                   paragraph=par1)
+        
+        self._add_run_to_paragraph(text=f'{info_json['lawsuit_info']['cost']}, ',
+                                   paragraph=par1,
+                                   need_bold=True)
+        
+        self._add_run_to_paragraph(text='в том числе:',
+                                   paragraph=par1)
+
+        self._add_list_of_payments(info_json)
+
+        par1 = self._add_paragraph_with_run(text="2.    Взыскать",
+                                            need_bold=True)
+
+        
+
+        self._add_run_to_paragraph(text=f"с Организации \"{info_json['defendant_info']['full_name']}\" (ИНН {info_json['defendant_info']['inn']} ОГРН {info_json['defendant_info']['ogrn']}) ",
+                                   paragraph=par1)
+        
+        self._add_run_to_paragraph(text=f'в пользу Организации \"{info_json['plaintiff_info']['full_name']}\" (ИНН {info_json['plaintiff_info']['inn']} ОГРН {info_json['plaintiff_info']['ogrn']}) ',
+                                   paragraph=par1)
+        
+        self._add_run_to_paragraph(text='расходы по оплате государственной пошлины за подачу настоящего иска ',
+                                   paragraph=par1)
+        
+        self._add_run_to_paragraph(text=f'{info_json['lawsuit_info']['tax']} ',
+                                   paragraph=par1,
+                                   need_bold=True)
+
+
+
+    
+    def _add_list_of_payments(self,info_json):
+        contracts = []
+        for key, value in info_json['table_info'].items():
+            if '№' in key:
+                contracts.append((key, info_json['table_info'][key]))
+
+        for contract_name, contract in contracts:
+            par = self.doc.add_paragraph(style='List Bullet')
+            par.paragraph_format.left_indent = Cm(2)
+            self._add_run_to_paragraph(text=f"по Договору {contract_name}:\n",
+                                       paragraph=par,
+                                       need_bold=True)
+            
+            self._add_run_to_paragraph(text=f'{contract['debt']} ',
+                                       paragraph=par,
+                                       need_bold=True)
+            
+            self._add_run_to_paragraph(text=f'руб. – основной долг за период {contract['contract_periods']};\n',
+                                       paragraph=par)
+            
+            self._add_run_to_paragraph(text=f'{contract['penalty']} ',
+                                       paragraph=par,
+                                       need_bold=True)
+            
+            self._add_run_to_paragraph(text=f'руб. – неустойку за период {contract['penalty_period']};\n',
+                                       paragraph=par)
+            
+            day_of_penalty = datetime.datetime.strptime(contract['penalty_period'][-10:],'%d.%m.%Y').date()
+            day_of_penalty += datetime.timedelta(days=1)
+            day_of_penalty_str = day_of_penalty.strftime("%d.%m.%Y")
+
+            self._add_run_to_paragraph(text=f'неустойку по день фактического исполнения обязательства, начиная с {day_of_penalty_str} года, рассчитанную исходя из 1/130 ставки рефинансирования Банка России.',
+                                       paragraph=par)
+
+
+    def create_applications(self, info_json):
+        pass
+
     def create_third_part_of_lawsuit(self, info_json):
         self._add_paragraph_with_run(text="\n3.  Неустойка.\n",
                                      need_bold=True)
@@ -201,9 +294,10 @@ class LawsuitCreator:
         par = self._add_paragraph_with_run(text='На основании вышеизложенного, в соответствии со статьями 309, 310, 395, 539, 541, 544 Гражданского кодекса РФ, ст. 15 Федерального закона от 27.07.2010 № 190-ФЗ «О теплоснабжении», ст. 13 Федерального закона от 07.12.2011 № 416-ФЗ «О водоснабжении и водоотведении», статьями 4, 125 Арбитражного процессуального кодекса Российской Федерации,')
         # self._add_run_to_paragraph(text='руб.',
         #                            paragraph=par)
-        
-        
 
+
+        
+    
     def _create_penalty_table(self, info_json):
 
         table = self.doc.add_table(rows=1, cols=5)
