@@ -22,6 +22,7 @@ class LawsuitCreator:
     def create_lawsuit(self, info_json, path_to_save:Path):
         self._create_title(info_json=info_json)
         self.create_first_part_of_lawsuit(info_json=info_json)
+        self.create_second_part_of_lawsuit(info_json=info_json)
         self._save_doc(str(path_to_save))
 
     def _save_doc(self, name:str):
@@ -145,10 +146,25 @@ class LawsuitCreator:
                                    paragraph=par,
                                    need_bold=True)
         
+    def create_second_part_of_lawsuit(self, info_json):
+        self._add_paragraph_with_run(text="\n2.  Соблюдение претензионного порядка..\n",
+                                     need_bold=True)
+        
+        service_type = self._get_service_type4(info=info_json['lawsuit_info']['service_type'])
 
+        par = self._add_paragraph_with_run(text=f'Поскольку Ответчик свои обязательства по оплате поставленной {service_type} исполнил ненадлежащим образом, Истцом направлены в его адрес ',)
+        
+        self._add_run_to_paragraph(text='претензии:',
+                                   paragraph=par,
+                                   need_bold=True)
+        items = info_json['lawsuit_info']['claims']
+        self._add_unnumeric_list(items=items)
+        
+        par = self._add_paragraph_with_run(text=f'с предложением погасить образовавшуюся задолженность за {service_type}, которые оставлены Ответчиком без ответа. Задолженность в полном объеме не погашена. Копии претензий, а также документация в отношении направления/получения их Ответчиком, соблюдения претензионного порядка прилагаются к настоящему иску.',
+                                           first_line_indent=0)
 
     def create_first_part_of_lawsuit(self, info_json):
-        self._add_paragraph_with_run(text="\n1.  Основной долг.\n",
+        self._add_paragraph_with_run(text="\n2.  Соблюдение претензионного порядка.\n",
                                      need_bold=True)
         
         par = self._add_paragraph_with_run(text='Между организацией ')
@@ -210,6 +226,25 @@ class LawsuitCreator:
         par = self._add_paragraph_with_run(text='Согласно п. 1 ст. 544 ГК РФ оплата энергии производится за фактически принятое абонентом количество энергии в соответствии с данными учета энергии, если иное не предусмотрено законом, иными правовыми актами или соглашением сторон договора энергоснабжения (купли-продажи (поставки) энергии).')
 
         par = self._add_paragraph_with_run(text="В силу ст. ст. 309, 310 ГК РФ обязательства должны исполняться надлежащим образом в соответствии с условиями обязательства и требованиями закона, иных правовых актов. Односторонний отказ от исполнения обязательства и одностороннее изменение его условий не допускаются за исключением случаев, предусмотренных действующим законодательством.")
+
+    def _add_unnumeric_list(self, items:list, font_size = 12, need_bold = True):
+
+
+        for elem in items :
+            par = self.doc.add_paragraph(style="List Bullet")
+            run = par.add_run(f"{elem}")
+            run.font.name = 'Times New Roman'
+            element = run._element
+            rPr = element.get_or_add_rPr()
+            rFonts = rPr.get_or_add_rFonts()
+            rFonts.set(qn('w:ascii'), 'Times New Roman')
+            rFonts.set(qn('w:hAnsi'), 'Times New Roman')
+            rFonts.set(qn('w:eastAsia'), 'Times New Roman')  
+            rFonts.set(qn('w:cs'), 'Times New Roman')
+            run.font.size = Pt(font_size)
+            run.bold = True
+
+
 
     def _get_service_type3(self, info_json):
         contracts = []
@@ -348,6 +383,18 @@ class LawsuitCreator:
 
         return table
 
+    def _get_service_type4(self, info):
+
+        match info:
+            case "ГВС + ТЭ":
+                return "ТЭ и ГВС"
+            
+            case "ГВС":
+                return "ГВС"
+
+            case "ТЭ":
+                return "ТЭ"
+            
     def _get_service_type1(self, info):
 
         match info:
