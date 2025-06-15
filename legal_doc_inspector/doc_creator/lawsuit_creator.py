@@ -238,7 +238,15 @@ class LawsuitCreator:
 
 
     def create_applications(self, info_json):
-        pass
+        par = self._add_paragraph_with_run("Приложения:",
+                                           first_line_indent=0,
+                                           left_indent=1,
+                                           need_bold=True)
+        number = 1
+        for key, value in info_json['applications_info'].items():
+            self._add_run_to_paragraph(text=f"{number}) {value}.\n",
+                                       paragraph=par)
+        
 
     def create_third_part_of_lawsuit(self, info_json):
         self._add_paragraph_with_run(text="\n3.  Неустойка.\n",
