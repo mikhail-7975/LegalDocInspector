@@ -7,9 +7,22 @@ import zipfile
 from collections import defaultdict
 from datetime import date, datetime
 
+<<<<<<< HEAD
 # from legal_doc_inspector.doc_parser.contract_parser import ContractParser
 # from legal_doc_inspector.doc_parser.zip_parser import ZipParser
 # from legal_doc_inspector.doc_parser.claim_parser import ClaimParser
+=======
+from configs.config import AppConfig, load_yaml_config
+from .llm_functions import parse_contract, parse_zip, parse_claim
+from legal_doc_inspector.doc_parser.table_parser import TableParser 
+from legal_doc_inspector.penalty_calculator.penalty_calculator import Penalty_calculator
+from legal_doc_inspector.doc_creator.penalty_table_creator import PenaltyTableCreator
+from legal_doc_inspector.doc_creator.lawsuit_creator import LawsuitCreator
+from legal_doc_inspector.doc_parser.contract_parser import ContractParser
+from legal_doc_inspector.doc_parser.zip_parser import ZipParser
+from legal_doc_inspector.doc_parser.claim_parser import ClaimParser
+
+>>>>>>> ec44a74 (enable neuro_models)
 from pathlib import Path
 
 import pandas as pd
@@ -52,6 +65,16 @@ zip_parser = ZipParser(model, processor, emb_model, emb_tokenizer)
 contract_parser = ContractParser(model, processor)
 claim_parser = ClaimParser(model, processor)
 
+model = Qwen2_5OmniForConditionalGeneration.from_pretrained(
+    "Qwen/Qwen2.5-Omni-3B",
+    torch_dtype="auto",
+    device_map="auto",
+    enable_audio_output=False,
+)
+processor = Qwen2_5OmniProcessor.from_pretrained("Qwen/Qwen2.5-Omni-3B")
+zip_parser = ZipParser(model, processor)
+contract_parser = ContractParser(model, processor)
+claim_parser = ClaimParser(model, processor)
 
 @app.route("/")
 def home():
@@ -60,11 +83,11 @@ def home():
 
 @app.route("/parse", methods=["POST"])
 def parse():
-    #для дебага без использования видеокарты
-    json_example = {}
-    with open(str('data/response_json_example.json')) as json_file:
-        json_example = json.load(json_file)
-        # print(type(data))
+    # для дебага без использования видеокарты
+    # json_example = {}
+    # with open(str('data/response_json_example.json')) as json_file:
+    #     json_example = json.load(json_file)
+    #     # print(type(data))
 
     
     current_config = g.config
@@ -98,7 +121,7 @@ def parse():
     with open(str(Path(folder, "index.json"))) as json_file:
         data["results_of_data_saving"] = json.load(json_file)
 
-    # pdf_pars_dict = dict()
+    pdf_pars_dict = dict()
 
     # Договор
     for i, contract_file in enumerate(uploaded_files["contract_file"]):
@@ -183,7 +206,7 @@ def parse():
     result_json['files_table']  = uploaded_files
     result_json['result_of_penalty_calculator'] = result_dict_json
 
-    result_json['result_of_llm_parsers'] = json_example['result_of_llm_parsers']
+    # result_json['result_of_llm_parsers'] = json_example['result_of_llm_parsers']
 
     result_json['results_of_name_parser'] = {}
     result_json['results_of_name_parser']['defendant_info'] = {}
@@ -197,7 +220,7 @@ def parse():
 
     result_json['contracts_info'] = contracts_info 
     # result_json['result_of_penalty_calculator'] = result_dict_json
-    # result_json['result_of_llm_parsers'] = pdf_pars_dict
+    result_json['result_of_llm_parsers'] = pdf_pars_dict
     
     with open(str(Path(folder, "index.json")),"w") as json_file:
         json.dump(uploaded_files, json_file)
