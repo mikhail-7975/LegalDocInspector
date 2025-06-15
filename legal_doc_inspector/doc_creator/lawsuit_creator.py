@@ -166,13 +166,13 @@ class LawsuitCreator:
         self._add_run_to_paragraph(text=f"с Организации \"{info_json['defendant_info']['full_name']}\" (ИНН {info_json['defendant_info']['inn']} ОГРН {info_json['defendant_info']['ogrn']}) ",
                                    paragraph=par1)
         
-        self._add_run_to_paragraph(text=f'в пользу Организации \"{info_json['plaintiff_info']['full_name']}\" (ИНН {info_json['plaintiff_info']['inn']} ОГРН {info_json['plaintiff_info']['ogrn']}) ',
+        self._add_run_to_paragraph(text=f"в пользу Организации \"{info_json['plaintiff_info']['full_name']}\" (ИНН {info_json['plaintiff_info']['inn']} ОГРН {info_json['plaintiff_info']['ogrn']}) ",
                                    paragraph=par1)
         
         self._add_run_to_paragraph(text='задолженность (основной долг) и неустойку по Договорам в общем размере ',
                                    paragraph=par1)
         
-        self._add_run_to_paragraph(text=f'{info_json['lawsuit_info']['cost']}, ',
+        self._add_run_to_paragraph(text=f"{info_json['lawsuit_info']['cost']}, ",
                                    paragraph=par1,
                                    need_bold=True)
         
@@ -189,13 +189,13 @@ class LawsuitCreator:
         self._add_run_to_paragraph(text=f"с Организации \"{info_json['defendant_info']['full_name']}\" (ИНН {info_json['defendant_info']['inn']} ОГРН {info_json['defendant_info']['ogrn']}) ",
                                    paragraph=par1)
         
-        self._add_run_to_paragraph(text=f'в пользу Организации \"{info_json['plaintiff_info']['full_name']}\" (ИНН {info_json['plaintiff_info']['inn']} ОГРН {info_json['plaintiff_info']['ogrn']}) ',
+        self._add_run_to_paragraph(text=f"в пользу Организации \"{info_json['plaintiff_info']['full_name']}\" (ИНН {info_json['plaintiff_info']['inn']} ОГРН {info_json['plaintiff_info']['ogrn']}) ",
                                    paragraph=par1)
         
         self._add_run_to_paragraph(text='расходы по оплате государственной пошлины за подачу настоящего иска ',
                                    paragraph=par1)
         
-        self._add_run_to_paragraph(text=f'{info_json['lawsuit_info']['tax']} ',
+        self._add_run_to_paragraph(text=f"{info_json['lawsuit_info']['tax']} ",
                                    paragraph=par1,
                                    need_bold=True)
 
@@ -215,25 +215,25 @@ class LawsuitCreator:
                                        paragraph=par,
                                        need_bold=True)
             
-            self._add_run_to_paragraph(text=f'{contract['debt']} ',
+            self._add_run_to_paragraph(text=f"{contract['debt']} ",
                                        paragraph=par,
                                        need_bold=True)
             
-            self._add_run_to_paragraph(text=f'руб. – основной долг за период {contract['contract_periods']};\n',
+            self._add_run_to_paragraph(text=f"руб. – основной долг за период {contract['contract_periods']};\n",
                                        paragraph=par)
             
-            self._add_run_to_paragraph(text=f'{contract['penalty']} ',
+            self._add_run_to_paragraph(text=f"{contract['penalty']} ",
                                        paragraph=par,
                                        need_bold=True)
             
-            self._add_run_to_paragraph(text=f'руб. – неустойку за период {contract['penalty_period']};\n',
+            self._add_run_to_paragraph(text=f"руб. – неустойку за период {contract['penalty_period']};\n",
                                        paragraph=par)
             
             day_of_penalty = datetime.datetime.strptime(contract['penalty_period'][-10:],'%d.%m.%Y').date()
             day_of_penalty += datetime.timedelta(days=1)
             day_of_penalty_str = day_of_penalty.strftime("%d.%m.%Y")
 
-            self._add_run_to_paragraph(text=f'неустойку по день фактического исполнения обязательства, начиная с {day_of_penalty_str} года, рассчитанную исходя из 1/130 ставки рефинансирования Банка России.',
+            self._add_run_to_paragraph(text=f"неустойку по день фактического исполнения обязательства, начиная с {day_of_penalty_str} года, рассчитанную исходя из 1/130 ставки рефинансирования Банка России.",
                                        paragraph=par)
 
 
@@ -271,7 +271,7 @@ class LawsuitCreator:
         self._add_run_to_paragraph(text='составляет ',
                                    paragraph=par)
 
-        self._add_run_to_paragraph(text=f'{info_json['lawsuit_info']['cost']} ',
+        self._add_run_to_paragraph(text=f"{info_json['lawsuit_info']['cost']} ",
                                    paragraph=par,
                                    need_bold=True)
         
@@ -287,7 +287,7 @@ class LawsuitCreator:
         self._add_run_to_paragraph(text='составляет ',
                                    paragraph=par)
 
-        self._add_run_to_paragraph(text=f'{info_json['lawsuit_info']['tax']}\n',
+        self._add_run_to_paragraph(text=f"{info_json['lawsuit_info']['tax']}\n",
                                    paragraph=par,
                                    need_bold=True)
         
@@ -341,19 +341,19 @@ class LawsuitCreator:
                                        font_size=10.5,
                                        need_bold=True)
             
-            self._put_text_into_table_cell(text=f'{contract['contract_periods']}',
+            self._put_text_into_table_cell(text=f"{contract['contract_periods']}",
                                        cell=row_cells[1],
                                         font_size=10.5,)
             
-            self._put_text_into_table_cell(text=f'{contract['debt']}',
+            self._put_text_into_table_cell(text=f"{contract['debt']}",
                                        cell=row_cells[2],
                                        font_size=10.5,)
             
-            self._put_text_into_table_cell(text=f'{contract['penalty']}',
+            self._put_text_into_table_cell(text=f"{contract['penalty']}",
                                         cell=row_cells[3],
                                         font_size=10.5,)
             
-            self._put_text_into_table_cell(text=f'{contract['debt_penalty']}',
+            self._put_text_into_table_cell(text=f"{contract['debt_penalty']}",
                                        cell=row_cells[4],
                                        font_size=10.5,)
 
@@ -369,17 +369,17 @@ class LawsuitCreator:
                                        orient='right',
                                        need_bold=True)
         
-        self._put_text_into_table_cell(text=f'{info_json['table_info']['all_debt']}',
+        self._put_text_into_table_cell(text=f"{info_json['table_info']['all_debt']}",
                                        cell=result_row_cells[2],
                                        font_size=10.5,
                                        need_bold=True)
         
-        self._put_text_into_table_cell(text=f'{info_json['table_info']['all_penalty']}',
+        self._put_text_into_table_cell(text=f"{info_json['table_info']['all_penalty']}",
                                        cell=result_row_cells[3],
                                        font_size=10.5,
                                        need_bold=True)
         
-        self._put_text_into_table_cell(text=f'{info_json['table_info']['cost_of_lawsuit']}',
+        self._put_text_into_table_cell(text=f"{info_json['table_info']['cost_of_lawsuit']}",
                                        cell=result_row_cells[4],
                                        font_size=10.5,
                                        need_bold=True)
@@ -413,14 +413,14 @@ class LawsuitCreator:
         
         par = self._add_paragraph_with_run(text='Между организацией ')
 
-        self._add_run_to_paragraph(text=f'{info_json['plaintiff_info']['full_name']} ',
+        self._add_run_to_paragraph(text=f"{info_json['plaintiff_info']['full_name']} ",
                                    need_bold=True,
                                    paragraph=par)
         
         self._add_run_to_paragraph(text=f"(далее - {info_json['plaintiff_info']['short_name']}, Истец) и ",
                                    paragraph=par)
 
-        self._add_run_to_paragraph(text=f'{info_json['defendant_info']['short_name']} ',
+        self._add_run_to_paragraph(text=f"{info_json['defendant_info']['short_name']} ",
                                    paragraph=par,
                                    need_bold=True)
         
@@ -431,7 +431,7 @@ class LawsuitCreator:
         
         service_type = self._get_service_type2(info_json=info_json)
         
-        self._add_run_to_paragraph(text=f'{service_type} на условиях, определённых {"Договором" if contract_type=='Договор' else "Договорами"}:',
+        self._add_run_to_paragraph(text=f"{service_type} на условиях, определённых {'Договором' if contract_type=='Договор' else 'Договорами'}:",
                                    paragraph=par)
         
 
@@ -441,18 +441,18 @@ class LawsuitCreator:
 
         par = self._add_paragraph_with_run(text="Поставка (подача) ресурсов производилась на условиях, определенных Договорами, за плату согласно действующим тарифам.")
 
-        par = self._add_paragraph_with_run(text=f'{info_json['plaintiff_info']['short_name']} свои обязательства по Договорам исполнило в полном объеме, поставив ресурсы ')
+        par = self._add_paragraph_with_run(text=f"{info_json['plaintiff_info']['short_name']} свои обязательства по Договорам исполнило в полном объеме, поставив ресурсы ")
 
         service_type = self._get_service_type3(info_json=info_json)
 
-        self._add_run_to_paragraph(text=f'{service_type} в соответствии с принятыми на себя обязательствами. Точки поставки (адреса) указаны в названных Договорах.',
+        self._add_run_to_paragraph(text=f"{service_type} в соответствии с принятыми на себя обязательствами. Точки поставки (адреса) указаны в названных Договорах.",
                                    paragraph=par)
 
         par = self._add_paragraph_with_run(text='В соответствии с условиями Договоров в период, указанный в соответствующей графе вышеизложенной таблицы (далее – Период), Истец поставил Ответчику через присоединенную сеть в соответствии с Договорами тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС), а Ответчик, соответственно, обязан оплатить полученные ресурсы на основании указанных Договоров и установленных тарифов для соответствующих групп потребителей.')
 
         par = self._add_paragraph_with_run(text='За Ответчиком по названным Договорам образовалась задолженность за потребленные ресурсы (тепловую энергию и/или теплоноситель и горячую воду) в сумме ')
 
-        self._add_run_to_paragraph(text=f'{info_json['table_info']['all_debt']} ',
+        self._add_run_to_paragraph(text=f"{info_json['table_info']['all_debt']} ",
                                    paragraph=par,
                                    need_bold=True)
         
@@ -584,16 +584,16 @@ class LawsuitCreator:
         for contract_name, contract in contracts:
             row = table.add_row()
             row_cells = row.cells
-            self._put_text_into_table_cell(text=f'{contract_name}',
+            self._put_text_into_table_cell(text=f"{contract_name}",
                                        cell=row_cells[0],
                                        font_size=11,
                                        need_bold=True)
             
-            self._put_text_into_table_cell(text=f'{contract['contract_periods']}',
+            self._put_text_into_table_cell(text=f"{contract['contract_periods']}",
                                        cell=row_cells[1],
                                         font_size=11,)
             
-            self._put_text_into_table_cell(text=f'{contract['debt']}',
+            self._put_text_into_table_cell(text=f"{contract['debt']}",
                                        cell=row_cells[2],
                                        font_size=11,)
             
@@ -617,7 +617,7 @@ class LawsuitCreator:
                                        orient='right',
                                        need_bold=True)
         
-        self._put_text_into_table_cell(text=f'{info_json['table_info']['all_debt']}',
+        self._put_text_into_table_cell(text=f"{info_json['table_info']['all_debt']}",
                                        cell=result_row_cells[2],
                                        font_size=11,
                                        need_bold=True)

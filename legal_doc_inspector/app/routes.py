@@ -7,11 +7,6 @@ import zipfile
 from collections import defaultdict
 from datetime import date, datetime
 
-<<<<<<< HEAD
-# from legal_doc_inspector.doc_parser.contract_parser import ContractParser
-# from legal_doc_inspector.doc_parser.zip_parser import ZipParser
-# from legal_doc_inspector.doc_parser.claim_parser import ClaimParser
-=======
 from configs.config import AppConfig, load_yaml_config
 from .llm_functions import parse_contract, parse_zip, parse_claim
 from legal_doc_inspector.doc_parser.table_parser import TableParser 
@@ -22,7 +17,6 @@ from legal_doc_inspector.doc_parser.contract_parser import ContractParser
 from legal_doc_inspector.doc_parser.zip_parser import ZipParser
 from legal_doc_inspector.doc_parser.claim_parser import ClaimParser
 
->>>>>>> ec44a74 (enable neuro_models)
 from pathlib import Path
 
 import pandas as pd
@@ -43,7 +37,8 @@ from legal_doc_inspector.doc_creator.lawsuit_creator import LawsuitCreator
 from legal_doc_inspector.doc_creator.penalty_table_creator import PenaltyTableCreator
 from legal_doc_inspector.doc_parser.claim_parser import ClaimParser
 from legal_doc_inspector.doc_parser.contract_parser import ContractParser
-from legal_doc_inspector.doc_parser.html_parser import parse_html
+# from legal_doc_inspector.doc_parser.html_parser import parse_html
+from legal_doc_inspector.app.utils.parse_info_by_inn import parse_html
 
 # from .llm_functions import parse_contract, parse_zip, parse_claim
 # from .llm_functions import parse_contract, parse_zip, parse_claim
@@ -65,16 +60,16 @@ zip_parser = ZipParser(model, processor, emb_model, emb_tokenizer)
 contract_parser = ContractParser(model, processor)
 claim_parser = ClaimParser(model, processor)
 
-model = Qwen2_5OmniForConditionalGeneration.from_pretrained(
-    "Qwen/Qwen2.5-Omni-3B",
-    torch_dtype="auto",
-    device_map="auto",
-    enable_audio_output=False,
-)
-processor = Qwen2_5OmniProcessor.from_pretrained("Qwen/Qwen2.5-Omni-3B")
-zip_parser = ZipParser(model, processor)
-contract_parser = ContractParser(model, processor)
-claim_parser = ClaimParser(model, processor)
+# model = Qwen2_5OmniForConditionalGeneration.from_pretrained(
+#     "Qwen/Qwen2.5-Omni-3B",
+#     torch_dtype="auto",
+#     device_map="auto",
+#     enable_audio_output=False,
+# )
+# processor = Qwen2_5OmniProcessor.from_pretrained("Qwen/Qwen2.5-Omni-3B")
+# zip_parser = ZipParser(model, processor)
+# contract_parser = ContractParser(model, processor)
+# claim_parser = ClaimParser(model, processor)
 
 @app.route("/")
 def home():
@@ -138,7 +133,9 @@ def parse():
     # Претензия
     for i, claim_file in enumerate(uploaded_files["claim_file"]):
         plaintiff_inn, claim_number, claim_date = parse_claim(claim_file, claim_parser)
-        plaintiff_name, plaintiff_address, plaintiff_kpp, plaintiff_ogrn = parse_html(
+        plaintiff_inn = '7720518494'
+        print(f"parsed inn - {plaintiff_inn}")
+        plaintiff_full_name, plaintiff_short_name, plaintiff_address, plaintiff_kpp, plaintiff_ogrn = parse_html(
             plaintiff_inn
         )
 
@@ -146,10 +143,9 @@ def parse():
         pdf_pars_dict[f"claim_{i}"]["plaintiff_info"] = {}
         pdf_pars_dict[f"claim_{i}"]["claim_number"] = claim_number
         pdf_pars_dict[f"claim_{i}"]["claim_date"] = claim_date
-        pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_name"] = plaintiff_name
-        pdf_pars_dict[f"claim_{i}"]["plaintiff_info"][
-            "plaintiff_address"
-        ] = plaintiff_address
+        pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_full_name"] = plaintiff_full_name
+        pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_short_name"] = plaintiff_short_name
+        pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_address"] = plaintiff_address
         pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_inn"] = plaintiff_inn
         pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_kpp"] = plaintiff_kpp
         pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_ogrn"] = plaintiff_ogrn
@@ -178,12 +174,13 @@ def parse():
 
         result_dict_json.append(table_creator.convert_datetime_keys(table_creator.group_by_month(result_dict)))
         
+        claim_number = parsing_table_result['номер договора']
         contract_number, start_date, end_date, all_debt, all_penalty = table_creator.create_penalty_table_from_json(
                 name = Path(folder,'расчёт к иску.docx') ,
                 data=result_dict,
                 start_date=result_dict[0]['start'].strftime("%d.%m.%Y"),
                 end_date=date_request.strftime('%d.%m.%Y'),
-                contract_number=f'№ {parsing_table_result['номер договора']}',
+                contract_number=f'№ {claim_number}',
             )
         
         

@@ -9,7 +9,8 @@ from docx.enum.section import WD_ORIENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
-from .utils.month_to_decimal import month_year_to_decimal
+# from .utils.month_to_decimal import month_year_to_decimal
+from legal_doc_inspector.doc_creator.utils.month_to_decimal import month_year_to_decimal
 
 class PenaltyTableCreator:
     
@@ -88,7 +89,7 @@ class PenaltyTableCreator:
                                            cell=row_cells[0],
                                            need_bold=True)
             
-            self._put_text_into_table_cell(text=f'{self.contracts_info[contract_number]['contract_periods']}',
+            self._put_text_into_table_cell(text=f"{self.contracts_info[contract_number]['contract_periods']}",
                                            font_size=11,
                                            cell=row_cells[1])
             

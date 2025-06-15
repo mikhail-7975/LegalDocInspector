@@ -147,25 +147,25 @@ if st.session_state.form_data['flag']:
 
     
     st.markdown("### Данные об Истце")
-    plaintiff_info['full_name'] = st.text_input(label="Название Истца", value="Публичное акционерное общество «Московская объединенная энергетическая компания» ")
-    plaintiff_info['short_name'] = st.text_input(label="Название Истца(аббревиатура)", value="ПАО \"МОЭК\"")
-    plaintiff_info['addres'] = st.text_input(label="Адрес Истца", value=f'{plaintiff_info_parsed['plaintiff_address']}')
+    plaintiff_info['full_name'] = st.text_input(label="Название Истца", value=f"{plaintiff_info_parsed['plaintiff_full_name']}")
+    plaintiff_info['short_name'] = st.text_input(label="Название Истца(аббревиатура)", value=f"{plaintiff_info_parsed['plaintiff_short_name']}")
+    plaintiff_info['addres'] = st.text_input(label="Адрес Истца", value=f"{plaintiff_info_parsed['plaintiff_address']}")
     plaintiff_info['correspondency_addres'] = st.text_input(label='Адрес для направления корреспонденции', value="121596, г. Москва, ул. Горбунова, д. 2, стр. 3, офис В613 (МГКА «КДЗП»)")
     # эти данные надо парсить
-    plaintiff_info['inn'] = st.text_input(label='ИНН Истца', value=f'{plaintiff_info_parsed['plaintiff_inn']}')
-    plaintiff_info['ogrn'] = st.text_input(label='ОГРН Истца', value=f'{plaintiff_info_parsed['plaintiff_ogrn']}')
+    plaintiff_info['inn'] = st.text_input(label='ИНН Истца', value=f"{plaintiff_info_parsed['plaintiff_inn']}")
+    plaintiff_info['ogrn'] = st.text_input(label='ОГРН Истца', value=f"{plaintiff_info_parsed['plaintiff_ogrn']}")
 
 
     st.markdown("### Данные об ответчике")
     #все эти данные надо парсить
-    defendant_info['full_name'] = st.text_input(label="Название ответчика", value=f'{result['results_of_name_parser']['defendant_info']['full_name']}')
-    defendant_info['short_name'] = st.text_input(label="Название ответчика(аббревиатура)", value=f'{result['results_of_name_parser']['defendant_info']['short_name']}')
-    defendant_info['addres'] = st.text_input(label="Адрес ответчика", value=f'{result['results_of_name_parser']['defendant_info']['address']}')
-    defendant_info['inn'] = st.text_input(label="ИНН ответчика", value=f'{result['results_of_name_parser']['defendant_info']['inn']}')
-    defendant_info['ogrn'] = st.text_input(label="ОГРН ответчика", value=f'{result['results_of_name_parser']['defendant_info']['ogrn']}')
+    defendant_info['full_name'] = st.text_input(label="Название ответчика", value=f"{result['results_of_name_parser']['defendant_info']['full_name']}")
+    defendant_info['short_name'] = st.text_input(label="Название ответчика(аббревиатура)", value=f"{result['results_of_name_parser']['defendant_info']['short_name']}")
+    defendant_info['addres'] = st.text_input(label="Адрес ответчика", value=f"{result['results_of_name_parser']['defendant_info']['address']}")
+    defendant_info['inn'] = st.text_input(label="ИНН ответчика", value=f"{result['results_of_name_parser']['defendant_info']['inn']}")
+    defendant_info['ogrn'] = st.text_input(label="ОГРН ответчика", value=f"{result['results_of_name_parser']['defendant_info']['ogrn']}")
     
     st.markdown("### Данные о договоре")
-    lawsuit_info['cost'] = st.text_input(label="Цена иска", value=f'{result['contracts_info']['cost_of_lawsuit']} р.')
+    lawsuit_info['cost'] = st.text_input(label="Цена иска", value=f"{result['contracts_info']['cost_of_lawsuit']} р.")
     lawsuit_info['tax'] = st.text_input(label="Госпошлина", value=f'{1000} р.')
     lawsuit_info['last_day'] = st.text_input(label = "Срок оплаты", value=f'До {day_of_penalty} числа месяца, следующего за расчётным')
     
@@ -177,11 +177,12 @@ if st.session_state.form_data['flag']:
         if "claim" in key:
             claims.append(f"№ {result['result_of_llm_parsers'][key]['claim_number']} от {result['result_of_llm_parsers'][key]['claim_date']}")
 
-    st.markdown(f"### Данные об услуге, полученные из договоров\n {"\n".join(f" - {elem}" for elem in service_type_info)}")
+    st.markdown(f"### Данные об услуге, полученные из договоров")
+    st.markdown(f"{'___'.join(f' - {elem}' for elem in service_type_info)}")
     lawsuit_info['service_type'] = st.selectbox("Выберите вид услугии", ["ГВС + ТЭ", "ТЭ", "ГВС"])
 
     st.markdown(f'### Данные о претензиях')
-    st.markdown(f"номера и даты претензий\n {"\n".join(f"- {claim}" for claim in claims)}")
+    st.markdown(f"номера и даты претензий\n {'___'.join(f'- {claim}' for claim in claims)}")
     lawsuit_info['claims'] = claims 
     
     request_json = {}
