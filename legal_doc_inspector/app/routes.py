@@ -134,23 +134,23 @@ def parse():
     for i, claim_file in enumerate(uploaded_files["claim_file"]):
         plaintiff_inn, claim_number, claim_date = parse_claim(claim_file, claim_parser)
         plaintiff_inn = '7720518494'
-        print(f"parsed inn - {plaintiff_inn}")
-        plaintiff_full_name, plaintiff_short_name, plaintiff_address, plaintiff_kpp, plaintiff_ogrn = parse_html(
-            plaintiff_inn
-        )
+        # print(f"parsed inn - {plaintiff_inn}")
+        # plaintiff_full_name, plaintiff_short_name, plaintiff_address, plaintiff_kpp, plaintiff_ogrn = parse_html(
+        #     plaintiff_inn
+        # )
 
         pdf_pars_dict[f"claim_{i}"] = {}
         pdf_pars_dict[f"claim_{i}"]["plaintiff_info"] = {}
         pdf_pars_dict[f"claim_{i}"]["claim_number"] = claim_number
         pdf_pars_dict[f"claim_{i}"]["claim_date"] = claim_date
-        pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_full_name"] = plaintiff_full_name
-        pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_short_name"] = plaintiff_short_name
-        pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_address"] = plaintiff_address
+        # pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_full_name"] = plaintiff_full_name
+        # pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_short_name"] = plaintiff_short_name
+        # pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_address"] = plaintiff_address
         pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_inn"] = plaintiff_inn
-        pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_kpp"] = plaintiff_kpp
-        pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_ogrn"] = plaintiff_ogrn
-        # TODO   <- КАЙТЕН ЕБАТЬ:
-        # Получить все данные истца из API по инну
+        # pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_kpp"] = plaintiff_k
+        # pp
+        # pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_ogrn"] = plaintiff_ogrn
+        
 
     # парсинг таблиц и создание документа с расчётом к иску
     table_creator = PenaltyTableCreator()
@@ -266,15 +266,10 @@ def get_request_files(
                         file.save(path_to_archive)
                         with zipfile.ZipFile(path_to_archive, "r") as zip_ref:
                             for zip_info in zip_ref.infolist():
-                                try:
-                                    file_name = zip_info.filename.encode(
-                                        "cp437"
-                                    ).decode("utf-8")
-                                except UnicodeDecodeError:
-                                    file_name = zip_info.filename.encode(
-                                        "cp437"
-                                    ).decode("cp866")
-                                zip_info.filename = file_name
+                                raw_filename = zip_info.orig_filename
+                                print(raw_filename)
+                                # decoded_name = safe_decode_filename(raw_filename)
+                                # zip_info.filename = decoded_name
                                 zip_ref.extract(zip_info, archive_folder)
                     uploaded_files[dest_key].append(str(archive_folder))
     
@@ -291,3 +286,21 @@ def find_parent_dir_with_name(start_path: Path, target_name: str) -> Path | None
         if target_name in parent.name:
             return parent
     return None
+
+def safe_decode_filename(filename_bytes: str):
+    try:
+        return filename_bytes.decode('utf-8')
+    except UnicodeDecodeError:
+        pass
+
+    try:
+        return filename_bytes.decode('cp866') 
+    except UnicodeDecodeError:
+        pass
+
+    try:
+        return filename_bytes.decode('cp437')  
+    except UnicodeDecodeError:
+        pass
+
+    return filename_bytes.decode('utf-8', errors='replace')

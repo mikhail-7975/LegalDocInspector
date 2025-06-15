@@ -7,6 +7,7 @@ import streamlit as st
 import pandas as pd
 from docx import Document
 
+from legal_doc_inspector.app.utils.parse_info_by_inn import parse_html
 
 if 'form_data' not in st.session_state:
     st.session_state.form_data = {
@@ -18,7 +19,9 @@ if 'form_data' not in st.session_state:
         'claims': [],
         'result': {},
         'flag':False,
-        'flag2':False
+        'flag2':False,
+        'plaintiff_correct':True,
+        'plaintiff_uncorrect':False
     }
 
 
@@ -147,14 +150,40 @@ if st.session_state.form_data['flag']:
 
     
     st.markdown("### Данные об Истце")
-    plaintiff_info['full_name'] = st.text_input(label="Название Истца", value=f"{plaintiff_info_parsed['plaintiff_full_name']}")
-    plaintiff_info['short_name'] = st.text_input(label="Название Истца(аббревиатура)", value=f"{plaintiff_info_parsed['plaintiff_short_name']}")
-    plaintiff_info['addres'] = st.text_input(label="Адрес Истца", value=f"{plaintiff_info_parsed['plaintiff_address']}")
-    plaintiff_info['correspondency_addres'] = st.text_input(label='Адрес для направления корреспонденции', value="121596, г. Москва, ул. Горбунова, д. 2, стр. 3, офис В613 (МГКА «КДЗП»)")
-    # эти данные надо парсить
     plaintiff_info['inn'] = st.text_input(label='ИНН Истца', value=f"{plaintiff_info_parsed['plaintiff_inn']}")
-    plaintiff_info['ogrn'] = st.text_input(label='ОГРН Истца', value=f"{plaintiff_info_parsed['plaintiff_ogrn']}")
+    if st.session_state.form_data['plaintiff_correct']:
+        try:
+            plaintiff_full_name, plaintiff_short_name, plaintiff_address, plaintiff_kpp, plaintiff_ogrn = parse_html(plaintiff_info_parsed['plaintiff_inn'])
 
+            plaintiff_info['full_name'] = st.text_input(label="Название Истца", value=f"{plaintiff_full_name}", key="full_name_1")
+            plaintiff_info['short_name'] = st.text_input(label="Название Истца(аббревиатура)", value=f"{plaintiff_short_name}", key="short_name_1")
+            plaintiff_info['addres'] = st.text_input(label="Адрес Истца", value=f"{plaintiff_address}", key="addres_1")
+            plaintiff_info['correspondency_addres'] = st.text_input(label='Адрес для направления корреспонденции', value="121596, г. Москва, ул. Горбунова, д. 2, стр. 3, офис В613 (МГКА «КДЗП»)", key="cor_addr1")
+            plaintiff_info['ogrn'] = st.text_input(label='ОГРН Истца', value=f"{plaintiff_ogrn}", key="ogrn_1")
+        except Exception as e:
+            st.error(e)
+            st.session_state.form_data['plaintiff_correct'] = False
+            st.markdown("К сожалению, не получилось получить данные об истце, проверьте ИНН, пожалуйста")
+
+    if st.button(label="Обновить данные об истце") or st.session_state.form_data['plaintiff_uncorrect'] == True:
+        st.session_state.form_data['plaintiff_correct'] = False
+        try:
+            plaintiff_full_name, plaintiff_short_name, plaintiff_address, plaintiff_kpp, plaintiff_ogrn = parse_html(plaintiff_info['inn'])
+
+            plaintiff_info['full_name'] = st.text_input(label="Название Истца", value=f"{plaintiff_full_name}", key="full_name_2")
+            plaintiff_info['short_name'] = st.text_input(label="Название Истца(аббревиатура)", value=f"{plaintiff_short_name}", key="short_name_2")
+            plaintiff_info['addres'] = st.text_input(label="Адрес Истца", value=f"{plaintiff_address}", key="addr_2")
+            plaintiff_info['correspondency_addres'] = st.text_input(label='Адрес для направления корреспонденции', value="121596, г. Москва, ул. Горбунова, д. 2, стр. 3, офис В613 (МГКА «КДЗП»)", key="coraddr_2")
+            plaintiff_info['ogrn'] = st.text_input(label='ОГРН Истца', value=f"{plaintiff_ogrn}", key="ogrn_2")
+            if st.session_state.form_data['plaintiff_uncorrect'] ==False:
+                st.session_state.form_data['plaintiff_uncorrect'] = True
+                st.rerun()
+                
+            
+        except Exception as e:
+            st.error(e)
+            st.markdown("К сожалению, не получилось получить данные об истце, проверьте ИНН, пожалуйста")
+            
 
     st.markdown("### Данные об ответчике")
     #все эти данные надо парсить
@@ -164,7 +193,10 @@ if st.session_state.form_data['flag']:
     defendant_info['inn'] = st.text_input(label="ИНН ответчика", value=f"{result['results_of_name_parser']['defendant_info']['inn']}")
     defendant_info['ogrn'] = st.text_input(label="ОГРН ответчика", value=f"{result['results_of_name_parser']['defendant_info']['ogrn']}")
     
-    st.markdown("### Данные о договоре")
+    st.markdown("### Данные о договорах")
+    contracts = []
+    request_json = {}
+    
     lawsuit_info['cost'] = st.text_input(label="Цена иска", value=f"{result['contracts_info']['cost_of_lawsuit']} р.")
     lawsuit_info['tax'] = st.text_input(label="Госпошлина", value=f'{1000} р.')
     lawsuit_info['last_day'] = st.text_input(label = "Срок оплаты", value=f'До {day_of_penalty} числа месяца, следующего за расчётным')
@@ -182,10 +214,18 @@ if st.session_state.form_data['flag']:
     lawsuit_info['service_type'] = st.selectbox("Выберите вид услугии", ["ГВС + ТЭ", "ТЭ", "ГВС"])
 
     st.markdown(f'### Данные о претензиях')
-    st.markdown(f"номера и даты претензий\n {'___'.join(f'- {claim}' for claim in claims)}")
-    lawsuit_info['claims'] = claims 
+    claims_edit = []
+    # st.markdown(f"номера и даты претензий\n {'___'.join(f'- {claim}' for claim in claims)}")
+    for i, claim in enumerate(claims):
+        new_value = st.text_input(
+            label=f"Претензия #{i + 1}",
+            value=claim,
+            key=f"claim_{i}"
+        )
+        claims_edit.append(new_value)
+    st.session_state.form_data['claims'] = claims_edit
+    lawsuit_info['claims'] = st.session_state.form_data['claims']
     
-    request_json = {}
 
     request_json['table_info'] = result['contracts_info']
     request_json['court_info'] = court_info
