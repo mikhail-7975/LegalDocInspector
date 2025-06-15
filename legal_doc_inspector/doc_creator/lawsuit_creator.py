@@ -158,7 +158,7 @@ class LawsuitCreator:
                                      need_bold=True,
                                      orient='center')
         
-        par1 = self._add_paragraph_with_run(text="1.    Взыскать",
+        par1 = self._add_paragraph_with_run(text="1.    Взыскать ",
                                             need_bold=True)
 
         
@@ -181,7 +181,7 @@ class LawsuitCreator:
 
         self._add_list_of_payments(info_json)
 
-        par1 = self._add_paragraph_with_run(text="2.    Взыскать",
+        par1 = self._add_paragraph_with_run(text="2.    Взыскать ",
                                             need_bold=True)
 
         
@@ -408,7 +408,7 @@ class LawsuitCreator:
                                            first_line_indent=0)
 
     def create_first_part_of_lawsuit(self, info_json):
-        self._add_paragraph_with_run(text="\n2.  Соблюдение претензионного порядка.\n",
+        self._add_paragraph_with_run(text="\n1.  Основной долг.\n",
                                      need_bold=True)
         
         par = self._add_paragraph_with_run(text='Между организацией ')
