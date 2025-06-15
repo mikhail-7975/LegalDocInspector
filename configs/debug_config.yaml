@@ -1,2 +1,2 @@
-save_data_folder : /tmp
+save_data_folder : data
 debug : True
