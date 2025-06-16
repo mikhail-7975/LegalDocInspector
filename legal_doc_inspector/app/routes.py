@@ -6,6 +6,7 @@ import tempfile
 import zipfile
 from collections import defaultdict
 from datetime import date, datetime
+from pathlib import Path
 
 from configs.config import AppConfig, load_yaml_config
 from .llm_functions import parse_contract, parse_zip, parse_claim
@@ -37,11 +38,9 @@ from legal_doc_inspector.doc_creator.lawsuit_creator import LawsuitCreator
 from legal_doc_inspector.doc_creator.penalty_table_creator import PenaltyTableCreator
 from legal_doc_inspector.doc_parser.claim_parser import ClaimParser
 from legal_doc_inspector.doc_parser.contract_parser import ContractParser
-# from legal_doc_inspector.doc_parser.html_parser import parse_html
+from legal_doc_inspector.doc_parser.html_parser import parse_html
 from legal_doc_inspector.app.utils.parse_info_by_inn import parse_html
 
-# from .llm_functions import parse_contract, parse_zip, parse_claim
-# from .llm_functions import parse_contract, parse_zip, parse_claim
 from legal_doc_inspector.doc_parser.table_parser import TableParser
 from legal_doc_inspector.doc_parser.zip_parser import ZipParser
 from legal_doc_inspector.penalty_calculator.penalty_calculator import Penalty_calculator
@@ -120,10 +119,11 @@ def parse():
 
     # Договор
     for i, contract_file in enumerate(uploaded_files["contract_file"]):
-        service_type, overdue_date = parse_contract(contract_file, contract_parser)
-        pdf_pars_dict[f"contract_{i}"] = {}
-        pdf_pars_dict[f"contract_{i}"]["service_type"] = service_type
-        pdf_pars_dict[f"contract_{i}"]["overdue_date"] = overdue_date
+        
+        contract_number, service_type, overdue_date = parse_contract(contract_file, contract_parser)
+        pdf_pars_dict[f"contract_{contract_number}"] = {}
+        pdf_pars_dict[f"contract_{contract_number}"]["service_type"] = service_type
+        pdf_pars_dict[f"contract_{contract_number}"]["overdue_date"] = overdue_date
 
     # Zip архив
     for i, folder in enumerate(uploaded_files["zip_file"]):
@@ -133,23 +133,23 @@ def parse():
     # Претензия
     for i, claim_file in enumerate(uploaded_files["claim_file"]):
         plaintiff_inn, claim_number, claim_date = parse_claim(claim_file, claim_parser)
-        plaintiff_inn = '7720518494'
+        
+        #plaintiff_inn = '7720518494'
         # print(f"parsed inn - {plaintiff_inn}")
-        # plaintiff_full_name, plaintiff_short_name, plaintiff_address, plaintiff_kpp, plaintiff_ogrn = parse_html(
-        #     plaintiff_inn
-        # )
+        plaintiff_full_name, plaintiff_short_name, plaintiff_address, plaintiff_kpp, plaintiff_ogrn = parse_html(
+            plaintiff_inn
+        )
 
         pdf_pars_dict[f"claim_{i}"] = {}
         pdf_pars_dict[f"claim_{i}"]["plaintiff_info"] = {}
         pdf_pars_dict[f"claim_{i}"]["claim_number"] = claim_number
         pdf_pars_dict[f"claim_{i}"]["claim_date"] = claim_date
-        # pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_full_name"] = plaintiff_full_name
-        # pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_short_name"] = plaintiff_short_name
-        # pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_address"] = plaintiff_address
+        pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_full_name"] = plaintiff_full_name
+        pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_short_name"] = plaintiff_short_name
+        pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_address"] = plaintiff_address
         pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_inn"] = plaintiff_inn
-        # pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_kpp"] = plaintiff_k
-        # pp
-        # pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_ogrn"] = plaintiff_ogrn
+        pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_kpp"] = plaintiff_kpp
+        pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_ogrn"] = plaintiff_ogrn
         
 
     # парсинг таблиц и создание документа с расчётом к иску
@@ -267,9 +267,8 @@ def get_request_files(
                         with zipfile.ZipFile(path_to_archive, "r") as zip_ref:
                             for zip_info in zip_ref.infolist():
                                 raw_filename = zip_info.orig_filename
-                                print(raw_filename)
-                                # decoded_name = safe_decode_filename(raw_filename)
-                                # zip_info.filename = decoded_name
+                                decoded_name = safe_decode_filename(raw_filename)
+                                zip_info.filename = decoded_name
                                 zip_ref.extract(zip_info, archive_folder)
                     uploaded_files[dest_key].append(str(archive_folder))
     
@@ -289,18 +288,23 @@ def find_parent_dir_with_name(start_path: Path, target_name: str) -> Path | None
 
 def safe_decode_filename(filename_bytes: str):
     try:
-        return filename_bytes.decode('utf-8')
+        return filename_bytes.encode('cp437').decode('utf-8')
     except UnicodeDecodeError:
         pass
 
     try:
-        return filename_bytes.decode('cp866') 
+        return filename_bytes.encode('cp437').decode('cp866') 
     except UnicodeDecodeError:
         pass
 
     try:
-        return filename_bytes.decode('cp437')  
+        return filename_bytes.encode('cp437').decode('cp437')  
     except UnicodeDecodeError:
         pass
 
-    return filename_bytes.decode('utf-8', errors='replace')
+    try:
+        return filename_bytes.encode('cp437').decode('cp1251')  
+    except UnicodeDecodeError:
+        pass
+
+    return filename_bytes.encode('cp437').decode('utf-8', errors='replace')
