@@ -136,20 +136,20 @@ def parse():
         
         #plaintiff_inn = '7720518494'
         # print(f"parsed inn - {plaintiff_inn}")
-        plaintiff_full_name, plaintiff_short_name, plaintiff_address, plaintiff_kpp, plaintiff_ogrn = parse_html(
-            plaintiff_inn
-        )
+        # plaintiff_full_name, plaintiff_short_name, plaintiff_address, plaintiff_kpp, plaintiff_ogrn = parse_html(
+        #     plaintiff_inn
+        # )
 
         pdf_pars_dict[f"claim_{i}"] = {}
         pdf_pars_dict[f"claim_{i}"]["plaintiff_info"] = {}
         pdf_pars_dict[f"claim_{i}"]["claim_number"] = claim_number
         pdf_pars_dict[f"claim_{i}"]["claim_date"] = claim_date
-        pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_full_name"] = plaintiff_full_name
-        pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_short_name"] = plaintiff_short_name
-        pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_address"] = plaintiff_address
+        # pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_full_name"] = plaintiff_full_name
+        # pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_short_name"] = plaintiff_short_name
+        # pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_address"] = plaintiff_address
         pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_inn"] = plaintiff_inn
-        pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_kpp"] = plaintiff_kpp
-        pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_ogrn"] = plaintiff_ogrn
+        # pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_kpp"] = plaintiff_kpp
+        # pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_ogrn"] = plaintiff_ogrn
         
 
     # парсинг таблиц и создание документа с расчётом к иску
@@ -286,7 +286,38 @@ def find_parent_dir_with_name(start_path: Path, target_name: str) -> Path | None
             return parent
     return None
 
-def safe_decode_filename(filename_bytes: str):
+# def safe_decode_filename(filename_bytes: str): Linux
+#     try: 
+#         return filename_bytes.encode('utf-8').decode('utf-8')
+#     except UnicodeDecodeError:
+#         pass
+#     except UnicodeEncodeError:
+#         pass
+#     try:
+#         return filename_bytes.encode('utf-8').decode('cp866') 
+#     except UnicodeDecodeError:
+#         pass
+
+#     except UnicodeEncodeError:
+#         pass
+
+#     try:
+#         return filename_bytes.encode('utf-8').decode('cp437')  
+#     except UnicodeDecodeError:
+#         pass
+#     except UnicodeEncodeError:
+#         pass
+
+#     try:
+#         return filename_bytes.encode('utf-8').decode('cp1251')  
+#     except UnicodeDecodeError:
+#         pass
+#     except UnicodeEncodeError:
+#         pass
+
+#     return filename_bytes.encode('utf-8').decode('utf-8', errors='replace')
+
+def safe_decode_filename(filename_bytes: str): # Windows
     try:
         return filename_bytes.encode('cp437').decode('utf-8')
     except UnicodeDecodeError:

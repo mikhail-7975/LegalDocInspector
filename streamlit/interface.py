@@ -9,6 +9,7 @@ import pandas as pd
 from docx import Document
 
 from legal_doc_inspector.app.utils.parse_info_by_inn import parse_html
+from legal_doc_inspector.app.utils.calculate_tax import calculate_state_duty
 
 if 'form_data' not in st.session_state:
     st.session_state.form_data = {
@@ -132,7 +133,7 @@ if st.session_state.form_data['flag']:
 
     st.success("Файл успешно обработан!")
     st.text("Результат обработки документов")
-    st.json(result)
+    # st.json(result)
 
     st.markdown("## Заполение информации для генерациии иска (поля которые будут далее, можно отредактировать)")
 
@@ -202,7 +203,7 @@ if st.session_state.form_data['flag']:
     request_json = {}
     
     lawsuit_info['cost'] = st.text_input(label="Цена иска", value=f"{result['contracts_info']['cost_of_lawsuit']} р.", on_change= on_change_handler)
-    lawsuit_info['tax'] = st.text_input(label="Госпошлина", value=f'{1000} р.' , on_change= on_change_handler)
+    lawsuit_info['tax'] = st.text_input(label="Госпошлина", value=f"{calculate_state_duty(result['contracts_info']['cost_of_lawsuit'])} р." , on_change= on_change_handler)
     lawsuit_info['last_day'] = st.text_input(label = "Срок оплаты", value=f'До {day_of_penalty} числа месяца, следующего за расчётным', on_change= on_change_handler)
     
     service_type_info = []
@@ -247,8 +248,19 @@ if st.session_state.form_data['flag']:
         )
         applications_edit[f"{Path(application_path).name}"] = new_value
     st.session_state.form_data['applications_info'] = applications_edit
+    person_info = {}
+    st.markdown("### Данные об ответственном лице")
+    col3, col4 = st.columns(2)
+
+    with col3:
+        person_info['vacancy'] = st.text_input(label = "Должность", value=f'Представитель ПАО «МОЭК» по доверенности', on_change= on_change_handler)
+
+    with col4:
+        person_info['name'] = st.text_input(label = "ФИО", value=f'Самошкина А.Е.', on_change= on_change_handler)
 
 
+
+    request_json['person_info'] = person_info
     request_json['applications_info'] = st.session_state.form_data['applications_info']
     request_json['table_info'] = result['contracts_info']
     request_json['court_info'] = court_info

@@ -27,6 +27,7 @@ class LawsuitCreator:
         self.create_third_part_of_lawsuit(info_json=info_json)
         self.create_court_asking(info_json=info_json)
         self.create_applications(info_json=info_json)
+        self.create_person_info(info_json=info_json)
         self._save_doc(str(path_to_save))
 
         return str(path_to_save.resolve())
@@ -152,6 +153,17 @@ class LawsuitCreator:
                                    paragraph=par,
                                    need_bold=True)
     
+    def create_person_info(self,info_json):
+        self.doc.add_paragraph(text="\n\n")
+        table = self.doc.add_table(rows = 1, cols=3)
+        table_cells = table.rows[0].cells
+        self._put_text_into_table_cell(text=f"{info_json['person_info']['vacancy']}",
+                                       orient='left',
+                                       cell=table_cells[0])
+        
+        self._put_text_into_table_cell(text = f"{info_json['person_info']['name']}",
+                                       cell=table_cells[2])
+
     def create_court_asking(self, info_json):
 
         self._add_paragraph_with_run(text="\nПРОСИМ СУД\n",
@@ -238,7 +250,7 @@ class LawsuitCreator:
 
 
     def create_applications(self, info_json):
-        par = self._add_paragraph_with_run("Приложения:",
+        par = self._add_paragraph_with_run("Приложения:\n",
                                            first_line_indent=0,
                                            left_indent=1,
                                            need_bold=True)
@@ -246,6 +258,7 @@ class LawsuitCreator:
         for key, value in info_json['applications_info'].items():
             self._add_run_to_paragraph(text=f"{number}) {value}.\n",
                                        paragraph=par)
+            number+=1
         
 
     def create_third_part_of_lawsuit(self, info_json):
