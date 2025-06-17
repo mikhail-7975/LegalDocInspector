@@ -9,11 +9,15 @@ from docx.enum.section import WD_ORIENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
+# from .utils.month_to_decimal import month_year_to_decimal
+from legal_doc_inspector.doc_creator.utils.month_to_decimal import month_year_to_decimal
+
 class PenaltyTableCreator:
     
     def __init__(self):
         self.doc = Document()
         self._create_document_title()
+        self.contracts_info = defaultdict(lambda : {})
 
 
     def save_doc(self, path_to_save:Path):
@@ -43,7 +47,7 @@ class PenaltyTableCreator:
         rFonts.set(qn('w:cs'), 'Times New Roman')
         run.font.size = Pt(12)
         paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-
+        result_json_part = defaultdict(lambda : {})
         table = self.doc.add_table(rows=1, cols=5)
         table.style = "Table Grid"
         title_row_cells = table.rows[0].cells
@@ -75,7 +79,8 @@ class PenaltyTableCreator:
         all_penalty = 0
 
         for contract_number, start_date, end_date, debt, penalty in list_of_tables_info:
-
+            
+            self.contracts_info[contract_number]['penalty_period'] = f'{start_date} по {end_date}'
             row = table.add_row()
             row_cells = row.cells
 
@@ -84,7 +89,7 @@ class PenaltyTableCreator:
                                            cell=row_cells[0],
                                            need_bold=True)
             
-            self._put_text_into_table_cell(text=f'{start_date}-{end_date}',
+            self._put_text_into_table_cell(text=f"{self.contracts_info[contract_number]['contract_periods']}",
                                            font_size=11,
                                            cell=row_cells[1])
             
@@ -100,6 +105,10 @@ class PenaltyTableCreator:
                                            cell=row_cells[4],
                                            font_size=11)
             
+            self.contracts_info[contract_number]['debt'] = self.format_float_to_currency(debt)
+            self.contracts_info[contract_number]['penalty'] = self.format_float_to_currency(penalty)
+            self.contracts_info[contract_number]['debt_penalty'] = self.format_float_to_currency(float(debt) + float(penalty))
+
             all_debt+=float(debt)
             all_penalty+=float(penalty)
 
@@ -131,6 +140,11 @@ class PenaltyTableCreator:
                                        cell=result_row_cells[4])
 
         self.save_doc(name)
+        self.contracts_info['all_debt'] = self.format_float_to_currency(all_debt)
+        self.contracts_info['all_penalty'] = self.format_float_to_currency(all_penalty)
+        self.contracts_info['cost_of_lawsuit'] = self.format_float_to_currency(float(all_debt) + float(all_penalty))
+
+        return str(name.resolve()), self.contracts_info
 
     def _create_document_title(self):
 
@@ -382,8 +396,10 @@ class PenaltyTableCreator:
         """
         all_debt = 0
         all_penalty = 0
+        months = []
         for month_dict in list_dict_of_months:
             month_key, periods_and_payments  = next(iter(month_dict.items()))
+            months.append(month_key)
             new_rows_for_month = []
             itogo = 0
             last_month_debt = 0
@@ -491,10 +507,12 @@ class PenaltyTableCreator:
 
             self._apply_width_for_column(table.columns[9], 5)
             self._apply_width_for_column(table.columns[2], 0.7)
+            
 
             all_penalty+=itogo
             all_debt += last_month_debt
 
+        self.contracts_info[contract_number]['contract_periods'] = (f'{month_year_to_decimal(months[0])}-{month_year_to_decimal(months[-1])}')
         first_row = table.add_row()
         second_row = table.add_row()
         self._apply_height_for_row(first_row, 0.65)
