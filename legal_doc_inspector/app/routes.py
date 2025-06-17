@@ -286,42 +286,44 @@ def find_parent_dir_with_name(start_path: Path, target_name: str) -> Path | None
             return parent
     return None
 
-# def safe_decode_filename(filename_bytes: str): Linux
-#     try: 
-#         return filename_bytes.encode('utf-8').decode('utf-8')
-#     except UnicodeDecodeError:
-#         pass
-#     except UnicodeEncodeError:
-#         pass
-#     try:
-#         return filename_bytes.encode('utf-8').decode('cp866') 
-#     except UnicodeDecodeError:
-#         pass
+def safe_decode_filename_linux(filename_bytes: str): # Linux
+    try: 
+        return filename_bytes.encode('utf-8').decode('utf-8')
+    except UnicodeDecodeError:
+        pass
+    except UnicodeEncodeError:
+        pass
+    try:
+        return filename_bytes.encode('utf-8').decode('cp866') 
+    except UnicodeDecodeError:
+        pass
 
-#     except UnicodeEncodeError:
-#         pass
+    except UnicodeEncodeError:
+        pass
 
-#     try:
-#         return filename_bytes.encode('utf-8').decode('cp437')  
-#     except UnicodeDecodeError:
-#         pass
-#     except UnicodeEncodeError:
-#         pass
+    try:
+        return filename_bytes.encode('utf-8').decode('cp437')  
+    except UnicodeDecodeError:
+        pass
+    except UnicodeEncodeError:
+        pass
 
-#     try:
-#         return filename_bytes.encode('utf-8').decode('cp1251')  
-#     except UnicodeDecodeError:
-#         pass
-#     except UnicodeEncodeError:
-#         pass
+    try:
+        return filename_bytes.encode('utf-8').decode('cp1251')  
+    except UnicodeDecodeError:
+        pass
+    except UnicodeEncodeError:
+        pass
 
-#     return filename_bytes.encode('utf-8').decode('utf-8', errors='replace')
+    return filename_bytes.encode('utf-8').decode('utf-8', errors='replace')
 
 def safe_decode_filename(filename_bytes: str): # Windows
     try:
         return filename_bytes.encode('cp437').decode('utf-8')
     except UnicodeDecodeError:
         pass
+    except UnicodeEncodeError:
+        return safe_decode_filename_linux(filename_bytes)
 
     try:
         return filename_bytes.encode('cp437').decode('cp866') 
