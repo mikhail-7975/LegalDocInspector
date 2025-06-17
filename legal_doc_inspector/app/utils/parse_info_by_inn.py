@@ -1,5 +1,5 @@
 import requests
-
+import re
 from bs4 import BeautifulSoup
 
 def parse_html(inn):
@@ -10,4 +10,8 @@ def parse_html(inn):
     ogrn = soup.find('span', {'id': 'ogrn'}).text.strip()
     short_name = soup.find('h1', {'id': 'short_name'}).text.strip()
     full_name = soup.find('h2', {'id': 'full_name'}).text.strip()
-    return full_name, short_name, address, kpp, ogrn
+    return replace_quotes(full_name), replace_quotes(short_name), address, kpp, ogrn
+
+def replace_quotes(text:str):
+    text = re.sub(r'"([^"]*)"', r'«\1»', text)
+    return text
