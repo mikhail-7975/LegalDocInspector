@@ -132,11 +132,12 @@ if st.session_state.form_data['flag']:
     
 
     st.success("Файл успешно обработан!")
-    st.text("Результат обработки документов")
+    # st.text("Результат обработки документов")
     # st.json(result)
 
     st.markdown("## Заполение информации для генерациии иска (поля которые будут далее, можно отредактировать)")
 
+    st.success("Пожалуйста, внимательно проверьте все пункты!")
     for key, value in result['result_of_llm_parsers'].items():
         if "claim" in key:
             plaintiff_info_parsed = value['plaintiff_info']
