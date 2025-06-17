@@ -1,3 +1,5 @@
+import math
+
 def calculate_state_duty(amount_str: str):
     rubles, kopecks = amount_str.replace(' ','').split(',')
     total_rubles = int(rubles) + int(kopecks) / 100
@@ -30,4 +32,6 @@ def calculate_state_duty(amount_str: str):
             formatted = ' ' + formatted
         formatted = digit + formatted
 
-    return f"{formatted},{kopecks:02d}"
+    text = math.ceil(float(f"{formatted}.{kopecks}"))
+    
+    return f"{text},00"
