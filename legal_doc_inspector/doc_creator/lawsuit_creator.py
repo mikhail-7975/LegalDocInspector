@@ -13,12 +13,85 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement, ns
 
+nbsp_replacements = {
+    "каб ": "каб\u00a0",
+    "ул. ": "ул.\u00a0",
+    "д. ": "д.\u00a0",
+    "к. ": "к.\u00a0",
+    "стр. ": "стр.\u00a0",
+    "помещ. ": "помещ.\u00a0",
+    "г. ": "г.\u00a0",
+    "ОГРН ": "ОГРН\u00a0",
+    "ИНН ": "ИНН\u00a0",
+    "офис " :"офис\u00a0",
+    "аал ": "аал\u00a0",
+    "аллея ": "аллея\u00a0",
+    "аул ": "аул\u00a0",
+    "б-р ": "б-р\u00a0",
+    "версаль ": "версаль\u00a0",
+    "высел ": "высел\u00a0",
+    "городок ": "городок\u00a0",
+    "д ": "д\u00a0",
+    "дор ": "дор\u00a0",
+    "ж/д_будка ": "ж/д_будка\u00a0",
+    "ж/д_казарм ": "ж/д_казарм\u00a0",
+    "ж/д_ст ": "ж/д_ст\u00a0",
+    "ж/д_пост ": "ж/д_пост\u00a0",
+    "ж/д_рзд ": "ж/д_рзд\u00a0",
+    "ж/д_оп ": "ж/д_оп\u00a0",
+    "заезд ": "заезд\u00a0",
+    "казарма ": "казарма\u00a0",
+    "кв-л ": "кв-л\u00a0",
+    "км ": "км\u00a0",
+    "кольцо ": "кольцо\u00a0",
+    "линия ": "линия\u00a0",
+    "м ": "м\u00a0",
+    "мкр ": "мкр\u00a0",
+    "наб ": "наб\u00a0",
+    "нп ": "нп\u00a0",
+    "остров ": "остров\u00a0",
+    "парк ": "парк\u00a0",
+    "переезд ": "переезд\u00a0",
+    "пер ": "пер\u00a0",
+    "пл-ка ": "пл-ка\u00a0",
+    "пл ": "пл\u00a0",
+    "платф ": "платф\u00a0",
+    "полустанок ": "полустанок\u00a0",
+    "п/ст ": "п/ст\u00a0",
+    "п ": "п\u00a0",
+    "починок ": "починок\u00a0",
+    "п/о ": "п/о\u00a0",
+    "п/р ": "п/р\u00a0",
+    "просек ": "просек\u00a0",
+    "проселок ": "проселок\u00a0",
+    "пр-кт ": "пр-кт\u00a0",
+    "проезд ": "проезд\u00a0",
+    "проулок ": "проулок\u00a0",
+    "рзд ": "рзд\u00a0",
+    "с ": "с\u00a0",
+    "сад ": "сад\u00a0",
+    "сквер ": "сквер\u00a0",
+    "сл ": "сл\u00a0",
+    "ст ": "ст\u00a0",
+    "стр ": "стр\u00a0",
+    "тер ": "тер\u00a0",
+    "тракт ": "тракт\u00a0",
+    "туп ": "туп\u00a0",
+    "ул ": "ул\u00a0",
+    "уч-к ": "уч-к\u00a0",
+    "х ": "х\u00a0",
+    "ш ": "ш\u00a0"
+}
 
 class LawsuitCreator:
 
     def __init__(self, data_json:dict):
         self.doc = docx.Document()
         self.data_json = data_json
+
+        sections = self.doc.sections[0]
+        sections.header_distance = Cm(1.25)
+        sections.footer_distance = Cm(0.5)
 
     def create_lawsuit(self, info_json, path_to_save:Path):
         self._create_title(info_json=info_json)
@@ -40,12 +113,8 @@ class LawsuitCreator:
         table = self.doc.add_table(rows=7, cols=2)
         table.style = "Normal Table"
         table_rows = table.rows
-        self.set_table_width(table, 17)
-        for row in table.rows:
-            row.height_rule = WD_ROW_HEIGHT_RULE.AT_LEAST
-
-
-        self._put_text_into_table_cell(text="В",
+        self.set_table_width(table,16.5)
+        self._put_text_into_table_cell(text="В",    
                                        cell=table_rows[0].cells[0],
                                        orient='right',
                                        need_bold=True,
@@ -56,7 +125,7 @@ class LawsuitCreator:
                                        orient='left',
                                        need_bold=True)
         
-        self._put_text_into_table_cell(text=f"{info_json['court_info']['addres']}",
+        self._put_text_into_table_cell(text=f"{self.add_nbsp_to_addr(info_json['court_info']['addres'])}",
                                        cell=table_rows[0].cells[1],
                                        orient='left')
         
@@ -84,10 +153,10 @@ class LawsuitCreator:
                                        need_bold=True,
                                        need_vertical_orient=False)
         
-        self._put_text_into_table_cell(text=f"{info_json['plaintiff_info']['addres']}",
+        self._put_text_into_table_cell(text=f"{self.add_nbsp_to_addr(info_json['plaintiff_info']['addres'])}",
                                        cell=table_rows[2].cells[1],
                                        orient='left',
-                                       need_bold=True)
+                                       need_bold=False)
         
         self._put_text_into_table_cell(text="Адрес для направления корреспонденции:",
                                        cell=table_rows[3].cells[0],
@@ -96,10 +165,10 @@ class LawsuitCreator:
                                        need_underline=True,
                                        need_vertical_orient=False)
         
-        self._put_text_into_table_cell(text=f"{info_json['plaintiff_info']['correspondency_addres']}",
+        self._put_text_into_table_cell(text=f"{self.add_nbsp_to_addr(info_json['plaintiff_info']['correspondency_addres'])}",
                                        cell=table_rows[3].cells[1],
                                        orient='left',
-                                       need_bold=True)
+                                       need_bold=False)
 
         self._put_text_into_table_cell(text="Ответчик:",
                                        cell=table_rows[4].cells[0],
@@ -118,10 +187,10 @@ class LawsuitCreator:
                                        need_bold=True,
                                        need_vertical_orient=False)
 
-        self._put_text_into_table_cell(text=f"{info_json['defendant_info']['addres']}",
+        self._put_text_into_table_cell(text=f"{self.add_nbsp_to_addr(info_json['defendant_info']['addres'])}",
                                        cell=table_rows[5].cells[1],
                                        orient='left',
-                                       need_bold=True)
+                                       need_bold=False)
         
         self._put_text_into_table_cell(text=f"(ОГРН {info_json['defendant_info']['ogrn']}, ИНН {info_json['defendant_info']['inn']})",
                                        cell=table_rows[4].cells[1],
@@ -141,7 +210,14 @@ class LawsuitCreator:
                                        need_bold=True,
                                        need_vertical_orient=False)
         
+        max_len = 0
+        for row_cells in table.columns[1].cells:
+            max_len = max(len(row_cells.text),max_len)
+
         
+        self.set_table_column_width(table.columns[0], 6)
+        
+         
 
         par = self._add_paragraph_with_run(text="\nИСКОВОЕ ЗАЯВЛЕНИЕ\n",
                                            need_bold=True,
@@ -175,10 +251,10 @@ class LawsuitCreator:
 
         
 
-        self._add_run_to_paragraph(text=f"с Организации \"{info_json['defendant_info']['full_name']}\" (ИНН {info_json['defendant_info']['inn']} ОГРН {info_json['defendant_info']['ogrn']}) ",
+        self._add_run_to_paragraph(text=f"с Ответчика {info_json['defendant_info']['short_name']} (ИНН {info_json['defendant_info']['inn']} ОГРН {info_json['defendant_info']['ogrn']}) ",
                                    paragraph=par1)
         
-        self._add_run_to_paragraph(text=f"в пользу Организации \"{info_json['plaintiff_info']['full_name']}\" (ИНН {info_json['plaintiff_info']['inn']} ОГРН {info_json['plaintiff_info']['ogrn']}) ",
+        self._add_run_to_paragraph(text=f"в пользу Истца {info_json['plaintiff_info']['short_name']} (ИНН {info_json['plaintiff_info']['inn']} ОГРН {info_json['plaintiff_info']['ogrn']}) ",
                                    paragraph=par1)
         
         self._add_run_to_paragraph(text='задолженность (основной долг) и неустойку по Договорам в общем размере ',
@@ -821,3 +897,14 @@ class LawsuitCreator:
 
         # Добавляем новое
         tbl_pr.append(tbl_w)
+
+    def set_table_column_width(self, table_column:_Column, size:float):
+        table_column.width = Cm(size)
+
+    
+    def add_nbsp_to_addr(self, text:str):
+        for key, value in nbsp_replacements.items():
+            if key in text:
+                text = text.replace(key, value)
+
+        return text
