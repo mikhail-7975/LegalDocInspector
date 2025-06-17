@@ -219,6 +219,8 @@ def create_doc():
     request_json = request.json
     lawsuit_creator = LawsuitCreator(dict())
     path_to_save = find_parent_dir_with_name(Path(request_json['files_info']['lawsuit_calculating']),'documents_from_request')
+    with open(Path(path_to_save,'lawsuit_create.json'), "w", encoding='utf-8') as f:
+        json.dump(request_json, f , indent=4, ensure_ascii=False)
     file = lawsuit_creator.create_lawsuit(request_json, Path(path_to_save,'ИСК.docx'))
     print(file)
     return send_file(file, as_attachment=True), 200
