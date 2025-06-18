@@ -140,7 +140,7 @@ if st.session_state.form_data['flag']:
 
     st.success("Файл успешно обработан!")
     # st.text("Результат обработки документов")
-    # st.json(result)
+    st.json(result)
 
     st.markdown("## Заполение информации для генерациии иска (поля которые будут далее, можно отредактировать)")
 
@@ -380,7 +380,8 @@ if st.session_state.form_data['flag']:
     request_json['lawsuit_info'] = lawsuit_info
     request_json['files_info'] = result['files_table']
     request_json['table_info'] = result['contracts_info']
-
+    request_json['results_of_data_saving'] = result['results_of_data_saving']
+    request_json['parsing_table_result'] = result['parsing_table_result']
 
     st.markdown(f"### подтверждение данных")
     if st.button(label="Нажмите, чтобы подтвердить правильность данных"):
