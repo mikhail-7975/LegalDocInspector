@@ -94,6 +94,8 @@ class LawsuitCreator:
         sections.footer_distance = Cm(0.5)
 
     def create_lawsuit(self, info_json, path_to_save:Path):
+        self.contracts = info_json['contracts_info']
+        self.applications = info_json['applications_info']
         self._create_title(info_json=info_json)
         self.create_first_part_of_lawsuit(info_json=info_json)
         self.create_second_part_of_lawsuit(info_json=info_json)
@@ -291,12 +293,9 @@ class LawsuitCreator:
 
     
     def _add_list_of_payments(self,info_json):
-        contracts = []
-        for key, value in info_json['table_info'].items():
-            if '№' in key:
-                contracts.append((key, info_json['table_info'][key]))
+        
 
-        for contract_name, contract in contracts:
+        for uid, contract_name, contract in self.contracts:
             par = self.doc.add_paragraph(style='List Bullet')
             par.paragraph_format.left_indent = Cm(2)
             self._add_run_to_paragraph(text=f"по Договору {contract_name}:\n",
@@ -331,7 +330,7 @@ class LawsuitCreator:
                                            left_indent=1,
                                            need_bold=True)
         number = 1
-        for key, value in info_json['applications_info'].items():
+        for uid, path, value in self.applications:
             self._add_run_to_paragraph(text=f"{number}) {value}.\n",
                                        paragraph=par)
             number+=1
@@ -425,12 +424,9 @@ class LawsuitCreator:
                                        cell=title_row_cells[4],
                                        font_size=10.5,
                                        need_bold=True)
-        contracts = []
-        for key, value in info_json['table_info'].items():
-            if '№' in key:
-                contracts.append((key, info_json['table_info'][key]))
+        
 
-        for contract_name, contract in contracts:
+        for uid, contract_name, contract in self.contracts:
             row = table.add_row()
             row_cells = row.cells
             self._put_text_into_table_cell(text=f'{contract_name}',
@@ -588,14 +584,12 @@ class LawsuitCreator:
 
 
     def _get_service_type3(self, info_json):
-        contracts = []
+        
         result = ''
         was1, was2, was3 = 0, 0, 0
-        for key, value in info_json['table_info'].items():
-            if '№' in key:
-                contracts.append(key)
+        
 
-        for contract_name in contracts:
+        for uid, contract_name, content in self.contracts:
             if "ТЭ" in contract_name and not was2:
                 was2 = 1
                 if was3:
@@ -611,14 +605,12 @@ class LawsuitCreator:
 
         return f'({result})' 
     def _get_service_type2(self, info_json):
-        contracts = []
+        
         result = ''
         was1, was2, was3 = 0, 0, 0
-        for key, value in info_json['table_info'].items():
-            if '№' in key:
-                contracts.append(key)
+        
 
-        for contract_name in contracts:
+        for uid, contract_name, content in self.contracts:
             if "СОИ" in contract_name and not was1:
                 was1 = 1
                 result = result + 'горячей воды для целей содержания общего имущества в многоквартирных домах (далее - СОИ), '
@@ -632,11 +624,8 @@ class LawsuitCreator:
         return result
 
     def _get_contract_type(self, info_json, is_dog=True):
-        contracts = []
-        for key, value in info_json['table_info'].items():
-            if '№' in key:
-                contracts.append(key)
-        if len(contracts) > 1 and is_dog : 
+        
+        if len(self.contracts) > 1 and is_dog : 
             return 'Договоры'
         else :
             return 'Договор'
@@ -671,14 +660,10 @@ class LawsuitCreator:
                                        font_size=11,
                                        need_bold=True)
         
-        last_day = info_json['lawsuit_info']['last_day']
-        x = '5.5'
-        contracts = []
-        for key, value in info_json['table_info'].items():
-            if '№' in key:
-                contracts.append((key, info_json['table_info'][key]))
+        
+        
 
-        for contract_name, contract in contracts:
+        for uid,contract_name, contract in self.contracts:
             row = table.add_row()
             row_cells = row.cells
             self._put_text_into_table_cell(text=f"{contract_name}",
@@ -694,11 +679,11 @@ class LawsuitCreator:
                                        cell=row_cells[2],
                                        font_size=11,)
             
-            self._put_text_into_table_cell(text=f'{last_day}',
+            self._put_text_into_table_cell(text=f'{contract['last_day']}',
                                         cell=row_cells[3],
                                         font_size=9,)
             
-            self._put_text_into_table_cell(text=f'{x}',
+            self._put_text_into_table_cell(text=f'{contract['contract_point']}',
                                        cell=row_cells[4],
                                        font_size=11,)
 

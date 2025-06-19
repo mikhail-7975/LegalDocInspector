@@ -1,5 +1,5 @@
 import requests
-from datetime import datetime
+from datetime import datetime, date
 from io import BytesIO
 from pathlib import Path
 from urllib.parse import quote
@@ -254,7 +254,7 @@ if st.session_state.form_data['flag']:
     contract_data = []
     for  key, value in result['result_of_llm_parsers'].items():
         if "contract" in key:
-            st.markdown(f"### {key} \n {result['result_of_llm_parsers'][key]['overdue_date']}")
+            st.markdown(f"### {result['result_of_llm_parsers'][key]['path_name']} \n {result['result_of_llm_parsers'][key]['overdue_date']}")
 
     contracts = st.session_state.form_data['contracts']
 
@@ -370,7 +370,8 @@ if st.session_state.form_data['flag']:
     with col4:
         person_info['name'] = st.text_input(label = "ФИО", value=f'Самошкина А.Е.', on_change= on_change_handler)
 
-
+    request_json['company_type'] = company_type
+    request_json['current_date'] =  date_selected.strftime("%Y-%m-%d")
     request_json['contracts_info'] = st.session_state.form_data['contracts']
     request_json['person_info'] = person_info
     request_json['applications_info'] = st.session_state.form_data['applications_info']
@@ -401,7 +402,7 @@ if st.session_state.form_data['flag']:
                 st.text(first_response.text)
 
             second_response = requests.post("http://localhost:5001/create_calculating_table",
-                                     json=request_json['files_info']
+                                    json=request_json
                             )
             
             if second_response.status_code == 200:
