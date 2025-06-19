@@ -8,7 +8,7 @@ from docx.shared import Pt, Cm
 from docx.enum.section import WD_ORIENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-
+import re
 # from .utils.month_to_decimal import month_year_to_decimal
 from legal_doc_inspector.doc_creator.utils.month_to_decimal import month_year_to_decimal
 
@@ -388,6 +388,25 @@ class PenaltyTableCreator:
 
         return result
 
+    def month_year_to_decimal(self, date_str):
+        # Словарь соответствия месяцев их номерам
+        months = {
+            'Январь': '01', 'Февраль': '02', 'Март': '03',
+            'Апрель': '04', 'Май': '05', 'Июнь': '06',
+            'Июль': '07', 'Август': '08', 'Сентябрь': '09',
+            'Октябрь': '10', 'Ноябрь': '11', 'Декабрь': '12'
+        }
+
+        # Проходим по всем месяцам и проверяем, есть ли он в строке
+        for month_name, month_num in months.items():
+            if month_name in date_str:
+                # Ищем год (предполагается, что после месяца идет год)
+                year_match = re.search(r'\b\d{4}\b', date_str)
+                if year_match:
+                    year = year_match.group()  # Берём полный год
+                    return f"{month_num}.{year}"
+        
+        return None  # Если ничего не найдено
     
     def _create_penalty_table(self, table:Table, list_dict_of_months, contract_number):
         """
@@ -403,13 +422,46 @@ class PenaltyTableCreator:
             new_rows_for_month = []
             itogo = 0
             last_month_debt = 0
+            all_amount = None 
+            need_to_write_all_amount = periods_and_payments[0]['type'] == 'payment'
+            # вытаскиваем выставленный счёт
+            if need_to_write_all_amount:
+                for period_or_payment in periods_and_payments:
+                    
+                    if period_or_payment['type'] == 'period':
+                        all_amount = period_or_payment['data']['all_amount']
+                        break
+                new_row = table.add_row()
+                self._apply_height_for_row(new_row, 0.65)
+
+                new_row_cells = new_row.cells
+
+                new_row_cells[0].merge(new_row_cells[1])
+                new_row_cells[2].merge(new_row_cells[3])
+                self._put_text_into_table_cell(text=f'{self.format_float_to_currency(all_amount)}',
+                                                cell=new_row_cells[2])
+
+                self._put_text_into_table_cell(text=f"{'31.'+ self.month_year_to_decimal(month_key)}",
+                                                cell=new_row_cells[4])
+                
+                self._put_text_into_table_cell(text=f"Начислено за {month_key}",
+                                                need_italic=True,
+                                                cell=new_row_cells[5],
+                                                orient='left')
+                
+                new_row_cells[5].merge(new_row_cells[10])
+                new_rows_for_month.append(new_row)
+
+
             for period_or_payment in periods_and_payments:
                 if period_or_payment['type'] == 'period':
                     data = period_or_payment['data']
+                    debt = data['debt']
+                    if debt == 0:
+                        continue
                     new_row = table.add_row()
                     self._apply_height_for_row(new_row, 0.65)
                     new_row_cells = new_row.cells
-                    debt = data['debt']
                     last_month_debt = debt
                     start_date = data['start']
                     end_date = data['end']
@@ -477,7 +529,8 @@ class PenaltyTableCreator:
                     
                     new_row_cells[5].merge(new_row_cells[10])
                     new_rows_for_month.append(new_row)
-            
+            if len(new_rows_for_month) == 0:
+                continue
             itog_row = table.add_row()
             itog_row_cells = itog_row.cells
             itog_row_cells[0].merge(itog_row_cells[1])
