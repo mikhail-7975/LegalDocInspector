@@ -48,17 +48,6 @@ zip_parser = ZipParser(model, processor, emb_model, emb_tokenizer)
 contract_parser = ContractParser(model, processor)
 claim_parser = ClaimParser(model, processor)
 
-model = Qwen2_5OmniForConditionalGeneration.from_pretrained(
-    "Qwen/Qwen2.5-Omni-3B",
-    torch_dtype="auto",
-    device_map="auto",
-    enable_audio_output=False,
-)
-processor = Qwen2_5OmniProcessor.from_pretrained("Qwen/Qwen2.5-Omni-3B")
-zip_parser = ZipParser(model, processor)
-contract_parser = ContractParser(model, processor)
-claim_parser = ClaimParser(model, processor)
-
 @app.route("/")
 def home():
     return "server is working"

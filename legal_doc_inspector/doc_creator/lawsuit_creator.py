@@ -679,11 +679,11 @@ class LawsuitCreator:
                                        cell=row_cells[2],
                                        font_size=11,)
             
-            self._put_text_into_table_cell(text=f'{contract['last_day']}',
+            self._put_text_into_table_cell(text=f"{contract['last_day']}",
                                         cell=row_cells[3],
                                         font_size=9,)
             
-            self._put_text_into_table_cell(text=f'{contract['contract_point']}',
+            self._put_text_into_table_cell(text=f"{contract['contract_point']}",
                                        cell=row_cells[4],
                                        font_size=11,)
 
