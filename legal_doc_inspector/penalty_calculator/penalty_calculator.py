@@ -15,7 +15,7 @@ class Penalty_calculator:
         self.cb_key_rate = 9.5 / 100
         # self.cb_key_rate = self._get_cb_rate()
         pass
-
+    
     def calculate_penalty_from_doc(self, data: dict, company_type, current_date: datetime.date, day_of_penalty:int):
         """
         Принимает результат парсера таблицы,
@@ -23,6 +23,7 @@ class Penalty_calculator:
         суммирует пени
         возвращает список периодов с расчётами
         """
+        payments = []
         penalty = []  # сумма пеней по всем задолженностям
         # перебираем каждый месяц
         month_pattern = r'^(0[1-9]|1[0-2])\.(20\d{2}|2100)$'
@@ -30,7 +31,7 @@ class Penalty_calculator:
 
             if re.match(month_pattern, month):
 
-                periods = self._get_penalty_periods_for_month(data=data,
+                periods, need_to_pay = self._get_penalty_periods_for_month(data=data,
                                                               month=month,
                                                               company_type=company_type,
                                                               current_date=current_date,
@@ -41,8 +42,8 @@ class Penalty_calculator:
 
                     period_with_calculated_penalty = self._calculate_penalty_for_period(period=period)
                     # print(period_with_calculated_penalty)
+                    period_with_calculated_penalty['all_amount'] = need_to_pay
                     penalty.append(period_with_calculated_penalty)
-
             else:
                 continue
 
@@ -89,7 +90,7 @@ class Penalty_calculator:
 
             periods = self._get_penalty_periods_for_type_3(data, month, current_date, need_to_pay, start_date)
 
-        return periods
+        return periods,need_to_pay
 
     def _get_penalty_periods_for_type_1(self, data: dict, month, current_date: datetime.date, need_to_pay,start_date):
         """
