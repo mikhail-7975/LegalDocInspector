@@ -176,6 +176,7 @@ if st.session_state.form_data['flag']:
             plaintiff_info['ogrn'] = plaintiff_ogrn
             st.session_state.form_data['plaintiff_info'] = plaintiff_info
         except Exception as e :
+            print(e)
             st.error("К сожалению, не получилось получить данные об истце, проверьте ИНН, пожалуйста")
     plaintiff_edit_info = st.session_state.form_data['plaintiff_info']
 
@@ -189,17 +190,18 @@ if st.session_state.form_data['flag']:
     if st.button(label="Обновить данные об истце"):
        
         try:
-            plaintiff_full_name, plaintiff_short_name, plaintiff_address, plaintiff_kpp, plaintiff_ogrn = parse_html(plaintiff_info['inn'])
-            plaintiff_info['full_name'] = st.text_input(label="Название Истца", value=f"{plaintiff_full_name}", key="full_name_1", on_change= on_change_handler)
-            plaintiff_info['short_name'] = st.text_input(label="Название Истца(аббревиатура)", value=f"{plaintiff_short_name}", key="short_name_1", on_change= on_change_handler)
-            plaintiff_info['addres'] = st.text_input(label="Адрес Истца", value=f"{plaintiff_address}", key="addres_1", on_change= on_change_handler)
-            plaintiff_info['correspondency_addres'] = st.text_input(label='Адрес для направления корреспонденции', value=f"{plaintiff_edit_info['correspondency_addres']}", key="cor_addr1", on_change= on_change_handler)
-            plaintiff_info['ogrn'] = st.text_input(label='ОГРН Истца', value=f"{plaintiff_ogrn}", key="ogrn_1", on_change= on_change_handler)
+            plaintiff_full_name, plaintiff_short_name, plaintiff_address, plaintiff_kpp, plaintiff_ogrn = parse_html(st.session_state.form_data['plaintiff_info']['inn'])
+            plaintiff_info['full_name'] = plaintiff_full_name
+            plaintiff_info['short_name'] = plaintiff_short_name
+            plaintiff_info['addres'] = plaintiff_address
+            plaintiff_info['correspondency_addres'] = f"{st.session_state.form_data['plaintiff_info']['correspondency_addres']}"
+            plaintiff_info['ogrn'] = plaintiff_ogrn
             st.session_state.form_data['plaintiff_info'] = plaintiff_info
             print('идёт запрос истец по кнопке')
 
         except Exception as e:
             # st.error(e)
+            print(e)
             st.error("К сожалению, не получилось получить данные об истце, проверьте ИНН, попробуйте ещё раз, пожалуйста")
                 
             
@@ -217,6 +219,7 @@ if st.session_state.form_data['flag']:
             defendant_info['ogrn'] = ogrn
             st.session_state.form_data['defendant_info'] = defendant_info
         except Exception as e:
+            print(e)
             st.error("К сожалению, не получилось получить данные об ответчике, проверьте ИНН, пожалуйста")
 
     defendant_edit_info = st.session_state.form_data['defendant_info']
@@ -228,16 +231,17 @@ if st.session_state.form_data['flag']:
     if st.button(label="Обновить данные об ответчике"):
         try:
             print("запрос ответчик по кнопке")
-            full_name, short_name, address, kpp, ogrn = parse_html(defendant_info['inn'])
-            defendant_info['full_name'] = st.text_input(label="Название ответчика", value=f"{full_name}", on_change= on_change_handler)
-            defendant_info['short_name'] = st.text_input(label="Название ответчика(аббревиатура)", value=f"{short_name}", on_change= on_change_handler)
-            defendant_info['addres'] = st.text_input(label="Адрес ответчика", value=f"{address}", on_change= on_change_handler)
-            defendant_info['ogrn'] = st.text_input(label="ОГРН ответчика", value=f"{ogrn}", on_change= on_change_handler)
+            full_name, short_name, address, kpp, ogrn = parse_html(st.session_state.form_data['defendant_info']['inn'])
+            defendant_info['full_name'] = full_name
+            defendant_info['short_name'] = short_name
+            defendant_info['addres'] = address
+            defendant_info['ogrn'] = ogrn
             st.session_state.form_data['defendant_info'] = defendant_info
                 
             
         except Exception as e:
             # st.error(e)
+            print(e)
             st.error("К сожалению, не получилось получить данные об ответчике, проверьте ИНН, попробуйте ещё раз, пожалуйста")
 
     st.markdown("### Данные о договорах")
