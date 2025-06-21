@@ -1,8 +1,9 @@
 import requests
-from datetime import datetime
+from datetime import datetime, date
 from io import BytesIO
 from pathlib import Path
 from urllib.parse import quote
+from uuid import uuid4
 
 import streamlit as st
 import pandas as pd
@@ -14,8 +15,7 @@ from legal_doc_inspector.app.utils.calculate_tax import calculate_state_duty
 if 'form_data' not in st.session_state:
     st.session_state.form_data = {
         'court_info': {},
-        'plaintiff_info': {},
-        'defendant_info': {},
+        
         'lawsuit_info': {},
         'service_type_info': [],
         'claims': [],
@@ -24,14 +24,18 @@ if 'form_data' not in st.session_state:
         'flag2':False,
         'plaintiff_correct':True,
         'plaintiff_uncorrect':False,
-        'forms_changed': False
+        'defendant_correct':True,
+        'defendant_uncorrect':False,
+        'forms_changed': False,
+        'need_parse_plaintiff_info':True,
+        'need_parse_defendant_info':True
     }
 
 def on_change_handler():
     st.session_state.form_data['forms_changed'] = True
 
 
-st.title("Загрузка и обработка документов")
+st.title("LegalDocInspector: Демонстрационное приложение")
 
 # Загрузчик файла
 
@@ -39,15 +43,18 @@ col1, col2 = st.columns(2)
 
 with col1:
     date_selected = st.date_input("Выберите дату конца просрочки",
-                                  format='DD.MM.YYYY')
+                                  format='DD.MM.YYYY',
+                                  on_change=on_change_handler)
 
 with col2:
     day_of_penalty = st.number_input(label="Выберите число месяца, которое является последним днём оплаты счёта",
                                      value=18,
                                      min_value=1,
-                                     max_value=31)
+                                     max_value=31,
+                                     on_change=on_change_handler)
 
-company_type = st.selectbox("Выберите тип компании", ["Прочие", "УК", "ТСЖ"])
+company_type = st.selectbox("Выберите тип компании", ["Прочие", "УК", "ТСЖ"],
+                            on_change=on_change_handler)
 
 st.text("Поле для договора")
 contract_uploaded_file = st.file_uploader("Выберите Документ с договором", accept_multiple_files=True)
@@ -154,58 +161,136 @@ if st.session_state.form_data['flag']:
     court_info['name'] = st.text_input(label="Название Органа", value="Арбитражный суд города Москвы" , on_change=on_change_handler)
     court_info['addres'] = st.text_input(label="Адресс Органа", value="115225, г. Москва, ул. Большая Тульская, д. 17", on_change= on_change_handler)
 
+        
     
     st.markdown("### Данные об Истце")
     plaintiff_info['inn'] = st.text_input(label='ИНН Истца', value=f"{plaintiff_info_parsed['plaintiff_inn']}", on_change= on_change_handler)
-    if st.session_state.form_data['plaintiff_correct']:
+    if not 'plaintiff_info' in st.session_state.form_data:
         try:
+            print('идёт первый запрос истец')
             plaintiff_full_name, plaintiff_short_name, plaintiff_address, plaintiff_kpp, plaintiff_ogrn = parse_html(plaintiff_info_parsed['plaintiff_inn'])
+            plaintiff_info['full_name'] = plaintiff_full_name
+            plaintiff_info['short_name'] = plaintiff_short_name
+            plaintiff_info['addres'] = plaintiff_address
+            plaintiff_info['correspondency_addres'] = "121596, г. Москва, ул. Горбунова, д. 2, стр. 3, офис В613 (МГКА «КДЗП»)"
+            plaintiff_info['ogrn'] = plaintiff_ogrn
+            st.session_state.form_data['plaintiff_info'] = plaintiff_info
+        except Exception as e :
+            print(e)
+            st.error("К сожалению, не получилось получить данные об истце, проверьте ИНН, пожалуйста")
+    plaintiff_edit_info = st.session_state.form_data['plaintiff_info']
 
-            plaintiff_info['full_name'] = st.text_input(label="Название Истца", value=f"{plaintiff_full_name}", key="full_name_1", on_change= on_change_handler)
-            plaintiff_info['short_name'] = st.text_input(label="Название Истца(аббревиатура)", value=f"{plaintiff_short_name}", key="short_name_1", on_change= on_change_handler)
-            plaintiff_info['addres'] = st.text_input(label="Адрес Истца", value=f"{plaintiff_address}", key="addres_1", on_change= on_change_handler)
-            plaintiff_info['correspondency_addres'] = st.text_input(label='Адрес для направления корреспонденции', value="121596, г. Москва, ул. Горбунова, д. 2, стр. 3, офис В613 (МГКА «КДЗП»)", key="cor_addr1", on_change= on_change_handler)
-            plaintiff_info['ogrn'] = st.text_input(label='ОГРН Истца', value=f"{plaintiff_ogrn}", key="ogrn_1", on_change= on_change_handler)
-        except Exception as e:
-            st.error(e)
-            st.session_state.form_data['plaintiff_correct'] = False
-            st.markdown("К сожалению, не получилось получить данные об истце, проверьте ИНН, пожалуйста")
+    plaintiff_info['full_name'] = st.text_input(label="Название Истца", value=f"{plaintiff_edit_info['full_name']}", key="full_name_1", on_change= on_change_handler)
+    plaintiff_info['short_name'] = st.text_input(label="Название Истца(аббревиатура)", value=f"{plaintiff_edit_info['short_name']}", key="short_name_1", on_change= on_change_handler)
+    plaintiff_info['addres'] = st.text_input(label="Адрес Истца", value=f"{plaintiff_edit_info['addres']}", key="addres_1", on_change= on_change_handler)
+    plaintiff_info['correspondency_addres'] = st.text_input(label='Адрес для направления корреспонденции', value=f"{plaintiff_edit_info['correspondency_addres']}", key="cor_addr1", on_change= on_change_handler)
+    plaintiff_info['ogrn'] = st.text_input(label='ОГРН Истца', value=f"{plaintiff_edit_info['ogrn']}", key="ogrn_1", on_change= on_change_handler)
+    st.session_state.form_data['plaintiff_info'] = plaintiff_info
 
-    if st.button(label="Обновить данные об истце") or st.session_state.form_data['plaintiff_uncorrect'] == True:
-        st.session_state.form_data['plaintiff_correct'] = False
+    if st.button(label="Обновить данные об истце"):
+       
         try:
-            plaintiff_full_name, plaintiff_short_name, plaintiff_address, plaintiff_kpp, plaintiff_ogrn = parse_html(plaintiff_info['inn'])
+            plaintiff_full_name, plaintiff_short_name, plaintiff_address, plaintiff_kpp, plaintiff_ogrn = parse_html(st.session_state.form_data['plaintiff_info']['inn'])
+            plaintiff_info['full_name'] = plaintiff_full_name
+            plaintiff_info['short_name'] = plaintiff_short_name
+            plaintiff_info['addres'] = plaintiff_address
+            plaintiff_info['correspondency_addres'] = f"{st.session_state.form_data['plaintiff_info']['correspondency_addres']}"
+            plaintiff_info['ogrn'] = plaintiff_ogrn
+            st.session_state.form_data['plaintiff_info'] = plaintiff_info
+            print('идёт запрос истец по кнопке')
 
-            plaintiff_info['full_name'] = st.text_input(label="Название Истца", value=f"{plaintiff_full_name}", key="full_name_2", on_change= on_change_handler)
-            plaintiff_info['short_name'] = st.text_input(label="Название Истца(аббревиатура)", value=f"{plaintiff_short_name}", key="short_name_2", on_change= on_change_handler)
-            plaintiff_info['addres'] = st.text_input(label="Адрес Истца", value=f"{plaintiff_address}", key="addr_2", on_change= on_change_handler)
-            plaintiff_info['correspondency_addres'] = st.text_input(label='Адрес для направления корреспонденции', value="121596, г. Москва, ул. Горбунова, д. 2, стр. 3, офис В613 (МГКА «КДЗП»)", key="coraddr_2", on_change= on_change_handler)
-            plaintiff_info['ogrn'] = st.text_input(label='ОГРН Истца', value=f"{plaintiff_ogrn}", key="ogrn_2", on_change= on_change_handler)
-            if st.session_state.form_data['plaintiff_uncorrect'] ==False:
-                st.session_state.form_data['plaintiff_uncorrect'] = True
-                st.rerun()
+        except Exception as e:
+            # st.error(e)
+            print(e)
+            st.error("К сожалению, не получилось получить данные об истце, проверьте ИНН, попробуйте ещё раз, пожалуйста")
+                
+            
+
+
+    st.markdown("### Данные об ответчике")
+    defendant_info['inn'] = st.text_input(label="ИНН ответчика", value=f"{result['results_of_name_parser']['defendant_info']['inn']}", on_change= on_change_handler)
+    if not 'defendant_info' in st.session_state.form_data:
+        try:
+            print("запрос ответчик первый")
+            full_name, short_name, address, kpp, ogrn = parse_html(result['results_of_name_parser']['defendant_info']['inn'])
+            defendant_info['full_name'] = full_name
+            defendant_info['short_name'] = short_name
+            defendant_info['addres'] = address 
+            defendant_info['ogrn'] = ogrn
+            st.session_state.form_data['defendant_info'] = defendant_info
+        except Exception as e:
+            print(e)
+            st.error("К сожалению, не получилось получить данные об ответчике, проверьте ИНН, пожалуйста")
+
+    defendant_edit_info = st.session_state.form_data['defendant_info']
+    defendant_info['full_name'] = st.text_input(label="Название ответчика", value=f"{defendant_edit_info['full_name']}", on_change= on_change_handler)
+    defendant_info['short_name'] = st.text_input(label="Название ответчика(аббревиатура)", value=f"{defendant_edit_info['short_name']}", on_change= on_change_handler)
+    defendant_info['addres'] = st.text_input(label="Адрес ответчика", value=f"{defendant_edit_info['addres']}", on_change= on_change_handler)
+    defendant_info['ogrn'] = st.text_input(label="ОГРН ответчика", value=f"{defendant_edit_info['ogrn']}", on_change= on_change_handler)
+    st.session_state.form_data['defendant_info'] = defendant_info
+    if st.button(label="Обновить данные об ответчике"):
+        try:
+            print("запрос ответчик по кнопке")
+            full_name, short_name, address, kpp, ogrn = parse_html(st.session_state.form_data['defendant_info']['inn'])
+            defendant_info['full_name'] = full_name
+            defendant_info['short_name'] = short_name
+            defendant_info['addres'] = address
+            defendant_info['ogrn'] = ogrn
+            st.session_state.form_data['defendant_info'] = defendant_info
                 
             
         except Exception as e:
-            st.error(e)
-            st.markdown("К сожалению, не получилось получить данные об истце, проверьте ИНН, пожалуйста")
-            
+            # st.error(e)
+            print(e)
+            st.error("К сожалению, не получилось получить данные об ответчике, проверьте ИНН, попробуйте ещё раз, пожалуйста")
 
-    st.markdown("### Данные об ответчике")
-    #все эти данные надо парсить
-    defendant_info['full_name'] = st.text_input(label="Название ответчика", value=f"{result['results_of_name_parser']['defendant_info']['full_name']}", on_change= on_change_handler)
-    defendant_info['short_name'] = st.text_input(label="Название ответчика(аббревиатура)", value=f"{result['results_of_name_parser']['defendant_info']['short_name']}", on_change= on_change_handler)
-    defendant_info['addres'] = st.text_input(label="Адрес ответчика", value=f"{result['results_of_name_parser']['defendant_info']['address']}", on_change= on_change_handler)
-    defendant_info['inn'] = st.text_input(label="ИНН ответчика", value=f"{result['results_of_name_parser']['defendant_info']['inn']}", on_change= on_change_handler)
-    defendant_info['ogrn'] = st.text_input(label="ОГРН ответчика", value=f"{result['results_of_name_parser']['defendant_info']['ogrn']}", on_change= on_change_handler)
-    
     st.markdown("### Данные о договорах")
-    contracts = []
+    if 'contracts' not in st.session_state.form_data:
+        contracts = []
+        
+        for key, value in result['contracts_info'].items():
+            if "№" in key:
+
+                contracts.append((str(uuid4()), key, value))
+        st.session_state.form_data['contracts'] = contracts
+    
+    st.markdown("### Результаты работы нейросети")
+    contract_data = []
+    for  key, value in result['result_of_llm_parsers'].items():
+        if "contract" in key:
+            st.markdown(f"### {result['result_of_llm_parsers'][key]['path_name']} \n {result['result_of_llm_parsers'][key]['overdue_date']}")
+
+    contracts = st.session_state.form_data['contracts']
+
+    st.markdown("### редактирование информации о договорах \n (нажатие на кнопки ⬆️ и ⬇️ изменяет порядок договоров в иске)")
+    for i in range(len(contracts)):
+        uid, name, content = contracts[i]
+        st.write("")
+        st.markdown(f"**{name}**")
+        col1, col2 = st.columns([1, 4])
+        with col1:
+            st.write("")  # Отступ сверху для центровки
+            if st.button("⬆️", use_container_width=True, key=f"contract_up_{uid}"):
+                if i>0:
+                    on_change_handler()
+                    contracts[i], contracts[i-1] = contracts[i-1], contracts[i]
+                    st.session_state.form_data['contracts'] = contracts
+                    st.rerun()
+            if st.button("⬇️", use_container_width=True, key=f"contract_down_{uid}"):
+                if i<len(contracts)-1:
+                    on_change_handler()
+                    contracts[i],contracts[i+1] = contracts[i+1],contracts[i]
+                    st.session_state.form_data['contracts'] = contracts
+                    st.rerun()
+        with col2:
+            content['last_day'] = st.text_input(label="число месяца, после которого следует просрочка", value=f"{'До 18 числа месяца, следующего за расчётным' if 'last_day' not in content else content['last_day']}", on_change=on_change_handler, key=f"day_last_{uid}")
+            content['contract_point'] = st.text_input(label="пункт договора", value=f"{'5.5' if 'contract_point' not in content else content['contract_point']}", on_change=on_change_handler, key=f"point_contract_{uid}")
+    st.session_state.form_data['contracts'] = contracts
+
     request_json = {}
     
-    lawsuit_info['cost'] = st.text_input(label="Цена иска", value=f"{result['contracts_info']['cost_of_lawsuit']} р.", on_change= on_change_handler)
-    lawsuit_info['tax'] = st.text_input(label="Госпошлина", value=f"{calculate_state_duty(result['contracts_info']['cost_of_lawsuit'])} р." , on_change= on_change_handler)
-    lawsuit_info['last_day'] = st.text_input(label = "Срок оплаты", value=f'До {day_of_penalty} числа месяца, следующего за расчётным', on_change= on_change_handler)
+    lawsuit_info['cost'] = st.text_input(label="Цена иска", value=f"{result['contracts_info']['cost_of_lawsuit']} руб.", on_change= on_change_handler)
+    lawsuit_info['tax'] = st.text_input(label="Госпошлина", value=f"{calculate_state_duty(result['contracts_info']['cost_of_lawsuit'])} руб." , on_change= on_change_handler)
     
     service_type_info = []
     claims = []
@@ -218,10 +303,11 @@ if st.session_state.form_data['flag']:
             claims.append(f"№ {result['result_of_llm_parsers'][key]['claim_number']} от {result['result_of_llm_parsers'][key]['claim_date']}")
         if "zip" in key:
             applications = value
+    
     st.markdown(f"### Данные об услуге, полученные из договоров")
     st.markdown(f"{'___'.join(f' - {elem}' for elem in service_type_info)}")
-    lawsuit_info['service_type'] = st.selectbox("Выберите вид услугии", ["ГВС + ТЭ", "ТЭ", "ГВС"])
-
+    lawsuit_info['service_type'] = st.selectbox("Выберите вид услугии", ["ГВС + ТЭ", "ТЭ", "ГВС"], on_change=on_change_handler)
+    
     st.markdown(f'### Данные о претензиях')
     claims_edit = []
     # st.markdown(f"номера и даты претензий\n {'___'.join(f'- {claim}' for claim in claims)}")
@@ -238,16 +324,45 @@ if st.session_state.form_data['flag']:
     
     st.markdown("### Данные о приложенных документах")
 
-    applications_edit = {}
+    if 'apps_edit' not in st.session_state.form_data:
+        applications_edit = []
+        number = 1
+        
+        for key, value in applications.items():
+            
+            applications_edit.append((str(uuid4()), key, value))
+
+        st.session_state.form_data['apps_edit'] = applications_edit
+
+
     # st.markdown(f"номера и даты претензий\n {'___'.join(f'- {claim}' for claim in claims)}")
-    for application_path, application_name in applications.items():
-        new_value = st.text_input(
-            label=f"{Path(application_path).name}",
-            value=application_name,
-            key=f"application_{Path(application_path).name}",
-            on_change= on_change_handler
-        )
-        applications_edit[f"{Path(application_path).name}"] = new_value
+    applications_edit = st.session_state.form_data['apps_edit']
+    
+    for i in range(len(applications_edit)):
+        uid, path, content = applications_edit[i]
+        name = Path(path).name
+        st.write("")
+        st.markdown(f"**{name}**")
+        col1, col2 = st.columns([1, 4])
+        with col1:
+            st.write("")  # Отступ сверху для центровки
+            if st.button("⬆️", use_container_width=True, key=f"app_up_{uid}"):
+                if i>0:
+                    on_change_handler()
+                    applications_edit[i], applications_edit[i-1] = applications_edit[i-1], applications_edit[i]
+                    st.session_state.form_data['apps_edit'] = applications_edit
+                    st.rerun()
+            if st.button("⬇️", use_container_width=True, key=f"app_down_{uid}"):
+                if i<len(applications_edit)-1:
+                    on_change_handler()
+                    applications_edit[i], applications_edit[i+1] = applications_edit[i+1], applications_edit[i]
+                    st.session_state.form_data['apps_edit'] = applications_edit
+                    st.rerun()
+        with col2:
+            content = st.text_input(label=f"{name}", value=f"{content}", on_change=on_change_handler, key=f"day_last_{uid}")
+            
+
+        
     st.session_state.form_data['applications_info'] = applications_edit
     person_info = {}
     st.markdown("### Данные об ответственном лице")
@@ -259,18 +374,19 @@ if st.session_state.form_data['flag']:
     with col4:
         person_info['name'] = st.text_input(label = "ФИО", value=f'Самошкина А.Е.', on_change= on_change_handler)
 
-
-
+    request_json['company_type'] = company_type
+    request_json['current_date'] =  date_selected.strftime("%Y-%m-%d")
+    request_json['contracts_info'] = st.session_state.form_data['contracts']
     request_json['person_info'] = person_info
     request_json['applications_info'] = st.session_state.form_data['applications_info']
-    request_json['table_info'] = result['contracts_info']
     request_json['court_info'] = court_info
-    request_json['plaintiff_info'] = plaintiff_info
-    request_json['defendant_info'] = defendant_info
+    request_json['plaintiff_info'] = st.session_state.form_data['plaintiff_info']
+    request_json['defendant_info'] = st.session_state.form_data['defendant_info']
     request_json['lawsuit_info'] = lawsuit_info
     request_json['files_info'] = result['files_table']
-
-
+    request_json['table_info'] = result['contracts_info']
+    request_json['results_of_data_saving'] = result['results_of_data_saving']
+    request_json['parsing_table_result'] = result['parsing_table_result']
 
     st.markdown(f"### подтверждение данных")
     if st.button(label="Нажмите, чтобы подтвердить правильность данных"):
@@ -290,7 +406,7 @@ if st.session_state.form_data['flag']:
                 st.text(first_response.text)
 
             second_response = requests.post("http://localhost:5001/create_calculating_table",
-                                     json=request_json['files_info']
+                                    json=request_json
                             )
             
             if second_response.status_code == 200:
