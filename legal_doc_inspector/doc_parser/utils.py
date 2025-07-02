@@ -1,13 +1,13 @@
-import re
-import pytesseract
+import re # нужна для очистки и разделения текста 
+import pytesseract # нужна для сканирования текста из pdf
 import numpy as np
-from pdf2image import convert_from_path  
-from sentence_transformers import util
+from pdf2image import convert_from_path  # нужна для сканирования текста из pdf
+from sentence_transformers import util # нужна для rag поиска через близость векторов
 from pathlib import Path
 
 def split_by_points(text):
     '''
-    Функция принимает текст и разделяет его по пунктам, возвращает список текстов
+    Функция принимает текст и разделяет его по пунктам, возвращает список текстов (для договора)
     '''
     pattern = r'(\n\d+[\.)]?|\n[а-я]\)|\n[А-Я]\.)'    
     parts = re.split(pattern, text)
@@ -23,7 +23,7 @@ def split_by_points(text):
 def retrieve_relevant_chunks(question_embedding, chunk_embeddings, chunks, top_k=5):
     '''
     Функция принимает вопрос, модель, список фрагментов текста в виде эмбеддингов и простой список фрагментов. 
-    возвращает top-k ближайших к вопросу фрагментов
+    возвращает top-k ближайших к вопросу фрагментов (функция для rag - поиска по договору)
     '''
     cos_scores = util.cos_sim(question_embedding, chunk_embeddings)[0]
     cos_scores = cos_scores.numpy().tolist()
@@ -33,7 +33,7 @@ def retrieve_relevant_chunks(question_embedding, chunk_embeddings, chunks, top_k
 
 def get_conversation_for_contract(chunks, question):
     '''
-    Функция для создания запроса для модели
+    Функция для создания запроса для модели (для договора)
     '''
     conversation = [
         {
@@ -51,6 +51,7 @@ def get_conversation_for_contract(chunks, question):
 
 
 def get_text_for_zip(pdf_path):
+    '''принимает путь до документа, возвращает текст документа в виде строки (для zip архива)'''
     images = convert_from_path(pdf_path)
     ocr_text = ""
     if images:
@@ -60,6 +61,7 @@ def get_text_for_zip(pdf_path):
     return clean_text
 
 def get_pdf_files(directory):
+    '''Принимает путь до директории, возвращает абсолютные пути до файлов в них в виде списка (для zip архива)'''
     path = Path(directory)
     return [
         str(file.resolve())  # Преобразуем Path в строку с абсолютным путем
@@ -69,7 +71,7 @@ def get_pdf_files(directory):
 
 def get_conversation_for_zip(rev_chunks, pdf_text):
     '''
-    Функция для создания запроса для llm
+    Функция для создания запроса для llm (для zip архива)
     '''
     conversation =[
             {
@@ -87,7 +89,7 @@ def get_conversation_for_zip(rev_chunks, pdf_text):
 
 def get_conversation_for_claim(pdf_text):
     '''
-    Функция для создания запроса для llm
+    Функция для создания запроса для llm (для претензии)
     '''
     conversation = [
         {
@@ -106,7 +108,7 @@ def get_conversation_for_claim(pdf_text):
     ]
     return conversation
 
-
+# примеры названий документов для парсера архива
 examples = """
 Расчет суммы неустойки (пеней) и общей цены иска.
 Соглашение о порядке урегулирования задолженности о признании ООО «КОНДОР-ГРУПП» задолженности перед ПАО «МОЭК» по Договору № 07.300418-ТЭ от 01.01.2019 за период 12.2022.
