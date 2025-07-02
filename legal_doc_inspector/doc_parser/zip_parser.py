@@ -13,23 +13,27 @@ class ZipParser:
 
     def get_texts (self, docs_path):
         '''
-        Принимает путь до папки с документами, возвращает словарь {документ: текст}
+        Принимает путь до папки с документами, возвращает словарь вида {документ: текст}
         '''
+        # получаем пути до файлов из архива
         pdf_paths = get_pdf_files (docs_path)
         pdf_chunks = {}
+        # получаем текст каждого документа из архива
         for path in pdf_paths:
             pdf_text = get_text_for_zip(path)
+            # добавляем в словарь
             pdf_chunks[path] = pdf_text
+        # возвращаем словарь
         return pdf_chunks
     
     def find_names(self, docs_json):
         '''
-        Принимает словарь {документ: текст}, возвращает словарь {документ: название}
+        Принимает словарь {путь до документа: текст}, возвращает словарь {документ: название}
         '''
         result = {}
-
+        # прохожимся по каждому документу в словаре
         for key, value in docs_json.items():
-            # эмбеддинги примеров
+            # убираем лишние символы из примеров названий
             name_examples = re.split(r'(?<=[.!?])\s+', examples.strip())
             # inputs = self.emb_tokenizer(
             #     name_examples,
@@ -65,7 +69,8 @@ class ZipParser:
             #     rev_chunks.append(examples[i])
 
             # conversation = get_conversation_for_zip(rev_chunks, value)
-            
+
+            # отправляем в llm запрос, в качестве контектса - примеры названий документов, в вопросе содержение нашего документа
             conversation = get_conversation_for_zip(name_examples, value)
             inputs = self.processor.apply_chat_template(
                 conversation,
@@ -77,8 +82,10 @@ class ZipParser:
             ).to(self.model.device)
 
             text_ids = self.model.generate(**inputs)
+            # переводим ответ в текст
             text = self.processor.batch_decode(text_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)
             clean_text = text[0].split("assistant", 1)[-1].strip()
+            # Добваляем в словарь
             result[key] = clean_text
         return result
         
