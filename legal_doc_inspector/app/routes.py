@@ -45,6 +45,7 @@ from legal_doc_inspector.doc_parser.table_parser import TableParser
 from legal_doc_inspector.doc_parser.zip_parser import ZipParser
 from legal_doc_inspector.penalty_calculator.penalty_calculator import Penalty_calculator
 
+# LLm инициализируется
 model = Qwen2_5OmniForConditionalGeneration.from_pretrained(
     "Qwen/Qwen2.5-Omni-3B",
     torch_dtype="auto",
@@ -55,20 +56,10 @@ processor = Qwen2_5OmniProcessor.from_pretrained("Qwen/Qwen2.5-Omni-3B")
 emb_tokenizer = AutoTokenizer.from_pretrained("DeepPavlov/rubert-base-cased")
 emb_model = AutoModel.from_pretrained("DeepPavlov/rubert-base-cased")
 
+# Создание классов для парсинга документов
 zip_parser = ZipParser(model, processor, emb_model, emb_tokenizer)
 contract_parser = ContractParser(model, processor)
 claim_parser = ClaimParser(model, processor)
-
-# model = Qwen2_5OmniForConditionalGeneration.from_pretrained(
-#     "Qwen/Qwen2.5-Omni-3B",
-#     torch_dtype="auto",
-#     device_map="auto",
-#     enable_audio_output=False,
-# )
-# processor = Qwen2_5OmniProcessor.from_pretrained("Qwen/Qwen2.5-Omni-3B")
-# zip_parser = ZipParser(model, processor)
-# contract_parser = ContractParser(model, processor)
-# claim_parser = ClaimParser(model, processor)
 
 @app.route("/")
 def home():
@@ -117,7 +108,7 @@ def parse():
 
     pdf_pars_dict = dict()
 
-    # Договор
+    # парсинг договора
     for i, contract_file in enumerate(uploaded_files["contract_file"]):
         
         contract_number, service_type, overdue_date = parse_contract(contract_file, contract_parser)
@@ -125,12 +116,12 @@ def parse():
         pdf_pars_dict[f"contract_{contract_number}"]["service_type"] = service_type
         pdf_pars_dict[f"contract_{contract_number}"]["overdue_date"] = overdue_date
 
-    # Zip архив
+    #  парсинг Zip архива
     for i, folder in enumerate(uploaded_files["zip_file"]):
         zip_names = parse_zip(folder, zip_parser)
         pdf_pars_dict[f"zip_{i}"] = zip_names
 
-    # Претензия
+    # парсинг Претензии
     for i, claim_file in enumerate(uploaded_files["claim_file"]):
         plaintiff_inn, claim_number, claim_date = parse_claim(claim_file, claim_parser)
         
