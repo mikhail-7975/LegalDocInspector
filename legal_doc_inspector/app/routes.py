@@ -1,49 +1,40 @@
-import io
-import json
-import os
-import re
+import io # работа с zip 
+import json # работа с json документами
+import os 
+import re # работа с текстом
 import tempfile
-import zipfile
-from collections import defaultdict
-from datetime import date, datetime
+import zipfile # рабоат с архивами
+from collections import defaultdict # словари
+from datetime import date, datetime # работа с датой
 from pathlib import Path
 
-from configs.config import AppConfig, load_yaml_config
-from .llm_functions import parse_contract, parse_zip, parse_claim
-from legal_doc_inspector.doc_parser.table_parser import TableParser 
-from legal_doc_inspector.penalty_calculator.penalty_calculator import Penalty_calculator
-from legal_doc_inspector.doc_creator.penalty_table_creator import PenaltyTableCreator
-from legal_doc_inspector.doc_creator.lawsuit_creator import LawsuitCreator
-from legal_doc_inspector.doc_parser.contract_parser import ContractParser
-from legal_doc_inspector.doc_parser.zip_parser import ZipParser
-from legal_doc_inspector.doc_parser.claim_parser import ClaimParser
+from configs.config import AppConfig, load_yaml_config # конфиги
+from .llm_functions import parse_contract, parse_zip, parse_claim # функции для работы llm моделей
+from legal_doc_inspector.doc_parser.table_parser import TableParser # Парсер таблиц
+from legal_doc_inspector.penalty_calculator.penalty_calculator import Penalty_calculator # рассчет штрафа
+from legal_doc_inspector.doc_creator.penalty_table_creator import PenaltyTableCreator # создание таблиц для штрафа
+from legal_doc_inspector.doc_creator.lawsuit_creator import LawsuitCreator # СОздание иска
+from legal_doc_inspector.doc_parser.contract_parser import ContractParser # Парсе догоора 
+from legal_doc_inspector.doc_parser.zip_parser import ZipParser # Парсер архива
+from legal_doc_inspector.doc_parser.claim_parser import ClaimParser # парсер претензии 
 
 from pathlib import Path
 
-import pandas as pd
-import requests
-from bs4 import BeautifulSoup
-from flask import Flask, Response, g, jsonify, render_template, request, send_file
+import pandas as pd # работа с датафреймами
+import requests # запросы
+from bs4 import BeautifulSoup # раьота с html
+from flask import Flask, Response, g, jsonify, render_template, request, send_file # бекэнд
 from flask import current_app as app
 from transformers import (
     AutoModel,
     AutoTokenizer,
     Qwen2_5OmniForConditionalGeneration,
     Qwen2_5OmniProcessor,
-)
+) # библиотека для llm 
 from werkzeug.utils import secure_filename
 
-from configs.config import AppConfig, load_yaml_config
-from legal_doc_inspector.doc_creator.lawsuit_creator import LawsuitCreator
-from legal_doc_inspector.doc_creator.penalty_table_creator import PenaltyTableCreator
-from legal_doc_inspector.doc_parser.claim_parser import ClaimParser
-from legal_doc_inspector.doc_parser.contract_parser import ContractParser
-from legal_doc_inspector.doc_parser.html_parser import parse_html
-from legal_doc_inspector.app.utils.parse_info_by_inn import parse_html
-
-from legal_doc_inspector.doc_parser.table_parser import TableParser
-from legal_doc_inspector.doc_parser.zip_parser import ZipParser
-from legal_doc_inspector.penalty_calculator.penalty_calculator import Penalty_calculator
+from legal_doc_inspector.doc_parser.html_parser import parse_html # функция для парсинга html
+from legal_doc_inspector.app.utils.parse_info_by_inn import parse_html # класс 
 
 # LLm инициализируется
 model = Qwen2_5OmniForConditionalGeneration.from_pretrained(
@@ -188,6 +179,8 @@ def parse():
     result_json['results_of_name_parser'] = {}
     result_json['results_of_name_parser']['defendant_info'] = {}
     result_json['results_of_name_parser']['defendant_info']['inn'] = f'{defendant_inn}'
+
+    # Получение данных ответчика по его инн
     full_name, short_name, address, kpp, ogrn = parse_html(int(defendant_inn))
     result_json['results_of_name_parser']['defendant_info']['full_name'] = full_name
     result_json['results_of_name_parser']['defendant_info']['short_name'] = short_name
