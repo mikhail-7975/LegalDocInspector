@@ -1,0 +1,39 @@
+FROM huggingface/transformers-pytorch-gpu:latest
+
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV TRANSFORMERS_CACHE=/app/huggingface
+
+COPY huggingface /app/huggingface
+
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+        git \
+        poppler-utils \
+        tesseract-ocr-rus \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+# Create non-root user for security (optional, may conflict with GPU access)
+# RUN adduser --disabled-password --gecos '' --shell /bin/bash user && \
+#     chown -R user:user /app
+# USER user
+
+EXPOSE 5001
+
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:5001/health || exit 1
+
+# Note: The command description mentions streamlit but the dockerfile runs Flask
+# Based on the service name and port, this should run Flask
+# If you need to run streamlit instead, update the CMD accordingly
+CMD ["python3", "run.py"]

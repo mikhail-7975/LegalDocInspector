@@ -1,4 +1,5 @@
 FROM huggingface/transformers-pytorch-gpu:latest  
+
 ENV TRANSFORMERS_CACHE=/app/huggingface
 COPY huggingface /app/huggingface
 
