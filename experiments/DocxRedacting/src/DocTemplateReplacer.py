@@ -76,9 +76,10 @@ class DocTemplateReplacer:
             if i < rows_n - 1:
                 new_row = self.redactor.insert_row_in_table(table, 2 + i)
                 self.redactor.clone_table_row(table.rows[1 + i], new_row)
-                for cell in table.row_cells(1 + i):
-                    self.redactor._set_borders_to_cell(cell)
-                    self.redactor.set_vertical_alignment_to_cell(cell, "center")
+                # for cell in table.row_cells(1 + i):
+                #     # self.redactor._set_borders_to_cell(cell)
+                #     pass
+                #     # self.redactor.set_vertical_alignment_to_cell(cell, "center")
 
             self.redactor.replace_text_in_paragraph(
                 table.row_cells(i + 1)[0].paragraphs[0],
@@ -115,9 +116,9 @@ class DocTemplateReplacer:
             if i < rows_n - 1:
                 new_row = self.redactor.insert_row_in_table(table, 2 + i)
                 self.redactor.clone_table_row(table.rows[1 + i], new_row)
-                for cell in table.row_cells(1 + i):
-                    self.redactor._set_borders_to_cell(cell)
-                    self.redactor.set_vertical_alignment_to_cell(cell, "center")
+                # for cell in table.row_cells(1 + i):
+                #     self.redactor._set_borders_to_cell(cell)
+                #     self.redactor.set_vertical_alignment_to_cell(cell, "center")
 
             self.redactor.replace_text_in_paragraph(
                 table.row_cells(i + 1)[0].paragraphs[0],

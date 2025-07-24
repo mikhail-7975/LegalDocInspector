@@ -328,24 +328,25 @@ class DocxRedactor:
         source_tr_pr = source_row._tr.trPr
         if source_tr_pr is not None:
             # Remove existing properties in target row
-            target_tr = target_row._tr
-            old_tr_pr = target_tr.trPr
-            if old_tr_pr is not None:
-                target_tr.remove(old_tr_pr)
-            # Add a copy of the source's trPr
-            target_tr.insert(0, source_tr_pr)
+            pass
+            # target_tr = target_row._tr
+            # old_tr_pr = target_tr.trPr
+            # if old_tr_pr is not None:
+            #     target_tr.remove(old_tr_pr)
+            # # Add a copy of the source's trPr
+            # target_tr.insert(0, source_tr_pr)
 
         for source_cell, target_cell in zip(source_row.cells, target_row.cells):
             # Copy cell properties (like background color)
             self.copy_cell_properties(source_cell, target_cell)
 
-            source_tc_pr = source_cell._tc.tcPr
-            if source_tc_pr is not None:
-                target_tc = target_cell._tc
-                old_tc_pr = target_tc.tcPr
-                if old_tc_pr is not None:
-                    target_tc.remove(old_tc_pr)
-                target_tc.insert(0, source_tc_pr)
+            # source_tc_pr = source_cell._tc.tcPr
+            # if source_tc_pr is not None:
+            #     target_tc = target_cell._tc
+            #     old_tc_pr = target_tc.tcPr
+            #     if old_tc_pr is not None:
+            #         target_tc.remove(old_tc_pr)
+            #     target_tc.insert(0, source_tc_pr)
 
             # Copy paragraph and run styles (font, bold, italic, etc.)
             for source_paragraph, target_paragraph in zip(source_cell.paragraphs, target_cell.paragraphs):
@@ -491,3 +492,32 @@ class DocxRedactor:
         """Возвращает таблицу по индексу
         """
         return self.doc.tables[index]
+
+
+    def merge_table_cells(self, c1: _Cell, c2: _Cell):
+        c1.merge(c2)
+        """Удаляет все параграфы из ячейки"""
+        """ЭТОТ КОД МОЖЕТ ПРИВЕСТИ К ОШИБКАМ"""
+        for paragraph in c1.paragraphs[1:]:
+            p = paragraph._element
+            p.getparent().remove(p)
+
+
+    def print_table(self, table: Table):
+        for r, row in enumerate(table.rows):
+            for c, cell in enumerate(row.cells):
+                print(f"Строка {r}, столбец {c}")
+
+                for paragraph in cell.paragraphs:
+                    runs = []
+                    for run in paragraph.runs:
+                        runs.append(run.text)
+
+                    print(f"runs: {runs}")
+            print()
+
+
+    # def copy_text_from_cell(self, cell: _Cell) -> str:
+    #     text = ""
+    #     for paragraph in cell.paragraph
+
