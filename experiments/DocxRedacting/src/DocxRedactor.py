@@ -228,8 +228,36 @@ class DocxRedactor:
         # Copy paragraph formatting
         source_format = source_paragraph.paragraph_format
         target_format = target_paragraph.paragraph_format
+        
+        # Копируем отступы
+        if source_paragraph.paragraph_format.left_indent is not None:
+            target_paragraph.paragraph_format.left_indent = source_paragraph.paragraph_format.left_indent
+        
+        if source_paragraph.paragraph_format.right_indent is not None:
+            target_paragraph.paragraph_format.right_indent = source_paragraph.paragraph_format.right_indent
+        
+        if source_paragraph.paragraph_format.first_line_indent is not None:
+            target_paragraph.paragraph_format.first_line_indent = source_paragraph.paragraph_format.first_line_indent
+        
+        # Копируем интервалы
+        if source_paragraph.paragraph_format.space_before is not None:
+            target_paragraph.paragraph_format.space_before = source_paragraph.paragraph_format.space_before
+        
+        if source_paragraph.paragraph_format.space_after is not None:
+            target_paragraph.paragraph_format.space_after = source_paragraph.paragraph_format.space_after
+        
+        # Копируем межстрочный интервал
+        target_paragraph.paragraph_format.line_spacing = source_paragraph.paragraph_format.line_spacing
+        target_paragraph.paragraph_format.line_spacing_rule = source_paragraph.paragraph_format.line_spacing_rule
+        
+        # Копируем выравнивание
+        target_paragraph.alignment = source_paragraph.alignment
+        
+        # Копируем стиль (если есть)
+        if source_paragraph.style:
+            target_paragraph.style = source_paragraph.style
 
-        target_paragraph.style = source_paragraph.style
+        # target_paragraph.style = source_paragraph.style
 
         if source_paragraph._element.pPr is not None and source_paragraph._element.pPr.numPr is not None:
             num_id = source_paragraph._element.pPr.numPr.numId.val
@@ -336,6 +364,10 @@ class DocxRedactor:
             # # Add a copy of the source's trPr
             # target_tr.insert(0, source_tr_pr)
 
+        # Копируем высоту строки
+        target_row.height = source_row.height
+        target_row.height_rule = source_row.height_rule
+
         for source_cell, target_cell in zip(source_row.cells, target_row.cells):
             # Copy cell properties (like background color)
             self.copy_cell_properties(source_cell, target_cell)
@@ -359,6 +391,15 @@ class DocxRedactor:
                     self.copy_run_styles(run, new_run)
 
 
+    def copy_row_properties(self, source_row: _Row, target_row: _Row):
+        # Копируем высоту строки
+        target_row.height = source_row.height
+        target_row.height_rule = source_row.height_rule
+
+        for source_cell, target_cell in zip(source_row.cells, target_row.cells):
+            self.copy_cell_properties(source_cell, target_cell)
+
+
     def copy_cell_properties(self, source_cell: _Cell, target_cell: _Cell):
         """
         Полностью копирует свойства ячейки:
@@ -373,12 +414,22 @@ class DocxRedactor:
         src_tcPr = src_tc.get_or_add_tcPr()  # w:tcPr исходной ячейки
         dst_tcPr = dst_tc.get_or_add_tcPr()  # w:tcPr целевой ячейки
 
-        # --- Шаг 1: Очищаем существующие свойства у целевой ячейки ---
-        for child in list(dst_tcPr):
-            dst_tcPr.remove(child)
+        # # --- Шаг 1: Очищаем существующие свойства у целевой ячейки ---
+        # for child in list(dst_tcPr):
+        #     dst_tcPr.remove(child)
+
+        # # Копирование стилей (например, шрифта)
+        # if source_cell._element.p_lst:
+        #     for p in source_cell._element.p_lst:
+        #         target_cell._element.append(p)
 
         # --- Шаг 2: Копируем нужные элементы из исходного tcPr ---
         tags_to_copy = ['w:tcBorders', 'w:vAlign', 'w:shd', 'w:highlight']
+
+        # self.copy_cell_width(source_cell, target_cell)
+        # Копируем ширину ячейки
+        if source_cell.width:
+            target_cell.width = source_cell.width
 
         # Копируем вертикальное выравнивание (если задано явно)
         if source_cell.vertical_alignment:
@@ -515,6 +566,66 @@ class DocxRedactor:
 
                     print(f"runs: {runs}")
             print()
+
+
+    def insert_paragraph_after_table(self, src_table: Table) -> Paragraph:
+        new_paragraph = self.doc.add_paragraph()
+
+        src_table._element.addnext(new_paragraph._element)
+
+        return new_paragraph
+
+
+    def insert_table_after_table(self, src_table: Table) -> Table:
+        new_table = self.doc.add_table(rows=len(src_table.rows), cols=len(src_table.row_cells(0)))
+        src_table._element.addnext(new_table._element)
+        return new_table
+
+
+    def clone_table(self, source_table: Table, target_table: Table):
+        # Копируем стиль таблицы
+        target_table.style = source_table.style
+        for source_row, target_row in zip(source_table.rows, target_table.rows):
+            self.clone_table_row(source_row, target_row)
+
+
+"""
+    def copy_table(self, table: Table):
+        # Создает копию таблицы со всем содержимым
+        # Создаем новую таблицу с тем же количеством строк и столбцов
+        new_table = table._parent.add_table(rows=0, cols=len(table.columns))
+
+        # Копируем каждую строку
+        for row in table.rows:
+            new_row = new_table.add_row()
+            for i, cell in enumerate(row.cells):
+                # Копируем текст
+                new_row.cells[i].text = cell.text
+
+                # Копируем форматирование параграфов
+                if cell.paragraphs:
+                    for j, para in enumerate(cell.paragraphs):
+                        if j < len(new_row.cells[i].paragraphs):
+                            new_para = new_row.cells[i].paragraphs[j]
+                        else:
+                            new_para = new_row.cells[i].add_paragraph()
+
+                        # Копируем выравнивание
+                        new_para.alignment = para.alignment
+
+                        # Копируем содержимое runs
+                        for run in para.runs:
+                            new_run = new_para.add_run(run.text)
+                            # Копируем форматирование текста
+                            new_run.bold = run.bold
+                            new_run.italic = run.italic
+                            new_run.underline = run.underline
+                            new_run.font.name = run.font.name
+                            new_run.font.size = run.font.size
+                            new_run.font.color.rgb = run.font.color.rgb if run.font.color.rgb else None
+
+        return new_table
+"""
 
 
     # def copy_text_from_cell(self, cell: _Cell) -> str:
