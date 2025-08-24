@@ -177,3 +177,10 @@ cython_debug/
 *lock*
 data/*/
 .huggingface/
+
+experiments/parser_excel/docs/
+experiments/parser_excel/docs1/
+experiments/parser_excel/docs2/
+experiments/parser_excel/docs3/
+experiments/parser_excel/data_for_tests/
+experiments/calculator/myenv/

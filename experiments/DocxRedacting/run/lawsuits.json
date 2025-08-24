@@ -1,0 +1,1129 @@
+{
+    "contracts": [
+        {
+            "contract_number": "01.468667 от 06.11.2004",
+            "start_date_of_delay": "24.05.2013",
+            "end_date_of_delay": "05.12.1553",
+            "periods": [
+                {
+                    "period": "02.1640-01.1234",
+                    "first_debt": "3 917 445,12",
+                    "first_date": "11.12.1941",
+                    "payments_1": [
+                        {
+                            "debt": "7 207 690,69",
+                            "start_date": "11.02.1495",
+                            "end_date": "27.09.1756",
+                            "period_days": "95557",
+                            "interest_rate": "9.5%",
+                            "share": "1/833",
+                            "formulae": "7 207 690,69 × 95557 × 1/833 × 9.5%",
+                            "peny": "80 387,45"
+                        },
+                        {
+                            "debt": "2 667 455,87",
+                            "start_date": "10.01.1079",
+                            "end_date": "22.06.1458",
+                            "period_days": "138590",
+                            "interest_rate": "9.5%",
+                            "share": "1/258",
+                            "formulae": "2 667 455,87 × 138590 × 1/258 × 9.5%",
+                            "peny": "29 677,14"
+                        },
+                        {
+                            "debt": "7 610 859,18",
+                            "start_date": "08.11.1848",
+                            "end_date": "31.07.2010",
+                            "period_days": "59069",
+                            "interest_rate": "9.5%",
+                            "share": "1/616",
+                            "formulae": "7 610 859,18 × 59069 × 1/616 × 9.5%",
+                            "peny": "13 661,53"
+                        }
+                    ],
+                    "second_debt": "4 533 944,76",
+                    "second_date": "30.06.1120",
+                    "payments_2": [
+                        {
+                            "debt": "1 799 742,16",
+                            "start_date": "25.12.1002",
+                            "end_date": "27.12.1728",
+                            "period_days": "265169",
+                            "interest_rate": "9.5%",
+                            "share": "1/329",
+                            "formulae": "1 799 742,16 × 265169 × 1/329 × 9.5%",
+                            "peny": "84 600,72"
+                        },
+                        {
+                            "debt": "1 203 131,81",
+                            "start_date": "31.05.1238",
+                            "end_date": "29.07.1970",
+                            "period_days": "267416",
+                            "interest_rate": "9.5%",
+                            "share": "1/695",
+                            "formulae": "1 203 131,81 × 267416 × 1/695 × 9.5%",
+                            "peny": "22 863,77"
+                        },
+                        {
+                            "debt": "2 168 896,77",
+                            "start_date": "06.11.1093",
+                            "end_date": "05.04.1105",
+                            "period_days": "4167",
+                            "interest_rate": "9.5%",
+                            "share": "1/457",
+                            "formulae": "2 168 896,77 × 4167 × 1/457 × 9.5%",
+                            "peny": "85 641,94"
+                        }
+                    ],
+                    "result": "2 485 957,71"
+                },
+                {
+                    "period": "01.1729-10.1761",
+                    "first_debt": "5 865 720,91",
+                    "first_date": "14.03.1787",
+                    "payments_1": [
+                        {
+                            "debt": "8 107 678,45",
+                            "start_date": "27.10.1356",
+                            "end_date": "11.03.1542",
+                            "period_days": "67704",
+                            "interest_rate": "9.5%",
+                            "share": "1/309",
+                            "formulae": "8 107 678,45 × 67704 × 1/309 × 9.5%",
+                            "peny": "14 858,83"
+                        },
+                        {
+                            "debt": "6 892 182,46",
+                            "start_date": "15.07.999",
+                            "end_date": "17.02.1066",
+                            "period_days": "24323",
+                            "interest_rate": "9.5%",
+                            "share": "1/363",
+                            "formulae": "6 892 182,46 × 24323 × 1/363 × 9.5%",
+                            "peny": "11 452,59"
+                        },
+                        {
+                            "debt": "7 718 461,93",
+                            "start_date": "24.01.1926",
+                            "end_date": "23.09.2010",
+                            "period_days": "30923",
+                            "interest_rate": "9.5%",
+                            "share": "1/323",
+                            "formulae": "7 718 461,93 × 30923 × 1/323 × 9.5%",
+                            "peny": "50 129,15"
+                        }
+                    ],
+                    "second_debt": "3 386 673,87",
+                    "second_date": "30.08.1896",
+                    "payments_2": [
+                        {
+                            "debt": "4 234 269,83",
+                            "start_date": "17.06.1834",
+                            "end_date": "17.12.1882",
+                            "period_days": "17715",
+                            "interest_rate": "9.5%",
+                            "share": "1/865",
+                            "formulae": "4 234 269,83 × 17715 × 1/865 × 9.5%",
+                            "peny": "60 772,85"
+                        },
+                        {
+                            "debt": "3 932 767,85",
+                            "start_date": "27.05.1922",
+                            "end_date": "04.03.1995",
+                            "period_days": "26579",
+                            "interest_rate": "9.5%",
+                            "share": "1/250",
+                            "formulae": "3 932 767,85 × 26579 × 1/250 × 9.5%",
+                            "peny": "86 949,26"
+                        },
+                        {
+                            "debt": "8 940 145,44",
+                            "start_date": "10.09.1162",
+                            "end_date": "25.10.1314",
+                            "period_days": "55562",
+                            "interest_rate": "9.5%",
+                            "share": "1/736",
+                            "formulae": "8 940 145,44 × 55562 × 1/736 × 9.5%",
+                            "peny": "95 792,45"
+                        }
+                    ],
+                    "result": "8 834 431,85"
+                },
+                {
+                    "period": "01.1009-09.2005",
+                    "first_debt": "3 297 559,39",
+                    "first_date": "19.09.1071",
+                    "payments_1": [
+                        {
+                            "debt": "7 813 337,45",
+                            "start_date": "26.02.1277",
+                            "end_date": "04.05.1422",
+                            "period_days": "53026",
+                            "interest_rate": "9.5%",
+                            "share": "1/577",
+                            "formulae": "7 813 337,45 × 53026 × 1/577 × 9.5%",
+                            "peny": "37 966,65"
+                        },
+                        {
+                            "debt": "1 400 403,59",
+                            "start_date": "22.07.1929",
+                            "end_date": "18.04.1951",
+                            "period_days": "7940",
+                            "interest_rate": "9.5%",
+                            "share": "1/630",
+                            "formulae": "1 400 403,59 × 7940 × 1/630 × 9.5%",
+                            "peny": "37 495,51"
+                        },
+                        {
+                            "debt": "7 426 589,25",
+                            "start_date": "25.12.1111",
+                            "end_date": "09.09.1776",
+                            "period_days": "242781",
+                            "interest_rate": "9.5%",
+                            "share": "1/630",
+                            "formulae": "7 426 589,25 × 242781 × 1/630 × 9.5%",
+                            "peny": "37 188,56"
+                        }
+                    ],
+                    "second_debt": "5 507 804,86",
+                    "second_date": "30.05.1370",
+                    "payments_2": [
+                        {
+                            "debt": "2 683 155,17",
+                            "start_date": "23.05.1796",
+                            "end_date": "22.05.2004",
+                            "period_days": "75969",
+                            "interest_rate": "9.5%",
+                            "share": "1/815",
+                            "formulae": "2 683 155,17 × 75969 × 1/815 × 9.5%",
+                            "peny": "60 356,17"
+                        },
+                        {
+                            "debt": "8 330 206,77",
+                            "start_date": "02.05.1211",
+                            "end_date": "29.11.1417",
+                            "period_days": "75451",
+                            "interest_rate": "9.5%",
+                            "share": "1/303",
+                            "formulae": "8 330 206,77 × 75451 × 1/303 × 9.5%",
+                            "peny": "15 432,47"
+                        },
+                        {
+                            "debt": "3 536 636,30",
+                            "start_date": "07.11.1191",
+                            "end_date": "04.10.1621",
+                            "period_days": "157021",
+                            "interest_rate": "9.5%",
+                            "share": "1/645",
+                            "formulae": "3 536 636,30 × 157021 × 1/645 × 9.5%",
+                            "peny": "24 618,11"
+                        }
+                    ],
+                    "result": "3 600 392,61"
+                }
+            ],
+            "sum_debt": "7 610 188,77",
+            "sum_peny": "69 883,12"
+        },
+        {
+            "contract_number": "01.289273 от 13.02.1827",
+            "start_date_of_delay": "28.05.1410",
+            "end_date_of_delay": "15.01.1336",
+            "periods": [
+                {
+                    "period": "01.1900-01.1352",
+                    "first_debt": "4 143 319,93",
+                    "first_date": "12.11.1749",
+                    "payments_1": [
+                        {
+                            "debt": "1 451 908,50",
+                            "start_date": "14.07.1640",
+                            "end_date": "08.03.1733",
+                            "period_days": "33839",
+                            "interest_rate": "9.5%",
+                            "share": "1/929",
+                            "formulae": "1 451 908,50 × 33839 × 1/929 × 9.5%",
+                            "peny": "49 171,68"
+                        },
+                        {
+                            "debt": "7 250 665,10",
+                            "start_date": "31.08.1084",
+                            "end_date": "17.09.1229",
+                            "period_days": "52977",
+                            "interest_rate": "9.5%",
+                            "share": "1/146",
+                            "formulae": "7 250 665,10 × 52977 × 1/146 × 9.5%",
+                            "peny": "14 535,26"
+                        },
+                        {
+                            "debt": "3 396 928,43",
+                            "start_date": "17.01.1751",
+                            "end_date": "04.03.1830",
+                            "period_days": "28900",
+                            "interest_rate": "9.5%",
+                            "share": "1/619",
+                            "formulae": "3 396 928,43 × 28900 × 1/619 × 9.5%",
+                            "peny": "82 578,70"
+                        }
+                    ],
+                    "second_debt": "6 929 794,80",
+                    "second_date": "09.12.1650",
+                    "payments_2": [
+                        {
+                            "debt": "3 935 969,17",
+                            "start_date": "30.12.1285",
+                            "end_date": "05.06.1827",
+                            "period_days": "197752",
+                            "interest_rate": "9.5%",
+                            "share": "1/620",
+                            "formulae": "3 935 969,17 × 197752 × 1/620 × 9.5%",
+                            "peny": "75 987,84"
+                        },
+                        {
+                            "debt": "6 405 173,40",
+                            "start_date": "05.02.1896",
+                            "end_date": "26.01.2016",
+                            "period_days": "43819",
+                            "interest_rate": "9.5%",
+                            "share": "1/106",
+                            "formulae": "6 405 173,40 × 43819 × 1/106 × 9.5%",
+                            "peny": "42 706,24"
+                        },
+                        {
+                            "debt": "2 946 858,23",
+                            "start_date": "09.02.1531",
+                            "end_date": "22.11.1570",
+                            "period_days": "14531",
+                            "interest_rate": "9.5%",
+                            "share": "1/912",
+                            "formulae": "2 946 858,23 × 14531 × 1/912 × 9.5%",
+                            "peny": "76 557,47"
+                        }
+                    ],
+                    "result": "3 349 789,57"
+                },
+                {
+                    "period": "11.1632-05.1971",
+                    "first_debt": "2 952 828,45",
+                    "first_date": "10.10.1494",
+                    "payments_1": [
+                        {
+                            "debt": "1 105 314,71",
+                            "start_date": "02.09.1703",
+                            "end_date": "15.12.1796",
+                            "period_days": "34073",
+                            "interest_rate": "9.5%",
+                            "share": "1/391",
+                            "formulae": "1 105 314,71 × 34073 × 1/391 × 9.5%",
+                            "peny": "94 709,42"
+                        },
+                        {
+                            "debt": "7 580 336,96",
+                            "start_date": "15.02.1477",
+                            "end_date": "07.03.1701",
+                            "period_days": "81834",
+                            "interest_rate": "9.5%",
+                            "share": "1/742",
+                            "formulae": "7 580 336,96 × 81834 × 1/742 × 9.5%",
+                            "peny": "56 624,23"
+                        },
+                        {
+                            "debt": "8 634 108,47",
+                            "start_date": "17.04.1598",
+                            "end_date": "26.08.1656",
+                            "period_days": "21316",
+                            "interest_rate": "9.5%",
+                            "share": "1/792",
+                            "formulae": "8 634 108,47 × 21316 × 1/792 × 9.5%",
+                            "peny": "11 753,86"
+                        }
+                    ],
+                    "second_debt": "8 901 790,28",
+                    "second_date": "18.07.1969",
+                    "payments_2": [
+                        {
+                            "debt": "3 298 935,89",
+                            "start_date": "21.04.1816",
+                            "end_date": "19.04.2019",
+                            "period_days": "74142",
+                            "interest_rate": "9.5%",
+                            "share": "1/827",
+                            "formulae": "3 298 935,89 × 74142 × 1/827 × 9.5%",
+                            "peny": "12 184,27"
+                        },
+                        {
+                            "debt": "8 701 476,66",
+                            "start_date": "20.12.1214",
+                            "end_date": "15.09.1923",
+                            "period_days": "258860",
+                            "interest_rate": "9.5%",
+                            "share": "1/897",
+                            "formulae": "8 701 476,66 × 258860 × 1/897 × 9.5%",
+                            "peny": "85 984,18"
+                        },
+                        {
+                            "debt": "8 254 131,58",
+                            "start_date": "28.05.1864",
+                            "end_date": "04.01.1959",
+                            "period_days": "34553",
+                            "interest_rate": "9.5%",
+                            "share": "1/553",
+                            "formulae": "8 254 131,58 × 34553 × 1/553 × 9.5%",
+                            "peny": "44 488,23"
+                        }
+                    ],
+                    "result": "7 226 800,45"
+                },
+                {
+                    "period": "04.1548-01.1951",
+                    "first_debt": "1 984 276,78",
+                    "first_date": "16.07.1269",
+                    "payments_1": [
+                        {
+                            "debt": "4 824 287,74",
+                            "start_date": "04.05.1876",
+                            "end_date": "14.01.1942",
+                            "period_days": "23995",
+                            "interest_rate": "9.5%",
+                            "share": "1/646",
+                            "formulae": "4 824 287,74 × 23995 × 1/646 × 9.5%",
+                            "peny": "70 614,66"
+                        },
+                        {
+                            "debt": "8 609 471,19",
+                            "start_date": "02.08.1880",
+                            "end_date": "07.01.1969",
+                            "period_days": "32299",
+                            "interest_rate": "9.5%",
+                            "share": "1/795",
+                            "formulae": "8 609 471,19 × 32299 × 1/795 × 9.5%",
+                            "peny": "64 154,42"
+                        },
+                        {
+                            "debt": "7 802 198,30",
+                            "start_date": "31.01.1807",
+                            "end_date": "19.05.1980",
+                            "period_days": "63296",
+                            "interest_rate": "9.5%",
+                            "share": "1/332",
+                            "formulae": "7 802 198,30 × 63296 × 1/332 × 9.5%",
+                            "peny": "59 942,80"
+                        }
+                    ],
+                    "second_debt": "8 691 688,56",
+                    "second_date": "30.12.1552",
+                    "payments_2": [
+                        {
+                            "debt": "6 860 853,56",
+                            "start_date": "06.07.1906",
+                            "end_date": "01.07.1944",
+                            "period_days": "13875",
+                            "interest_rate": "9.5%",
+                            "share": "1/759",
+                            "formulae": "6 860 853,56 × 13875 × 1/759 × 9.5%",
+                            "peny": "98 720,16"
+                        },
+                        {
+                            "debt": "4 455 155,51",
+                            "start_date": "19.07.1178",
+                            "end_date": "04.08.1690",
+                            "period_days": "187021",
+                            "interest_rate": "9.5%",
+                            "share": "1/652",
+                            "formulae": "4 455 155,51 × 187021 × 1/652 × 9.5%",
+                            "peny": "86 683,28"
+                        },
+                        {
+                            "debt": "6 243 860,43",
+                            "start_date": "26.02.1956",
+                            "end_date": "02.11.1983",
+                            "period_days": "10111",
+                            "interest_rate": "9.5%",
+                            "share": "1/325",
+                            "formulae": "6 243 860,43 × 10111 × 1/325 × 9.5%",
+                            "peny": "64 601,53"
+                        }
+                    ],
+                    "result": "7 491 615,25"
+                }
+            ],
+            "sum_debt": "3 802 294,24",
+            "sum_peny": "88 528,57"
+        },
+        {
+            "contract_number": "01.873150 от 14.07.1635",
+            "start_date_of_delay": "18.01.1332",
+            "end_date_of_delay": "29.08.1756",
+            "periods": [
+                {
+                    "period": "02.1652-12.1459",
+                    "first_debt": "8 286 347,88",
+                    "first_date": "19.12.1124",
+                    "payments_1": [
+                        {
+                            "debt": "1 127 217,11",
+                            "start_date": "24.08.1322",
+                            "end_date": "10.06.1711",
+                            "period_days": "142004",
+                            "interest_rate": "9.5%",
+                            "share": "1/528",
+                            "formulae": "1 127 217,11 × 142004 × 1/528 × 9.5%",
+                            "peny": "44 838,52"
+                        },
+                        {
+                            "debt": "7 553 381,41",
+                            "start_date": "21.10.1779",
+                            "end_date": "08.01.1871",
+                            "period_days": "33316",
+                            "interest_rate": "9.5%",
+                            "share": "1/120",
+                            "formulae": "7 553 381,41 × 33316 × 1/120 × 9.5%",
+                            "peny": "54 749,83"
+                        },
+                        {
+                            "debt": "4 345 143,33",
+                            "start_date": "18.07.1813",
+                            "end_date": "26.11.1926",
+                            "period_days": "41403",
+                            "interest_rate": "9.5%",
+                            "share": "1/413",
+                            "formulae": "4 345 143,33 × 41403 × 1/413 × 9.5%",
+                            "peny": "21 412,78"
+                        }
+                    ],
+                    "second_debt": "6 178 903,68",
+                    "second_date": "26.12.1726",
+                    "payments_2": [
+                        {
+                            "debt": "7 460 654,27",
+                            "start_date": "25.09.1498",
+                            "end_date": "10.08.1874",
+                            "period_days": "137285",
+                            "interest_rate": "9.5%",
+                            "share": "1/724",
+                            "formulae": "7 460 654,27 × 137285 × 1/724 × 9.5%",
+                            "peny": "29 348,65"
+                        },
+                        {
+                            "debt": "2 768 672,16",
+                            "start_date": "12.09.1642",
+                            "end_date": "11.04.1756",
+                            "period_days": "41484",
+                            "interest_rate": "9.5%",
+                            "share": "1/577",
+                            "formulae": "2 768 672,16 × 41484 × 1/577 × 9.5%",
+                            "peny": "26 290,66"
+                        },
+                        {
+                            "debt": "1 427 365,84",
+                            "start_date": "30.03.1661",
+                            "end_date": "01.07.1945",
+                            "period_days": "103821",
+                            "interest_rate": "9.5%",
+                            "share": "1/591",
+                            "formulae": "1 427 365,84 × 103821 × 1/591 × 9.5%",
+                            "peny": "35 253,51"
+                        }
+                    ],
+                    "result": "2 698 434,37"
+                },
+                {
+                    "period": "04.1162-02.1794",
+                    "first_debt": "5 977 691,88",
+                    "first_date": "18.09.1877",
+                    "payments_1": [
+                        {
+                            "debt": "1 243 920,24",
+                            "start_date": "05.11.1344",
+                            "end_date": "28.05.1789",
+                            "period_days": "162372",
+                            "interest_rate": "9.5%",
+                            "share": "1/490",
+                            "formulae": "1 243 920,24 × 162372 × 1/490 × 9.5%",
+                            "peny": "90 177,76"
+                        },
+                        {
+                            "debt": "2 622 467,62",
+                            "start_date": "11.02.1126",
+                            "end_date": "28.06.1743",
+                            "period_days": "225492",
+                            "interest_rate": "9.5%",
+                            "share": "1/991",
+                            "formulae": "2 622 467,62 × 225492 × 1/991 × 9.5%",
+                            "peny": "84 301,22"
+                        },
+                        {
+                            "debt": "5 167 398,87",
+                            "start_date": "16.01.1983",
+                            "end_date": "26.11.2020",
+                            "period_days": "13829",
+                            "interest_rate": "9.5%",
+                            "share": "1/862",
+                            "formulae": "5 167 398,87 × 13829 × 1/862 × 9.5%",
+                            "peny": "21 126,35"
+                        }
+                    ],
+                    "second_debt": "6 785 873,96",
+                    "second_date": "06.07.1388",
+                    "payments_2": [
+                        {
+                            "debt": "2 375 251,83",
+                            "start_date": "29.03.1557",
+                            "end_date": "28.02.1611",
+                            "period_days": "19694",
+                            "interest_rate": "9.5%",
+                            "share": "1/417",
+                            "formulae": "2 375 251,83 × 19694 × 1/417 × 9.5%",
+                            "peny": "73 996,91"
+                        },
+                        {
+                            "debt": "1 216 635,68",
+                            "start_date": "18.03.1429",
+                            "end_date": "04.12.1885",
+                            "period_days": "166812",
+                            "interest_rate": "9.5%",
+                            "share": "1/553",
+                            "formulae": "1 216 635,68 × 166812 × 1/553 × 9.5%",
+                            "peny": "82 552,83"
+                        },
+                        {
+                            "debt": "1 354 316,85",
+                            "start_date": "19.02.1242",
+                            "end_date": "08.06.1919",
+                            "period_days": "247377",
+                            "interest_rate": "9.5%",
+                            "share": "1/747",
+                            "formulae": "1 354 316,85 × 247377 × 1/747 × 9.5%",
+                            "peny": "74 384,88"
+                        }
+                    ],
+                    "result": "1 306 912,59"
+                },
+                {
+                    "period": "11.1284-07.1956",
+                    "first_debt": "5 964 589,23",
+                    "first_date": "14.02.2001",
+                    "payments_1": [
+                        {
+                            "debt": "5 483 290,43",
+                            "start_date": "06.01.1864",
+                            "end_date": "13.09.1866",
+                            "period_days": "981",
+                            "interest_rate": "9.5%",
+                            "share": "1/403",
+                            "formulae": "5 483 290,43 × 981 × 1/403 × 9.5%",
+                            "peny": "81 490,41"
+                        },
+                        {
+                            "debt": "3 156 576,15",
+                            "start_date": "11.06.1428",
+                            "end_date": "15.04.2024",
+                            "period_days": "217628",
+                            "interest_rate": "9.5%",
+                            "share": "1/651",
+                            "formulae": "3 156 576,15 × 217628 × 1/651 × 9.5%",
+                            "peny": "91 502,79"
+                        },
+                        {
+                            "debt": "4 943 452,23",
+                            "start_date": "28.01.1734",
+                            "end_date": "21.03.1775",
+                            "period_days": "15027",
+                            "interest_rate": "9.5%",
+                            "share": "1/452",
+                            "formulae": "4 943 452,23 × 15027 × 1/452 × 9.5%",
+                            "peny": "21 956,60"
+                        }
+                    ],
+                    "second_debt": "7 406 968,26",
+                    "second_date": "15.02.1609",
+                    "payments_2": [
+                        {
+                            "debt": "4 178 869,55",
+                            "start_date": "31.08.1313",
+                            "end_date": "28.01.1792",
+                            "period_days": "174736",
+                            "interest_rate": "9.5%",
+                            "share": "1/483",
+                            "formulae": "4 178 869,55 × 174736 × 1/483 × 9.5%",
+                            "peny": "78 681,45"
+                        },
+                        {
+                            "debt": "3 699 725,87",
+                            "start_date": "16.07.1801",
+                            "end_date": "22.11.1941",
+                            "period_days": "51263",
+                            "interest_rate": "9.5%",
+                            "share": "1/822",
+                            "formulae": "3 699 725,87 × 51263 × 1/822 × 9.5%",
+                            "peny": "21 421,19"
+                        },
+                        {
+                            "debt": "5 317 322,66",
+                            "start_date": "04.12.1998",
+                            "end_date": "09.06.2023",
+                            "period_days": "8953",
+                            "interest_rate": "9.5%",
+                            "share": "1/312",
+                            "formulae": "5 317 322,66 × 8953 × 1/312 × 9.5%",
+                            "peny": "69 792,95"
+                        }
+                    ],
+                    "result": "1 656 145,79"
+                }
+            ],
+            "sum_debt": "8 149 566,57",
+            "sum_peny": "40 291,67"
+        },
+        {
+            "contract_number": "01.849021 от 14.03.1539",
+            "start_date_of_delay": "06.06.1373",
+            "end_date_of_delay": "10.10.1545",
+            "periods": [
+                {
+                    "period": "02.1574-09.1527",
+                    "first_debt": "8 548 613,14",
+                    "first_date": "17.02.998",
+                    "payments_1": [
+                        {
+                            "debt": "2 367 471,77",
+                            "start_date": "08.10.1226",
+                            "end_date": "06.04.1272",
+                            "period_days": "16617",
+                            "interest_rate": "9.5%",
+                            "share": "1/191",
+                            "formulae": "2 367 471,77 × 16617 × 1/191 × 9.5%",
+                            "peny": "28 709,98"
+                        },
+                        {
+                            "debt": "6 247 750,11",
+                            "start_date": "20.06.1275",
+                            "end_date": "02.02.1349",
+                            "period_days": "26890",
+                            "interest_rate": "9.5%",
+                            "share": "1/867",
+                            "formulae": "6 247 750,11 × 26890 × 1/867 × 9.5%",
+                            "peny": "47 165,21"
+                        },
+                        {
+                            "debt": "1 129 339,71",
+                            "start_date": "22.09.1280",
+                            "end_date": "09.08.1460",
+                            "period_days": "65699",
+                            "interest_rate": "9.5%",
+                            "share": "1/137",
+                            "formulae": "1 129 339,71 × 65699 × 1/137 × 9.5%",
+                            "peny": "61 393,71"
+                        }
+                    ],
+                    "second_debt": "5 383 173,14",
+                    "second_date": "23.02.2006",
+                    "payments_2": [
+                        {
+                            "debt": "8 556 410,64",
+                            "start_date": "20.06.1885",
+                            "end_date": "07.02.1981",
+                            "period_days": "34930",
+                            "interest_rate": "9.5%",
+                            "share": "1/884",
+                            "formulae": "8 556 410,64 × 34930 × 1/884 × 9.5%",
+                            "peny": "60 963,91"
+                        },
+                        {
+                            "debt": "5 915 215,81",
+                            "start_date": "04.06.1438",
+                            "end_date": "04.05.1975",
+                            "period_days": "196104",
+                            "interest_rate": "9.5%",
+                            "share": "1/793",
+                            "formulae": "5 915 215,81 × 196104 × 1/793 × 9.5%",
+                            "peny": "87 127,98"
+                        },
+                        {
+                            "debt": "2 542 779,69",
+                            "start_date": "12.09.1578",
+                            "end_date": "19.10.1952",
+                            "period_days": "136638",
+                            "interest_rate": "9.5%",
+                            "share": "1/717",
+                            "formulae": "2 542 779,69 × 136638 × 1/717 × 9.5%",
+                            "peny": "71 253,35"
+                        }
+                    ],
+                    "result": "5 239 249,69"
+                },
+                {
+                    "period": "05.1426-08.1044",
+                    "first_debt": "6 616 519,28",
+                    "first_date": "15.03.1467",
+                    "payments_1": [
+                        {
+                            "debt": "7 311 104,63",
+                            "start_date": "13.05.1198",
+                            "end_date": "23.02.1333",
+                            "period_days": "49229",
+                            "interest_rate": "9.5%",
+                            "share": "1/422",
+                            "formulae": "7 311 104,63 × 49229 × 1/422 × 9.5%",
+                            "peny": "85 766,19"
+                        },
+                        {
+                            "debt": "1 829 844,75",
+                            "start_date": "26.07.1069",
+                            "end_date": "29.04.1265",
+                            "period_days": "71500",
+                            "interest_rate": "9.5%",
+                            "share": "1/561",
+                            "formulae": "1 829 844,75 × 71500 × 1/561 × 9.5%",
+                            "peny": "18 747,82"
+                        },
+                        {
+                            "debt": "6 976 882,37",
+                            "start_date": "11.08.1503",
+                            "end_date": "18.03.1791",
+                            "period_days": "105045",
+                            "interest_rate": "9.5%",
+                            "share": "1/576",
+                            "formulae": "6 976 882,37 × 105045 × 1/576 × 9.5%",
+                            "peny": "29 702,51"
+                        }
+                    ],
+                    "second_debt": "3 842 417,81",
+                    "second_date": "11.05.1797",
+                    "payments_2": [
+                        {
+                            "debt": "5 705 171,78",
+                            "start_date": "24.01.1538",
+                            "end_date": "08.08.1626",
+                            "period_days": "32338",
+                            "interest_rate": "9.5%",
+                            "share": "1/250",
+                            "formulae": "5 705 171,78 × 32338 × 1/250 × 9.5%",
+                            "peny": "70 418,11"
+                        },
+                        {
+                            "debt": "1 253 144,94",
+                            "start_date": "24.09.1902",
+                            "end_date": "12.06.1906",
+                            "period_days": "1357",
+                            "interest_rate": "9.5%",
+                            "share": "1/519",
+                            "formulae": "1 253 144,94 × 1357 × 1/519 × 9.5%",
+                            "peny": "50 785,12"
+                        },
+                        {
+                            "debt": "3 998 607,70",
+                            "start_date": "04.04.1999",
+                            "end_date": "25.07.2021",
+                            "period_days": "8148",
+                            "interest_rate": "9.5%",
+                            "share": "1/292",
+                            "formulae": "3 998 607,70 × 8148 × 1/292 × 9.5%",
+                            "peny": "46 485,60"
+                        }
+                    ],
+                    "result": "2 488 722,88"
+                },
+                {
+                    "period": "07.1054-05.1840",
+                    "first_debt": "2 228 505,13",
+                    "first_date": "03.09.1775",
+                    "payments_1": [
+                        {
+                            "debt": "3 187 544,64",
+                            "start_date": "30.05.1112",
+                            "end_date": "15.11.1248",
+                            "period_days": "49843",
+                            "interest_rate": "9.5%",
+                            "share": "1/215",
+                            "formulae": "3 187 544,64 × 49843 × 1/215 × 9.5%",
+                            "peny": "30 869,45"
+                        },
+                        {
+                            "debt": "5 513 598,67",
+                            "start_date": "11.12.1113",
+                            "end_date": "25.01.1452",
+                            "period_days": "123497",
+                            "interest_rate": "9.5%",
+                            "share": "1/900",
+                            "formulae": "5 513 598,67 × 123497 × 1/900 × 9.5%",
+                            "peny": "90 127,10"
+                        },
+                        {
+                            "debt": "8 540 679,52",
+                            "start_date": "10.09.1089",
+                            "end_date": "28.05.1864",
+                            "period_days": "282958",
+                            "interest_rate": "9.5%",
+                            "share": "1/746",
+                            "formulae": "8 540 679,52 × 282958 × 1/746 × 9.5%",
+                            "peny": "41 110,79"
+                        }
+                    ],
+                    "second_debt": "1 202 910,63",
+                    "second_date": "06.06.1451",
+                    "payments_2": [
+                        {
+                            "debt": "1 558 954,57",
+                            "start_date": "26.05.2007",
+                            "end_date": "31.10.2024",
+                            "period_days": "6368",
+                            "interest_rate": "9.5%",
+                            "share": "1/217",
+                            "formulae": "1 558 954,57 × 6368 × 1/217 × 9.5%",
+                            "peny": "42 951,91"
+                        },
+                        {
+                            "debt": "8 564 261,50",
+                            "start_date": "30.09.1695",
+                            "end_date": "20.12.1820",
+                            "period_days": "45736",
+                            "interest_rate": "9.5%",
+                            "share": "1/199",
+                            "formulae": "8 564 261,50 × 45736 × 1/199 × 9.5%",
+                            "peny": "31 507,42"
+                        },
+                        {
+                            "debt": "1 906 101,10",
+                            "start_date": "22.12.1002",
+                            "end_date": "02.10.1918",
+                            "period_days": "334481",
+                            "interest_rate": "9.5%",
+                            "share": "1/857",
+                            "formulae": "1 906 101,10 × 334481 × 1/857 × 9.5%",
+                            "peny": "69 440,10"
+                        }
+                    ],
+                    "result": "4 561 986,64"
+                }
+            ],
+            "sum_debt": "2 138 276,29",
+            "sum_peny": "89 688,96"
+        },
+        {
+            "contract_number": "01.352368 от 17.09.1541",
+            "start_date_of_delay": "12.04.1425",
+            "end_date_of_delay": "06.09.1516",
+            "periods": [
+                {
+                    "period": "07.1275-12.2005",
+                    "first_debt": "8 582 277,10",
+                    "first_date": "19.02.1918",
+                    "payments_1": [
+                        {
+                            "debt": "2 151 765,33",
+                            "start_date": "12.06.1593",
+                            "end_date": "30.06.1793",
+                            "period_days": "73067",
+                            "interest_rate": "9.5%",
+                            "share": "1/897",
+                            "formulae": "2 151 765,33 × 73067 × 1/897 × 9.5%",
+                            "peny": "31 632,46"
+                        },
+                        {
+                            "debt": "2 262 190,12",
+                            "start_date": "24.09.1932",
+                            "end_date": "12.06.1977",
+                            "period_days": "16332",
+                            "interest_rate": "9.5%",
+                            "share": "1/684",
+                            "formulae": "2 262 190,12 × 16332 × 1/684 × 9.5%",
+                            "peny": "88 548,57"
+                        },
+                        {
+                            "debt": "3 509 766,33",
+                            "start_date": "06.07.1854",
+                            "end_date": "01.11.1870",
+                            "period_days": "5962",
+                            "interest_rate": "9.5%",
+                            "share": "1/321",
+                            "formulae": "3 509 766,33 × 5962 × 1/321 × 9.5%",
+                            "peny": "11 576,98"
+                        }
+                    ],
+                    "second_debt": "2 435 643,16",
+                    "second_date": "30.07.1678",
+                    "payments_2": [
+                        {
+                            "debt": "2 503 527,29",
+                            "start_date": "27.04.1713",
+                            "end_date": "21.04.1936",
+                            "period_days": "81443",
+                            "interest_rate": "9.5%",
+                            "share": "1/638",
+                            "formulae": "2 503 527,29 × 81443 × 1/638 × 9.5%",
+                            "peny": "22 444,56"
+                        },
+                        {
+                            "debt": "8 771 503,14",
+                            "start_date": "06.07.1205",
+                            "end_date": "21.06.1316",
+                            "period_days": "40527",
+                            "interest_rate": "9.5%",
+                            "share": "1/921",
+                            "formulae": "8 771 503,14 × 40527 × 1/921 × 9.5%",
+                            "peny": "32 126,92"
+                        },
+                        {
+                            "debt": "4 236 396,78",
+                            "start_date": "24.12.1057",
+                            "end_date": "19.11.1478",
+                            "period_days": "153732",
+                            "interest_rate": "9.5%",
+                            "share": "1/505",
+                            "formulae": "4 236 396,78 × 153732 × 1/505 × 9.5%",
+                            "peny": "95 805,65"
+                        }
+                    ],
+                    "result": "2 367 381,12"
+                },
+                {
+                    "period": "11.1310-03.1006",
+                    "first_debt": "8 928 707,14",
+                    "first_date": "08.05.1239",
+                    "payments_1": [
+                        {
+                            "debt": "3 809 329,78",
+                            "start_date": "17.01.1568",
+                            "end_date": "05.01.1903",
+                            "period_days": "122344",
+                            "interest_rate": "9.5%",
+                            "share": "1/427",
+                            "formulae": "3 809 329,78 × 122344 × 1/427 × 9.5%",
+                            "peny": "64 403,39"
+                        },
+                        {
+                            "debt": "3 443 167,25",
+                            "start_date": "07.07.1971",
+                            "end_date": "11.01.1994",
+                            "period_days": "8224",
+                            "interest_rate": "9.5%",
+                            "share": "1/234",
+                            "formulae": "3 443 167,25 × 8224 × 1/234 × 9.5%",
+                            "peny": "69 815,14"
+                        },
+                        {
+                            "debt": "8 418 886,28",
+                            "start_date": "21.10.1581",
+                            "end_date": "20.02.1933",
+                            "period_days": "128322",
+                            "interest_rate": "9.5%",
+                            "share": "1/686",
+                            "formulae": "8 418 886,28 × 128322 × 1/686 × 9.5%",
+                            "peny": "80 895,55"
+                        }
+                    ],
+                    "second_debt": "4 914 491,65",
+                    "second_date": "18.06.1110",
+                    "payments_2": [
+                        {
+                            "debt": "4 755 294,47",
+                            "start_date": "25.11.1146",
+                            "end_date": "20.04.1455",
+                            "period_days": "112641",
+                            "interest_rate": "9.5%",
+                            "share": "1/527",
+                            "formulae": "4 755 294,47 × 112641 × 1/527 × 9.5%",
+                            "peny": "37 427,65"
+                        },
+                        {
+                            "debt": "7 463 835,68",
+                            "start_date": "17.06.1500",
+                            "end_date": "13.12.1576",
+                            "period_days": "27938",
+                            "interest_rate": "9.5%",
+                            "share": "1/279",
+                            "formulae": "7 463 835,68 × 27938 × 1/279 × 9.5%",
+                            "peny": "54 265,27"
+                        },
+                        {
+                            "debt": "8 856 948,35",
+                            "start_date": "01.06.1278",
+                            "end_date": "18.09.1681",
+                            "period_days": "147302",
+                            "interest_rate": "9.5%",
+                            "share": "1/811",
+                            "formulae": "8 856 948,35 × 147302 × 1/811 × 9.5%",
+                            "peny": "91 908,18"
+                        }
+                    ],
+                    "result": "2 184 511,52"
+                },
+                {
+                    "period": "08.1358-08.1550",
+                    "first_debt": "7 848 126,54",
+                    "first_date": "28.12.1510",
+                    "payments_1": [
+                        {
+                            "debt": "5 170 900,23",
+                            "start_date": "14.09.1717",
+                            "end_date": "22.05.1754",
+                            "period_days": "13399",
+                            "interest_rate": "9.5%",
+                            "share": "1/758",
+                            "formulae": "5 170 900,23 × 13399 × 1/758 × 9.5%",
+                            "peny": "61 865,60"
+                        },
+                        {
+                            "debt": "1 144 134,57",
+                            "start_date": "22.02.1565",
+                            "end_date": "26.09.1882",
+                            "period_days": "115998",
+                            "interest_rate": "9.5%",
+                            "share": "1/219",
+                            "formulae": "1 144 134,57 × 115998 × 1/219 × 9.5%",
+                            "peny": "34 716,56"
+                        },
+                        {
+                            "debt": "1 644 852,90",
+                            "start_date": "24.02.1718",
+                            "end_date": "02.08.1905",
+                            "period_days": "68459",
+                            "interest_rate": "9.5%",
+                            "share": "1/953",
+                            "formulae": "1 644 852,90 × 68459 × 1/953 × 9.5%",
+                            "peny": "93 924,40"
+                        }
+                    ],
+                    "second_debt": "3 869 790,47",
+                    "second_date": "20.09.1157",
+                    "payments_2": [
+                        {
+                            "debt": "8 349 515,11",
+                            "start_date": "22.05.1201",
+                            "end_date": "30.05.1863",
+                            "period_days": "241798",
+                            "interest_rate": "9.5%",
+                            "share": "1/680",
+                            "formulae": "8 349 515,11 × 241798 × 1/680 × 9.5%",
+                            "peny": "36 502,62"
+                        },
+                        {
+                            "debt": "4 369 671,32",
+                            "start_date": "28.03.1378",
+                            "end_date": "21.06.1394",
+                            "period_days": "5929",
+                            "interest_rate": "9.5%",
+                            "share": "1/344",
+                            "formulae": "4 369 671,32 × 5929 × 1/344 × 9.5%",
+                            "peny": "20 876,45"
+                        },
+                        {
+                            "debt": "6 453 398,77",
+                            "start_date": "24.11.1094",
+                            "end_date": "03.07.1680",
+                            "period_days": "213889",
+                            "interest_rate": "9.5%",
+                            "share": "1/433",
+                            "formulae": "6 453 398,77 × 213889 × 1/433 × 9.5%",
+                            "peny": "80 728,47"
+                        }
+                    ],
+                    "result": "7 642 392,81"
+                }
+            ],
+            "sum_debt": "3 390 730,96",
+            "sum_peny": "35 896,11"
+        }
+    ]
+}
