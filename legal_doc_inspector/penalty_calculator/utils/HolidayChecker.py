@@ -1,33 +1,34 @@
-# -*- coding: utf-8 -*-
 """
 Created on Fri Apr 25 18:28:25 2025
 
 @author: marin
 """
 
-import json
 from datetime import date, timedelta
+import json
 from pathlib import Path
-from workalendar.europe import Russia
+
 import requests
+from workalendar.europe import Russia
+
 
 class HolidayChecker:
-    def __init__(self, cache_file='holiday_cache.json', offline=False):
+    def __init__(self, cache_file="holiday_cache.json", offline=False):
         self.calendar = Russia()
         self.cache_file = Path(cache_file)
         self.offline = offline
         self.holidays_cache = self._load_cache()
-        
+
     def _load_cache(self):
         """Загружает кэш праздников из файла или создаёт новый"""
         if self.cache_file.exists():
-            with open(self.cache_file, 'r', encoding='utf-8') as f:
+            with open(self.cache_file, encoding="utf-8") as f:
                 return json.load(f)
         return {}
 
     def _save_cache(self):
         """Сохраняет кэш праздников в файл"""
-        with open(self.cache_file, 'w', encoding='utf-8') as f:
+        with open(self.cache_file, "w", encoding="utf-8") as f:
             json.dump(self.holidays_cache, f, ensure_ascii=False, indent=2)
 
     def _fetch_online_holidays(self, year):
@@ -35,7 +36,7 @@ class HolidayChecker:
         try:
             url = f"https://date.nager.at/api/v3/PublicHolidays/{year}/RU"
             response = requests.get(url, timeout=3)
-            return [holiday['date'] for holiday in response.json()]
+            return [holiday["date"] for holiday in response.json()]
         except requests.RequestException:
             return None
 
@@ -43,12 +44,12 @@ class HolidayChecker:
         """Обновляет кэш праздников для указанного года"""
         if str(year) in self.holidays_cache:
             return
-            
+
         # Используем workalendar как основной источник
         holidays = []
         for month in range(1, 13):
-            month_holidays = self.calendar.holidays(year)[month-1::12]
-            holidays.extend([d.strftime('%Y-%m-%d') for d, _ in month_holidays])
+            month_holidays = self.calendar.holidays(year)[month - 1 :: 12]
+            holidays.extend([d.strftime("%Y-%m-%d") for d, _ in month_holidays])
 
         # Пробуем получить дополнительные данные онлайн
         if not self.offline:
@@ -62,7 +63,9 @@ class HolidayChecker:
     def is_holiday_or_weekend(self, check_date):
         """Проверяет, является ли дата праздником или выходным"""
         if not isinstance(check_date, date):
-            check_date = date.fromisoformat(check_date) if isinstance(check_date, str) else None
+            check_date = (
+                date.fromisoformat(check_date) if isinstance(check_date, str) else None
+            )
             if not check_date:
                 raise ValueError("Некорректный формат даты")
 
@@ -81,34 +84,42 @@ class HolidayChecker:
         """Возвращает следующий рабочий день с учётом переносов"""
         delta = timedelta(days=2)
         next_day = check_date + delta
-        
+
         while self.is_holiday_or_weekend(next_day):
             next_day += delta
-            
+
         return next_day
+
 
 def get_user_date():
     """Функция для ввода даты пользователем"""
     while True:
-        date_str = input("Введите дату в формате ДД.ММ.ГГГГ (например, 01.01.2024): ").strip()
+        date_str = input(
+            "Введите дату в формате ДД.ММ.ГГГГ (например, 01.01.2024): "
+        ).strip()
         try:
-            day, month, year = map(int, date_str.split('.'))
+            day, month, year = map(int, date_str.split("."))
             return date(year, month, day)
         except (ValueError, AttributeError):
             print("Ошибка: введите дату в правильном формате (ДД.ММ.ГГГГ)")
+
 
 # Пример использования
 if __name__ == "__main__":
     # Инициализация (offline=True для работы без интернета)
     checker = HolidayChecker(offline=False)
-    
+
     # Запрос даты у пользователя
     user_date = get_user_date()
-    
+
     # Проверка введенной даты
-    status = "выходной/праздник" if checker.is_holiday_or_weekend(user_date) else "рабочий день"
+    status = (
+        "выходной/праздник"
+        if checker.is_holiday_or_weekend(user_date)
+        else "рабочий день"
+    )
     print(f"\n{user_date.strftime('%d.%m.%Y')}: {status}")
-    
+
     # Если дата выходная, показываем следующий рабочий день
     if checker.is_holiday_or_weekend(user_date):
         next_workday = checker.get_next_workday(user_date)

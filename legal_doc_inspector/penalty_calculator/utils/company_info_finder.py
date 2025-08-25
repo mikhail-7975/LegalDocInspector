@@ -1,12 +1,13 @@
-# -*- coding: utf-8 -*-
 """
 Created on Wed Apr 16 20:30:05 2025
 
 @author: marin
 """
 
-import requests
 import time
+
+import requests
+
 
 def get_company_info_by_inn(inn):
     # Шаг 1: Получаем идентификатор запроса
@@ -16,7 +17,7 @@ def get_company_info_by_inn(inn):
         "page": "",
         "query": inn,
         "region": "",
-        "PreventChromeAutocomplete": ""
+        "PreventChromeAutocomplete": "",
     }
 
     headers = {
@@ -31,7 +32,7 @@ def get_company_info_by_inn(inn):
         response.raise_for_status()
 
         # Получаем ID из ответа
-        search_id = response.json().get('t')
+        search_id = response.json().get("t")
 
         if not search_id:
             return None, None, None
@@ -48,12 +49,12 @@ def get_company_info_by_inn(inn):
         data = result_response.json()
 
         # Проверяем наличие данных
-        if 'rows' in data and len(data['rows']) > 0:
+        if "rows" in data and len(data["rows"]) > 0:
             # Берем первую запись (самую релевантную)
-            first_record = data['rows'][0]
-            ogrn = first_record.get('o')
-            company_name = first_record.get('n')
-            address = first_record.get('a')
+            first_record = data["rows"][0]
+            ogrn = first_record.get("o")
+            company_name = first_record.get("n")
+            address = first_record.get("a")
             return ogrn, company_name, address
         else:
             return None, None, None
@@ -61,4 +62,3 @@ def get_company_info_by_inn(inn):
     except requests.exceptions.RequestException as e:
         print(f"Ошибка при выполнении запроса: {e}")
         return None, None, None
-

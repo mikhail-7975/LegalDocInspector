@@ -1,7 +1,7 @@
-from .utils import get_text_for_zip, get_pdf_files, get_conversation_for_zip, examples
-import torch
 import re
-from sentence_transformers import util
+
+from .utils import examples, get_conversation_for_zip, get_pdf_files, get_text_for_zip
+
 
 class ZipParser:
     def __init__(self, model, processor, emb_model, emb_tokenizer):
@@ -11,12 +11,12 @@ class ZipParser:
         self.emb_model = emb_model
         self.emb_tokenizer = emb_tokenizer
 
-    def get_texts (self, docs_path):
-        '''
+    def get_texts(self, docs_path):
+        """
         Принимает путь до папки с документами, возвращает словарь вида {документ: текст}
-        '''
+        """
         # получаем пути до файлов из архива
-        pdf_paths = get_pdf_files (docs_path)
+        pdf_paths = get_pdf_files(docs_path)
         pdf_chunks = {}
         # получаем текст каждого документа из архива
         for path in pdf_paths:
@@ -25,40 +25,40 @@ class ZipParser:
             pdf_chunks[path] = pdf_text
         # возвращаем словарь
         return pdf_chunks
-    
+
     def find_names(self, docs_json):
-        '''
+        """
         Принимает словарь {путь до документа: текст}, возвращает словарь {документ: название}
-        '''
+        """
         result = {}
         # прохожимся по каждому документу в словаре
         for key, value in docs_json.items():
             # убираем лишние символы из примеров названий
-            name_examples = re.split(r'(?<=[.!?])\s+', examples.strip())
+            name_examples = re.split(r"(?<=[.!?])\s+", examples.strip())
             # inputs = self.emb_tokenizer(
             #     name_examples,
-            #     padding=True,        
-            #     truncation=True,       
-            #     max_length=1024,        
-            #     return_tensors="pt"    
+            #     padding=True,
+            #     truncation=True,
+            #     max_length=1024,
+            #     return_tensors="pt"
             # )
             # outputs = self.emb_model(**inputs)
             # cls_embeddings = outputs.last_hidden_state[:, 0, :].detach().numpy()
             # mean_embeddings = outputs.last_hidden_state.mean(dim=1).detach().numpy()
 
-            # # Эмбеддинг документа 
+            # # Эмбеддинг документа
             # inputs = self.emb_tokenizer(
             #     value,
             #     return_tensors="pt",
-            #     truncation=True,      
-            #     max_length=512        
+            #     truncation=True,
+            #     max_length=512
             # )
             # outputs = self.emb_model(**inputs)
             # cls_query_embedding = outputs.last_hidden_state[:, 0, :].detach().numpy()
             # mean_query_embedding = outputs.last_hidden_state.mean(dim=1).detach().numpy()
 
-            # mean_similarities = util.cos_sim(mean_query_embedding, mean_embeddings)[0]  
-            # cls_similarities = util.cos_sim(cls_query_embedding, cls_embeddings)[0]  
+            # mean_similarities = util.cos_sim(mean_query_embedding, mean_embeddings)[0]
+            # cls_similarities = util.cos_sim(cls_query_embedding, cls_embeddings)[0]
             # average_similarities = (mean_similarities + cls_similarities) / 2
 
             # top_indices = torch.topk(average_similarities, k=10).indices.tolist()
@@ -83,9 +83,10 @@ class ZipParser:
 
             text_ids = self.model.generate(**inputs)
             # переводим ответ в текст
-            text = self.processor.batch_decode(text_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)
+            text = self.processor.batch_decode(
+                text_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False
+            )
             clean_text = text[0].split("assistant", 1)[-1].strip()
             # Добваляем в словарь
             result[key] = clean_text
         return result
-        

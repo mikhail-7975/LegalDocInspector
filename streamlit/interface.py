@@ -1,328 +1,246 @@
-import requests
-from datetime import datetime
-from io import BytesIO
-from pathlib import Path
-from urllib.parse import quote
+"""
+Главный модуль Streamlit приложения для обработки юридических документов.
+Чистая архитектура с разделением ответственности между компонентами.
+"""
+
+import logging
+
+from components import (
+    ApplicationsComponent,
+    ClaimsComponent,
+    CourtInfoComponent,
+    DefendantInfoComponent,
+    DocumentDownloadComponent,
+    FileUploadComponent,
+    LawsuitInfoComponent,
+    PersonInfoComponent,
+    PlaintiffInfoComponent,
+)
+from models import FormData, ProcessingStage
+from services import APIError, ApplicationStateService, DocumentProcessingService
 
 import streamlit as st
-import pandas as pd
-from docx import Document
 
-from legal_doc_inspector.app.utils.parse_info_by_inn import parse_html
-from legal_doc_inspector.app.utils.calculate_tax import calculate_state_duty
+# Настройка логирования
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
-if 'form_data' not in st.session_state:
-    st.session_state.form_data = {
-        'court_info': {},
-        'plaintiff_info': {},
-        'defendant_info': {},
-        'lawsuit_info': {},
-        'service_type_info': [],
-        'claims': [],
-        'result': {},
-        'flag':False,
-        'flag2':False,
-        'plaintiff_correct':True,
-        'plaintiff_uncorrect':False,
-        'forms_changed': False
+
+def main():
+    """Главная функция приложения."""
+    try:
+        app_state = ApplicationStateService.get_state()
+
+        # Этап 1: Загрузка и обработка файлов
+        if app_state.stage == ProcessingStage.INITIAL:
+            handle_file_upload(app_state)
+
+        # Этап 2: Заполнение форм после парсинга
+        elif app_state.stage == ProcessingStage.DOCUMENTS_PARSED:
+            handle_form_filling(app_state)
+
+        # Этап 3: Скачивание готовых документов
+        elif app_state.stage == ProcessingStage.DOCUMENTS_GENERATED:
+            handle_document_download(app_state)
+
+    except Exception as e:
+        logger.error(f"Ошибка в главной функции: {e}")
+        st.error(f"Произошла непредвиденная ошибка: {e}")
+        # Сбрасываем состояние при критической ошибке
+        if st.button("Начать заново"):
+            ApplicationStateService.update_state(stage=ProcessingStage.INITIAL)
+            st.rerun()
+
+
+def handle_file_upload(app_state):
+    """Обрабатывает этап загрузки файлов."""
+    date_selected, payment_day, company_type, files = FileUploadComponent.render()
+
+    # Показываем кнопку отправки только если есть файлы
+    if files.has_files():
+        if st.button("Отправить на сервер", type="primary"):
+            process_uploaded_files(
+                app_state, files, date_selected, payment_day, company_type
+            )
+    else:
+        st.info("Пожалуйста, загрузите хотя бы один файл для продолжения")
+
+
+def process_uploaded_files(app_state, files, date_selected, payment_day, company_type):
+    """Обрабатывает загруженные файлы через API."""
+    form_data = FormData(
+        date=date_selected.strftime("%Y-%m-%d"),
+        company_type=company_type,
+        day_of_penalty=payment_day,
+    )
+
+    with st.spinner("Обрабатываем документы, пожалуйста подождите..."):
+        try:
+            result = DocumentProcessingService.parse_documents(files, form_data)
+
+            ApplicationStateService.update_state(
+                parsed_result=result, stage=ProcessingStage.DOCUMENTS_PARSED
+            )
+
+            st.success("Документы успешно обработаны!")
+            st.rerun()
+
+        except APIError as e:
+            logger.error(f"Ошибка API при обработке файлов: {e}")
+            st.error(f"Ошибка сервера: {e.message}")
+            if e.status_code == 0:
+                st.error("Проверьте подключение к серверу")
+
+        except ValueError as e:
+            st.error(f"Ошибка данных: {e}")
+
+        except Exception as e:
+            logger.error(f"Неожиданная ошибка при обработке файлов: {e}")
+            st.error(f"Произошла ошибка при обработке: {e}")
+
+
+def handle_form_filling(app_state):
+    """Обрабатывает этап заполнения форм."""
+    st.success("Документы успешно обработаны!")
+    st.markdown("## Заполнение информации для генерации иска")
+    st.info(
+        "Пожалуйста, внимательно проверьте все поля и отредактируйте при необходимости"
+    )
+
+    parsed_data = app_state.parsed_result or {}
+
+    # Рендерим все компоненты форм
+    app_state.court_info = CourtInfoComponent.render(app_state.court_info)
+
+    app_state.plaintiff_info = PlaintiffInfoComponent.render(
+        app_state.plaintiff_info, parsed_data
+    )
+
+    app_state.defendant_info = DefendantInfoComponent.render(
+        app_state.defendant_info, parsed_data
+    )
+
+    # Получаем payment_day из parsed_data или используем значение по умолчанию
+    payment_day = 18  # Можно извлечь из parsed_data если нужно
+    app_state.lawsuit_info = LawsuitInfoComponent.render(
+        app_state.lawsuit_info, parsed_data, payment_day
+    )
+
+    app_state.claims_edit = ClaimsComponent.render(app_state.claims_edit, parsed_data)
+
+    app_state.applications_info = ApplicationsComponent.render(
+        app_state.applications_info, parsed_data
+    )
+
+    app_state.person_info = PersonInfoComponent.render(app_state.person_info)
+
+    # Кнопка подтверждения данных
+    st.markdown("### Подтверждение данных")
+    if st.button("Создать документы", type="primary"):
+        generate_documents(app_state, parsed_data)
+
+
+def generate_documents(app_state, parsed_data):
+    """Генерирует итоговые документы."""
+    # Подготавливаем данные для API
+    request_data = prepare_document_request_data(app_state, parsed_data)
+
+    with st.spinner("Генерируем документы..."):
+        try:
+            # Создаем иск
+            lawsuit_document = DocumentProcessingService.create_lawsuit_document(
+                request_data
+            )
+
+            # Создаем таблицу расчетов
+            files_info = parsed_data.get("files_table", {})
+            lawsuit_table = DocumentProcessingService.create_calculation_table(
+                files_info
+            )
+
+            # Сохраняем документы в состоянии
+            ApplicationStateService.update_state(
+                lawsuit_document=lawsuit_document,
+                lawsuit_table=lawsuit_table,
+                stage=ProcessingStage.DOCUMENTS_GENERATED,
+                forms_changed=False,
+            )
+
+            st.success("Документы успешно созданы!")
+            st.rerun()
+
+        except APIError as e:
+            logger.error(f"Ошибка API при создании документов: {e}")
+            if e.status_code == 404:
+                st.error("Не удалось создать таблицу расчетов")
+                st.json({"error": e.message})
+            else:
+                st.error(f"Ошибка сервера: {e.message}")
+
+        except Exception as e:
+            logger.error(f"Ошибка при создании документов: {e}")
+            st.error(f"Произошла ошибка при создании документов: {e}")
+
+
+def prepare_document_request_data(app_state, parsed_data):
+    """Подготавливает данные для запроса создания документа."""
+    return {
+        "person_info": {
+            "vacancy": app_state.person_info.position,
+            "name": app_state.person_info.name,
+        },
+        "applications_info": app_state.applications_info,
+        "table_info": parsed_data.get("contracts_info", {}),
+        "court_info": {
+            "name": app_state.court_info.name,
+            "addres": app_state.court_info.address,  # Оставляем 'addres' для совместимости с API
+        },
+        "plaintiff_info": {
+            "inn": app_state.plaintiff_info.inn,
+            "full_name": app_state.plaintiff_info.full_name,
+            "short_name": app_state.plaintiff_info.short_name,
+            "addres": app_state.plaintiff_info.address,  # Оставляем 'addres' для совместимости с API
+            "correspondency_addres": app_state.plaintiff_info.correspondence_address,
+            "ogrn": app_state.plaintiff_info.ogrn,
+        },
+        "defendant_info": {
+            "full_name": app_state.defendant_info.full_name,
+            "short_name": app_state.defendant_info.short_name,
+            "addres": app_state.defendant_info.address,  # Оставляем 'addres' для совместимости с API
+            "inn": app_state.defendant_info.inn,
+            "ogrn": app_state.defendant_info.ogrn,
+        },
+        "lawsuit_info": {
+            "cost": app_state.lawsuit_info.cost,
+            "tax": app_state.lawsuit_info.tax,
+            "last_day": app_state.lawsuit_info.last_day,
+            "service_type": app_state.lawsuit_info.service_type,
+            "claims": app_state.claims_edit,
+        },
+        "files_info": parsed_data.get("files_table", {}),
     }
 
-def on_change_handler():
-    st.session_state.form_data['forms_changed'] = True
 
-
-st.title("Загрузка и обработка документов")
-
-# Загрузчик файла
-
-col1, col2 = st.columns(2)
-
-with col1:
-    date_selected = st.date_input("Выберите дату конца просрочки",
-                                  format='DD.MM.YYYY')
-
-with col2:
-    day_of_penalty = st.number_input(label="Выберите число месяца, которое является последним днём оплаты счёта",
-                                     value=18,
-                                     min_value=1,
-                                     max_value=31)
-
-company_type = st.selectbox("Выберите тип компании", ["Прочие", "УК", "ТСЖ"])
-
-st.text("Поле для договора")
-contract_uploaded_file = st.file_uploader("Выберите Документ с договором", accept_multiple_files=True)
-st.text("Поле для претензии")
-claim_uploaded_file = st.file_uploader("Выберите Документ с претензией", accept_multiple_files=True)
-st.text("Поле для Excel справки о задожленности")
-debt_certificate_file = st.file_uploader("Выберите Excel справку о задолженности", accept_multiple_files=True)
-st.text("Поле для ZIP архива с приложением к иску")
-zip_uploaded_file = st.file_uploader("Выберите ZIP файл")
-
-if zip_uploaded_file is not None or len(claim_uploaded_file)!=0 or len(contract_uploaded_file)!=0 or len(debt_certificate_file) !=0:    
-
-    files = {}
-
-
-    # Кнопка отправки
-    if st.button("Отправить на сервер"):
-        # Восстанавливаем указатель файла
-        if zip_uploaded_file:
-            zip_uploaded_file.seek(0)
-            files["zip_file"] = (zip_uploaded_file.name, zip_uploaded_file)
-
-        if claim_uploaded_file:
-            if isinstance(claim_uploaded_file, list):
-                for i, file in enumerate(claim_uploaded_file):
-                    file.seek(0)
-                    files[f'claim_file_{i}'] = (file.name, file)
-            else:
-                claim_uploaded_file.seek(0)
-                files["claim_file"] = (claim_uploaded_file.name, claim_uploaded_file)
-            
-
-        if contract_uploaded_file:
-            if isinstance(contract_uploaded_file, list):
-                for i, file in enumerate(contract_uploaded_file):
-                    file.seek(0)
-                    files[f'contract_file_{i}'] = (file.name, file)
-            else:
-                contract_uploaded_file.seek(0)
-                files['contract_file'] = (contract_uploaded_file.name, contract_uploaded_file)
-            
-        
-        if debt_certificate_file:
-            if isinstance(debt_certificate_file, list):
-                for i, file in enumerate(debt_certificate_file):
-                    file.seek(0)
-                    files[f'certificate_file_{i}'] = (file.name, file)
-            else:
-                debt_certificate_file.seek(0)
-                files["certificate_file"] = (debt_certificate_file.name, debt_certificate_file)
-        
-        data = {
-            "date": date_selected.strftime("%Y-%m-%d"),  # форматируем дату
-            "company_type": company_type,
-            "day_of_penalty":day_of_penalty
-        }
-
-        if len(files) < 1:
-            st.error("Загружены не все файлы")
-
-        
-        else:
-            with st.spinner(text="Ваш запрос обрабатывается, пожалуйста, подождите"):
-                response = requests.post("http://localhost:5001/parse",
-                                        files=files,
-                                        data= data
-                                        )
-            if response.status_code == 200:
-                flag = True
-                st.session_state.form_data['flag'] = flag
-                st.session_state.form_data['result'] = response.json()
-
-
-            else:
-                st.error(f"Ошибка: {response.status_code}")
-                st.text(response.text)
-
-        
-if st.session_state.form_data['flag']:
-    result = st.session_state.form_data['result']
-
-    
-
-    st.success("Файл успешно обработан!")
-    # st.text("Результат обработки документов")
-    # st.json(result)
-
-    st.markdown("## Заполение информации для генерациии иска (поля которые будут далее, можно отредактировать)")
-
-    st.success("Пожалуйста, внимательно проверьте все пункты!")
-    for key, value in result['result_of_llm_parsers'].items():
-        if "claim" in key:
-            plaintiff_info_parsed = value['plaintiff_info']
-
-
-
-
-    court_info = {}
-    plaintiff_info = {}
-    defendant_info = {}
-    lawsuit_info = {}
-
-    st.markdown("### Данные о месте проведения")
-    court_info['name'] = st.text_input(label="Название Органа", value="Арбитражный суд города Москвы" , on_change=on_change_handler)
-    court_info['addres'] = st.text_input(label="Адресс Органа", value="115225, г. Москва, ул. Большая Тульская, д. 17", on_change= on_change_handler)
-
-    
-    st.markdown("### Данные об Истце")
-    plaintiff_info['inn'] = st.text_input(label='ИНН Истца', value=f"{plaintiff_info_parsed['plaintiff_inn']}", on_change= on_change_handler)
-    if st.session_state.form_data['plaintiff_correct']:
-        try:
-            plaintiff_full_name, plaintiff_short_name, plaintiff_address, plaintiff_kpp, plaintiff_ogrn = parse_html(plaintiff_info_parsed['plaintiff_inn'])
-
-            plaintiff_info['full_name'] = st.text_input(label="Название Истца", value=f"{plaintiff_full_name}", key="full_name_1", on_change= on_change_handler)
-            plaintiff_info['short_name'] = st.text_input(label="Название Истца(аббревиатура)", value=f"{plaintiff_short_name}", key="short_name_1", on_change= on_change_handler)
-            plaintiff_info['addres'] = st.text_input(label="Адрес Истца", value=f"{plaintiff_address}", key="addres_1", on_change= on_change_handler)
-            plaintiff_info['correspondency_addres'] = st.text_input(label='Адрес для направления корреспонденции', value="121596, г. Москва, ул. Горбунова, д. 2, стр. 3, офис В613 (МГКА «КДЗП»)", key="cor_addr1", on_change= on_change_handler)
-            plaintiff_info['ogrn'] = st.text_input(label='ОГРН Истца', value=f"{plaintiff_ogrn}", key="ogrn_1", on_change= on_change_handler)
-        except Exception as e:
-            st.error(e)
-            st.session_state.form_data['plaintiff_correct'] = False
-            st.markdown("К сожалению, не получилось получить данные об истце, проверьте ИНН, пожалуйста")
-
-    if st.button(label="Обновить данные об истце") or st.session_state.form_data['plaintiff_uncorrect'] == True:
-        st.session_state.form_data['plaintiff_correct'] = False
-        try:
-            plaintiff_full_name, plaintiff_short_name, plaintiff_address, plaintiff_kpp, plaintiff_ogrn = parse_html(plaintiff_info['inn'])
-
-            plaintiff_info['full_name'] = st.text_input(label="Название Истца", value=f"{plaintiff_full_name}", key="full_name_2", on_change= on_change_handler)
-            plaintiff_info['short_name'] = st.text_input(label="Название Истца(аббревиатура)", value=f"{plaintiff_short_name}", key="short_name_2", on_change= on_change_handler)
-            plaintiff_info['addres'] = st.text_input(label="Адрес Истца", value=f"{plaintiff_address}", key="addr_2", on_change= on_change_handler)
-            plaintiff_info['correspondency_addres'] = st.text_input(label='Адрес для направления корреспонденции', value="121596, г. Москва, ул. Горбунова, д. 2, стр. 3, офис В613 (МГКА «КДЗП»)", key="coraddr_2", on_change= on_change_handler)
-            plaintiff_info['ogrn'] = st.text_input(label='ОГРН Истца', value=f"{plaintiff_ogrn}", key="ogrn_2", on_change= on_change_handler)
-            if st.session_state.form_data['plaintiff_uncorrect'] ==False:
-                st.session_state.form_data['plaintiff_uncorrect'] = True
-                st.rerun()
-                
-            
-        except Exception as e:
-            st.error(e)
-            st.markdown("К сожалению, не получилось получить данные об истце, проверьте ИНН, пожалуйста")
-            
-
-    st.markdown("### Данные об ответчике")
-    #все эти данные надо парсить
-    defendant_info['full_name'] = st.text_input(label="Название ответчика", value=f"{result['results_of_name_parser']['defendant_info']['full_name']}", on_change= on_change_handler)
-    defendant_info['short_name'] = st.text_input(label="Название ответчика(аббревиатура)", value=f"{result['results_of_name_parser']['defendant_info']['short_name']}", on_change= on_change_handler)
-    defendant_info['addres'] = st.text_input(label="Адрес ответчика", value=f"{result['results_of_name_parser']['defendant_info']['address']}", on_change= on_change_handler)
-    defendant_info['inn'] = st.text_input(label="ИНН ответчика", value=f"{result['results_of_name_parser']['defendant_info']['inn']}", on_change= on_change_handler)
-    defendant_info['ogrn'] = st.text_input(label="ОГРН ответчика", value=f"{result['results_of_name_parser']['defendant_info']['ogrn']}", on_change= on_change_handler)
-    
-    st.markdown("### Данные о договорах")
-    contracts = []
-    request_json = {}
-    
-    lawsuit_info['cost'] = st.text_input(label="Цена иска", value=f"{result['contracts_info']['cost_of_lawsuit']} р.", on_change= on_change_handler)
-    lawsuit_info['tax'] = st.text_input(label="Госпошлина", value=f"{calculate_state_duty(result['contracts_info']['cost_of_lawsuit'])} р." , on_change= on_change_handler)
-    lawsuit_info['last_day'] = st.text_input(label = "Срок оплаты", value=f'До {day_of_penalty} числа месяца, следующего за расчётным', on_change= on_change_handler)
-    
-    service_type_info = []
-    claims = []
-    applications = {}
-
-    for key, value in result['result_of_llm_parsers'].items():
-        if "contract" in key:
-            service_type_info.append(result['result_of_llm_parsers'][key]['service_type'])
-        if "claim" in key:
-            claims.append(f"№ {result['result_of_llm_parsers'][key]['claim_number']} от {result['result_of_llm_parsers'][key]['claim_date']}")
-        if "zip" in key:
-            applications = value
-    st.markdown(f"### Данные об услуге, полученные из договоров")
-    st.markdown(f"{'___'.join(f' - {elem}' for elem in service_type_info)}")
-    lawsuit_info['service_type'] = st.selectbox("Выберите вид услугии", ["ГВС + ТЭ", "ТЭ", "ГВС"])
-
-    st.markdown(f'### Данные о претензиях')
-    claims_edit = []
-    # st.markdown(f"номера и даты претензий\n {'___'.join(f'- {claim}' for claim in claims)}")
-    for i, claim in enumerate(claims):
-        new_value = st.text_input(
-            label=f"Претензия #{i + 1}",
-            value=claim,
-            key=f"claim_{i}",
-            on_change= on_change_handler
-        )
-        claims_edit.append(new_value)
-    st.session_state.form_data['claims'] = claims_edit
-    lawsuit_info['claims'] = st.session_state.form_data['claims']
-    
-    st.markdown("### Данные о приложенных документах")
-
-    applications_edit = {}
-    # st.markdown(f"номера и даты претензий\n {'___'.join(f'- {claim}' for claim in claims)}")
-    for application_path, application_name in applications.items():
-        new_value = st.text_input(
-            label=f"{Path(application_path).name}",
-            value=application_name,
-            key=f"application_{Path(application_path).name}",
-            on_change= on_change_handler
-        )
-        applications_edit[f"{Path(application_path).name}"] = new_value
-    st.session_state.form_data['applications_info'] = applications_edit
-    person_info = {}
-    st.markdown("### Данные об ответственном лице")
-    col3, col4 = st.columns(2)
-
-    with col3:
-        person_info['vacancy'] = st.text_input(label = "Должность", value=f'Представитель ПАО «МОЭК» по доверенности', on_change= on_change_handler)
-
-    with col4:
-        person_info['name'] = st.text_input(label = "ФИО", value=f'Самошкина А.Е.', on_change= on_change_handler)
-
-
-
-    request_json['person_info'] = person_info
-    request_json['applications_info'] = st.session_state.form_data['applications_info']
-    request_json['table_info'] = result['contracts_info']
-    request_json['court_info'] = court_info
-    request_json['plaintiff_info'] = plaintiff_info
-    request_json['defendant_info'] = defendant_info
-    request_json['lawsuit_info'] = lawsuit_info
-    request_json['files_info'] = result['files_table']
-
-
-
-    st.markdown(f"### подтверждение данных")
-    if st.button(label="Нажмите, чтобы подтвердить правильность данных"):
-            st.session_state.form_data['forms_changed'] = False
-            first_response = requests.post("http://localhost:5001/create_doc",
-                                json=request_json
-                                )
-            
-            if first_response.status_code == 200:
-                lawsuit = BytesIO(first_response.content)
-                st.session_state.form_data['lawsuit'] = lawsuit
-
-                
-            
-            else:
-                st.error(f"Ошибка: {first_response.status_code}")
-                st.text(first_response.text)
-
-            second_response = requests.post("http://localhost:5001/create_calculating_table",
-                                     json=request_json['files_info']
-                            )
-            
-            if second_response.status_code == 200:
-                lawsuit_table = BytesIO(second_response.content)
-                st.session_state.form_data['lawsuite_table'] = lawsuit_table
-                st.session_state.form_data['flag2'] = True
-            
-            elif second_response.status_code == 404:
-                st.error("Ошибка")
-                st.json(second_response.json())
-            else:
-                st.error(f"Ошибка: {second_response.status_code}")
-                st.text(second_response.text)
-
-            # with col1:
-            #     if st.button(label="Создать Иск"):
-if st.session_state.form_data['flag2'] and st.session_state.form_data['forms_changed']==False:             
-    col1, col2, = st.columns(2)
-
-    with col1:
-        st.download_button(
-            label="Скачать иск",
-            data=st.session_state.form_data['lawsuit'],
-            file_name="Иск.docx",
-            
+def handle_document_download(app_state):
+    """Обрабатывает этап скачивания документов."""
+    # Показываем формы только если они не изменились
+    if not app_state.forms_changed:
+        DocumentDownloadComponent.render(
+            app_state.lawsuit_document, app_state.lawsuit_table
         )
 
-    with col2:
-        st.download_button(
-            label="Скачать расчёт к иску",
-            data=st.session_state.form_data['lawsuite_table'],
-            file_name="Расчёт к иску.docx",
-            
-        )
+        # Кнопка для создания новых документов
+        if st.button("Создать новые документы"):
+            ApplicationStateService.update_state(stage=ProcessingStage.INITIAL)
+            st.rerun()
+    else:
+        st.warning("Данные формы были изменены. Пожалуйста, пересоздайте документы.")
+        if st.button("Пересоздать документы"):
+            ApplicationStateService.update_state(stage=ProcessingStage.DOCUMENTS_PARSED)
+            st.rerun()
 
+
+if __name__ == "__main__":
+    main()

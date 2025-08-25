@@ -1,7 +1,8 @@
-import re
-import pytesseract  
+from pdf2image import convert_from_path
+import pytesseract
+
 from .utils import get_conversation_for_claim
-from pdf2image import convert_from_path  
+
 
 class ClaimParser:
     def __init__(self, model, processor):
@@ -9,15 +10,15 @@ class ClaimParser:
         self.processor = processor
 
     def pdf_to_text(self, pdf_path):
-        '''
+        """
         Принимает путь до pdf файла, возвращает строку с текстом
-        '''
+        """
         # переводим пдф в изображения
-        images = convert_from_path(pdf_path, dpi=200)  
+        images = convert_from_path(pdf_path, dpi=200)
         ocr_text = ""
         if images:
             # проходимся по каждому изображению
-            for i, image in enumerate (images):
+            for i, image in enumerate(images):
                 if i == 0:
                     # если страница первая то считываем верхнюю правую и верхнюю части отдельно
                     width, height = image.size
@@ -27,24 +28,32 @@ class ClaimParser:
                     right_upper = image.crop((center_x, 0, width, center_y))
                     bottom_part = image.crop((0, center_y, width, height))
                     # левая верхняя часть
-                    ocr_text += pytesseract.image_to_string(left_upper, lang="rus+eng") + "\n"
+                    ocr_text += (
+                        pytesseract.image_to_string(left_upper, lang="rus+eng") + "\n"
+                    )
                     # правая верхняя часть
-                    ocr_text += pytesseract.image_to_string(right_upper, lang="rus+eng") + "\n"
+                    ocr_text += (
+                        pytesseract.image_to_string(right_upper, lang="rus+eng") + "\n"
+                    )
                     # нижняя часть
-                    ocr_text += pytesseract.image_to_string(bottom_part, lang="rus+eng") + "\n"
+                    ocr_text += (
+                        pytesseract.image_to_string(bottom_part, lang="rus+eng") + "\n"
+                    )
                 else:
                     # иначе сканируем всю страницу
-                    ocr_text += pytesseract.image_to_string(image, lang="rus+eng") + "\n"
+                    ocr_text += (
+                        pytesseract.image_to_string(image, lang="rus+eng") + "\n"
+                    )
         # возвращаем текст
         return ocr_text.strip()
-    
+
     def find_info(self, pdf_text):
-        '''
+        """
         Принимает строку (текст документа), возвращает ответ нейросети в формате строки
-        '''
+        """
         # запрос для нейросети - принимает текст документа, возвращает нужные данные
         conversation = get_conversation_for_claim(pdf_text)
-        
+
         inputs = self.processor.apply_chat_template(
             conversation,
             add_generation_prompt=True,
@@ -55,5 +64,7 @@ class ClaimParser:
         ).to(self.model.device)
         text_ids = self.model.generate(**inputs)
         # перевод в текст
-        text = self.processor.batch_decode(text_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)
-        return(text[0].split("assistant", 1)[-1].strip())
+        text = self.processor.batch_decode(
+            text_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False
+        )
+        return text[0].split("assistant", 1)[-1].strip()

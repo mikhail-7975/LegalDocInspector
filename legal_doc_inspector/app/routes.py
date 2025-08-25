@@ -1,40 +1,53 @@
-import io # работа с zip 
-import json # работа с json документами
-import os 
-import re # работа с текстом
+from collections import defaultdict  # словари
+from datetime import date, datetime  # работа с датой
+import io  # работа с zip
+import json  # работа с json документами
+import os
+from pathlib import Path
+import re  # работа с текстом
 import tempfile
-import zipfile # рабоат с архивами
-from collections import defaultdict # словари
-from datetime import date, datetime # работа с датой
-from pathlib import Path
+import zipfile  # рабоат с архивами
 
-from configs.config import AppConfig, load_yaml_config # конфиги
-from .llm_functions import parse_contract, parse_zip, parse_claim # функции для работы llm моделей
-from legal_doc_inspector.doc_parser.table_parser import TableParser # Парсер таблиц
-from legal_doc_inspector.penalty_calculator.penalty_calculator import Penalty_calculator # рассчет штрафа
-from legal_doc_inspector.doc_creator.penalty_table_creator import PenaltyTableCreator # создание таблиц для штрафа
-from legal_doc_inspector.doc_creator.lawsuit_creator import LawsuitCreator # СОздание иска
-from legal_doc_inspector.doc_parser.contract_parser import ContractParser # Парсе догоора 
-from legal_doc_inspector.doc_parser.zip_parser import ZipParser # Парсер архива
-from legal_doc_inspector.doc_parser.claim_parser import ClaimParser # парсер претензии 
-
-from pathlib import Path
-
-import pandas as pd # работа с датафреймами
-import requests # запросы
-from bs4 import BeautifulSoup # раьота с html
-from flask import Flask, Response, g, jsonify, render_template, request, send_file # бекэнд
 from flask import current_app as app
+from flask import (  # бекэнд
+    g,
+    jsonify,
+    request,
+    send_file,
+)
 from transformers import (
     AutoModel,
     AutoTokenizer,
     Qwen2_5OmniForConditionalGeneration,
     Qwen2_5OmniProcessor,
-) # библиотека для llm 
+)  # библиотека для llm
 from werkzeug.utils import secure_filename
 
-from legal_doc_inspector.doc_parser.html_parser import parse_html # функция для парсинга html
-from legal_doc_inspector.app.utils.parse_info_by_inn import parse_html # класс 
+from legal_doc_inspector.app.utils.parse_info_by_inn import parse_html  # класс
+from legal_doc_inspector.doc_creator.lawsuit_creator import (
+    LawsuitCreator,  # СОздание иска
+)
+from legal_doc_inspector.doc_creator.penalty_table_creator import (
+    PenaltyTableCreator,  # создание таблиц для штрафа
+)
+from legal_doc_inspector.doc_parser.claim_parser import ClaimParser  # парсер претензии
+from legal_doc_inspector.doc_parser.contract_parser import (
+    ContractParser,  # Парсе догоора
+)
+from legal_doc_inspector.doc_parser.html_parser import (
+    parse_html,  # функция для парсинга html
+)
+from legal_doc_inspector.doc_parser.table_parser import TableParser  # Парсер таблиц
+from legal_doc_inspector.doc_parser.zip_parser import ZipParser  # Парсер архива
+from legal_doc_inspector.penalty_calculator.penalty_calculator import (
+    Penalty_calculator,  # рассчет штрафа
+)
+
+from .llm_functions import (  # функции для работы llm моделей
+    parse_claim,
+    parse_contract,
+    parse_zip,
+)
 
 # LLm инициализируется
 model = Qwen2_5OmniForConditionalGeneration.from_pretrained(
@@ -52,6 +65,7 @@ zip_parser = ZipParser(model, processor, emb_model, emb_tokenizer)
 contract_parser = ContractParser(model, processor)
 claim_parser = ClaimParser(model, processor)
 
+
 @app.route("/")
 def home():
     return "server is working"
@@ -65,7 +79,6 @@ def parse():
     #     json_example = json.load(json_file)
     #     # print(type(data))
 
-    
     current_config = g.config
     save_data_folder = Path(current_config.save_data_folder)
 
@@ -101,8 +114,9 @@ def parse():
 
     # парсинг договора
     for i, contract_file in enumerate(uploaded_files["contract_file"]):
-        
-        contract_number, service_type, overdue_date = parse_contract(contract_file, contract_parser)
+        contract_number, service_type, overdue_date = parse_contract(
+            contract_file, contract_parser
+        )
         pdf_pars_dict[f"contract_{contract_number}"] = {}
         pdf_pars_dict[f"contract_{contract_number}"]["service_type"] = service_type
         pdf_pars_dict[f"contract_{contract_number}"]["overdue_date"] = overdue_date
@@ -115,13 +129,12 @@ def parse():
     # парсинг Претензии
     for i, claim_file in enumerate(uploaded_files["claim_file"]):
         plaintiff_inn, claim_number, claim_date = parse_claim(claim_file, claim_parser)
-        
+
         pdf_pars_dict[f"claim_{i}"] = {}
         pdf_pars_dict[f"claim_{i}"]["plaintiff_info"] = {}
         pdf_pars_dict[f"claim_{i}"]["claim_number"] = claim_number
         pdf_pars_dict[f"claim_{i}"]["claim_date"] = claim_date
         pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_inn"] = plaintiff_inn
-        
 
     # парсинг таблиц и создание документа с расчётом к иску
     table_creator = PenaltyTableCreator()
@@ -135,64 +148,70 @@ def parse():
     parsing_table_results = []
 
     for table_path in data["results_of_data_saving"]["certificate_file"]:
-
         parsing_table_result = table_parser.parse_excel_table(table_path)
-        defendant_inn = parsing_table_result['ИНН']
-        result_dict = penalty_calculator.calculate_penalty_from_doc(data=parsing_table_result,
-                                                                        company_type=company_type,
-                                                                        current_date=date_request,
-                                                                        day_of_penalty=day_of_penalty)
+        defendant_inn = parsing_table_result["ИНН"]
+        result_dict = penalty_calculator.calculate_penalty_from_doc(
+            data=parsing_table_result,
+            company_type=company_type,
+            current_date=date_request,
+            day_of_penalty=day_of_penalty,
+        )
 
-        result_dict_json.append(table_creator.convert_datetime_keys(table_creator.group_by_month(result_dict)))
-        
-        claim_number = parsing_table_result['номер договора']
-        contract_number, start_date, end_date, all_debt, all_penalty = table_creator.create_penalty_table_from_json(
-                name = Path(folder,'расчёт к иску.docx') ,
-                data=result_dict,
-                start_date=result_dict[0]['start'].strftime("%d.%m.%Y"),
-                end_date=date_request.strftime('%d.%m.%Y'),
-                contract_number=f'№ {claim_number}',
+        result_dict_json.append(
+            table_creator.convert_datetime_keys(
+                table_creator.group_by_month(result_dict)
             )
-        
-        
-        list_of_tables_info.append((contract_number, start_date, end_date, all_debt, all_penalty))
-    
+        )
 
+        claim_number = parsing_table_result["номер договора"]
+        contract_number, start_date, end_date, all_debt, all_penalty = (
+            table_creator.create_penalty_table_from_json(
+                name=Path(folder, "расчёт к иску.docx"),
+                data=result_dict,
+                start_date=result_dict[0]["start"].strftime("%d.%m.%Y"),
+                end_date=date_request.strftime("%d.%m.%Y"),
+                contract_number=f"№ {claim_number}",
+            )
+        )
 
+        list_of_tables_info.append(
+            (contract_number, start_date, end_date, all_debt, all_penalty)
+        )
 
-    table_name, contracts_info = table_creator.create_result_table(list_of_tables_info,Path(folder,'расчёт к иску.docx'))
+    table_name, contracts_info = table_creator.create_result_table(
+        list_of_tables_info, Path(folder, "расчёт к иску.docx")
+    )
 
     bio = io.BytesIO()
     table_creator.doc.save(bio)
     bio.seek(0)
 
-    uploaded_files['lawsuit_calculating'] = table_name
-
+    uploaded_files["lawsuit_calculating"] = table_name
 
     result_json = dict()
 
-    result_json['files_table']  = uploaded_files
-    result_json['result_of_penalty_calculator'] = result_dict_json
+    result_json["files_table"] = uploaded_files
+    result_json["result_of_penalty_calculator"] = result_dict_json
 
     # result_json['result_of_llm_parsers'] = json_example['result_of_llm_parsers']
 
-    result_json['results_of_name_parser'] = {}
-    result_json['results_of_name_parser']['defendant_info'] = {}
-    result_json['results_of_name_parser']['defendant_info']['inn'] = f'{defendant_inn}'
+    result_json["results_of_name_parser"] = {}
+    result_json["results_of_name_parser"]["defendant_info"] = {}
+    result_json["results_of_name_parser"]["defendant_info"]["inn"] = f"{defendant_inn}"
 
     # Получение данных ответчика по его инн
     full_name, short_name, address, kpp, ogrn = parse_html(int(defendant_inn))
-    result_json['results_of_name_parser']['defendant_info']['full_name'] = full_name
-    result_json['results_of_name_parser']['defendant_info']['short_name'] = short_name
-    result_json['results_of_name_parser']['defendant_info']['address'] = address
-    result_json['results_of_name_parser']['defendant_info']['kpp'] = kpp
-    result_json['results_of_name_parser']['defendant_info']['ogrn'] = ogrn
+    result_json["results_of_name_parser"]["defendant_info"]["full_name"] = full_name
+    result_json["results_of_name_parser"]["defendant_info"]["short_name"] = short_name
+    result_json["results_of_name_parser"]["defendant_info"]["address"] = address
+    result_json["results_of_name_parser"]["defendant_info"]["kpp"] = kpp
+    result_json["results_of_name_parser"]["defendant_info"]["ogrn"] = ogrn
 
-    result_json['contracts_info'] = contracts_info 
+    result_json["contracts_info"] = contracts_info
     # result_json['result_of_penalty_calculator'] = result_dict_json
-    result_json['result_of_llm_parsers'] = pdf_pars_dict
-    
-    with open(str(Path(folder, "index.json")),"w") as json_file:
+    result_json["result_of_llm_parsers"] = pdf_pars_dict
+
+    with open(str(Path(folder, "index.json")), "w") as json_file:
         json.dump(uploaded_files, json_file)
 
     return jsonify(result_json), 200
@@ -202,10 +221,13 @@ def parse():
 def create_doc():
     request_json = request.json
     lawsuit_creator = LawsuitCreator(dict())
-    path_to_save = find_parent_dir_with_name(Path(request_json['files_info']['lawsuit_calculating']),'documents_from_request')
-    with open(Path(path_to_save,'lawsuit_create.json'), "w", encoding='utf-8') as f:
-        json.dump(request_json, f , indent=4, ensure_ascii=False)
-    file = lawsuit_creator.create_lawsuit(request_json, Path(path_to_save,'ИСК.docx'))
+    path_to_save = find_parent_dir_with_name(
+        Path(request_json["files_info"]["lawsuit_calculating"]),
+        "documents_from_request",
+    )
+    with open(Path(path_to_save, "lawsuit_create.json"), "w", encoding="utf-8") as f:
+        json.dump(request_json, f, indent=4, ensure_ascii=False)
+    file = lawsuit_creator.create_lawsuit(request_json, Path(path_to_save, "ИСК.docx"))
     print(file)
     return send_file(file, as_attachment=True), 200
 
@@ -213,11 +235,11 @@ def create_doc():
 @app.route("/create_calculating_table", methods=["POST"])
 def create_table():
     request_json = request.json
-    path_to_table = request_json['lawsuit_calculating']
+    path_to_table = request_json["lawsuit_calculating"]
 
     if not os.path.exists(path_to_table):
         return jsonify({"error": "Файл не найден"}), 404
-    
+
     return send_file(path_to_table, as_attachment=True), 200
 
 
@@ -246,7 +268,7 @@ def get_request_files(
                                 zip_info.filename = decoded_name
                                 zip_ref.extract(zip_info, archive_folder)
                     uploaded_files[dest_key].append(str(archive_folder))
-    
+
     return uploaded_files
 
 
@@ -261,15 +283,16 @@ def find_parent_dir_with_name(start_path: Path, target_name: str) -> Path | None
             return parent
     return None
 
-def safe_decode_filename_linux(filename_bytes: str): # Linux
-    try: 
-        return filename_bytes.encode('utf-8').decode('utf-8')
+
+def safe_decode_filename_linux(filename_bytes: str):  # Linux
+    try:
+        return filename_bytes.encode("utf-8").decode("utf-8")
     except UnicodeDecodeError:
         pass
     except UnicodeEncodeError:
         pass
     try:
-        return filename_bytes.encode('utf-8').decode('cp866') 
+        return filename_bytes.encode("utf-8").decode("cp866")
     except UnicodeDecodeError:
         pass
 
@@ -277,42 +300,43 @@ def safe_decode_filename_linux(filename_bytes: str): # Linux
         pass
 
     try:
-        return filename_bytes.encode('utf-8').decode('cp437')  
+        return filename_bytes.encode("utf-8").decode("cp437")
     except UnicodeDecodeError:
         pass
     except UnicodeEncodeError:
         pass
 
     try:
-        return filename_bytes.encode('utf-8').decode('cp1251')  
+        return filename_bytes.encode("utf-8").decode("cp1251")
     except UnicodeDecodeError:
         pass
     except UnicodeEncodeError:
         pass
 
-    return filename_bytes.encode('utf-8').decode('utf-8', errors='replace')
+    return filename_bytes.encode("utf-8").decode("utf-8", errors="replace")
 
-def safe_decode_filename(filename_bytes: str): # Windows
+
+def safe_decode_filename(filename_bytes: str):  # Windows
     try:
-        return filename_bytes.encode('cp437').decode('utf-8')
+        return filename_bytes.encode("cp437").decode("utf-8")
     except UnicodeDecodeError:
         pass
     except UnicodeEncodeError:
         return safe_decode_filename_linux(filename_bytes)
 
     try:
-        return filename_bytes.encode('cp437').decode('cp866') 
+        return filename_bytes.encode("cp437").decode("cp866")
     except UnicodeDecodeError:
         pass
 
     try:
-        return filename_bytes.encode('cp437').decode('cp437')  
+        return filename_bytes.encode("cp437").decode("cp437")
     except UnicodeDecodeError:
         pass
 
     try:
-        return filename_bytes.encode('cp437').decode('cp1251')  
+        return filename_bytes.encode("cp437").decode("cp1251")
     except UnicodeDecodeError:
         pass
 
-    return filename_bytes.encode('cp437').decode('utf-8', errors='replace')
+    return filename_bytes.encode("cp437").decode("utf-8", errors="replace")

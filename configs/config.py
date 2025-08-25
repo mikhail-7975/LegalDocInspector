@@ -1,5 +1,6 @@
-import yaml
 from dataclasses import dataclass
+
+import yaml
 
 
 @dataclass
@@ -16,10 +17,10 @@ def save_yaml_config(filename: str, config: dict):
 
 def load_yaml_config(filename: str) -> AppConfig:
     """Load configuration from YAML file and return as YamlConfig instance"""
-    with open(filename, "r") as f:
+    with open(filename) as f:
         config_data = yaml.safe_load(f)
 
     return AppConfig(
-        save_data_folder=config_data['save_data_folder'],
-        debug_mode=config_data['debug']
+        save_data_folder=config_data["save_data_folder"],
+        debug_mode=config_data["debug"],
     )

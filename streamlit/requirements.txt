@@ -1,3 +1,13 @@
-pandas == 2.3.0
+# Core dependencies
 streamlit==1.45.0
+pandas==2.3.0
 python-docx==1.1.2
+requests==2.31.0
+
+# Type checking (optional but recommended)
+mypy==1.8.0
+
+# Development dependencies (optional)
+pytest==7.4.4
+black==23.12.1
+isort==5.13.2
