@@ -84,10 +84,12 @@ class CalculationClaimGenerator:
 
         self.clone_block(table, 4, len(contract["periods"]) - 1)
 
-        # payments = 0
-        # for i, period in enumerate(contract["periods"]):
-        #     self.fill_period(period, i, table, payments)
-        #     payments += len(period["payments_1"])
+        filled_rows = 0     # число заполненных строк во всей таблице
+        for i, period in enumerate(contract["periods"]):
+            res = self.fill_period(period, i, table, filled_rows)
+            filled_rows += res
+            # filled_rows += 3
+            # payments += len(period["payments_1"])
         #     payments += len(period["payments_2"])
 
 
@@ -112,59 +114,192 @@ class CalculationClaimGenerator:
         self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[4][0], to_replace[4][1])
 
 
+    def clone_block(self, table: Table, index: int, count: int = 1):
+        """Клонирует блок. 1 блок - 1 период
+
+        Args:
+            index (int): индекс первой строки копируемого блока
+            count (int): количество копий.
+        """
+
+        stride = 3
+        for i in range(count):
+            for j in range(stride):
+                new_row = self.redactor.insert_row_in_table(table, index + (i + 1) * stride + j)
+                self.redactor.clone_table_row(table.rows[index + j], new_row)
+
+            self.merge_row_5(table, index + (i + 1) * stride)
+            self.merge_row_6(table, index + (i + 1) * stride + 1)
+            self.merge_row_6(table, index + (i + 1) * stride + 2)
+
+
     def fill_period(self, period, period_index, table: Table, filled_rows: int):
         self.fill_common_period_info(period, period_index, table, filled_rows)
 
         """
-        offset - это индекс, по которому находится строка-шаблон header-строки. Он вычисляется
-        следующим образом. 4 - это первые четыре строки в таблице, они содержат информацию о договоре. 
-        period_index - это индекс текущего блока с периодом, а 3 - это 3 фиксированных строки в каждом таком 
-        блоке (Начислено за период, корректировка обязательств и итог). payments - это число платежей, 
-        которые уже заполнены в текущей таблице. Последняя 1 - это фиксированная строка Начислено за период. 
-        В итоге в таблицу по индексу offset + 1 вставляются новые строки с платежами, которые нужно
-        заполнить
-
-        Update:
-        payments - больше нет
+        template_offset - это индекс, по которому находится строка-шаблон header-строки. Он вычисляется
+        следующим образом. 4 - это первые четыре строки в таблице, они содержат информацию о договоре.
         filled_rows - количество строк, которые заполнены в таблице (в это число не входят первые четыре 
         строки в таблице, которые не относятся не к каким периодам)
         """
-        offset = 4 + filled_rows
-        self.clone_payment_row(table, len(period["payments_2"]) - 1, offset + 2, offset + 3)
-        self.clone_payment_row(table, len(period["payments_1"]) - 1, offset, offset + 1)
+        template_offset = 4 + filled_rows
 
-        for i, payment in enumerate(period["payments_1"]):
-            # self.fill_payment_1(payment, i, table, offset)
-            pass
+        current_filled_rows = 0
+        for row in period["rows"]:
+            # print(f"Обрабатываем строку: {row}")
+            paste_offset = template_offset + 2 + current_filled_rows    # +2 - это плюс две строки с шаблонами
 
-        for i, payment in enumerate(period["payments_2"]):
-            self.fill_payment_2(payment, i, table, offset + len(period["payments_1"]) + 1)
+            if self.type_of_row(row) == 1:
+                self.clone_row_type_1(table, template_offset, paste_offset)
+                self.fill_row_type_1(table, paste_offset, row)
+
+            elif self.type_of_row(row) == 2:
+                self.clone_row_type_2(table, template_offset + 1, paste_offset)
+                self.fill_row_type_2(table, paste_offset, row)
+
+            current_filled_rows += 1
+
+        # Здесь мы добавляем единицу, поскольку каждый блок заканчивается строкой "итого"
+        current_filled_rows += 1
+        # Удаляем строки с шаблонами
+        self.redactor.delete_row_in_table(table, template_offset)
+        self.redactor.delete_row_in_table(table, template_offset)
+        # current_filled_rows += 2
+
+        return current_filled_rows
+
+        # self.clone_payment_row(table, len(period["payments_2"]) - 1, offset + 2, offset + 3)
+        # self.clone_payment_row(table, len(period["payments_1"]) - 1, offset, offset + 1)
+
+        # for i, payment in enumerate(period["payments_1"]):
+        #     # self.fill_payment_1(payment, i, table, offset)
+        #     pass
+
+        # for i, payment in enumerate(period["payments_2"]):
+        #     self.fill_payment_2(payment, i, table, offset + len(period["payments_1"]) + 1)
 
 
-    def fill_common_period_info(self, period, period_index: int, table: Table, payments: int):
+    def fill_common_period_info(self, period, period_index: int, table: Table, filled_rows: int):
         to_replace = (
             (self.borders("период месяц.год"),              period["period"]),
-            (self.borders("сумма пени за период"),          period["result"]),
+            (self.borders("сумма пени за период"),          period["total"]),
         )
 
-        stride = 3
-        cell = table.row_cells(4 + period_index * stride + payments)[0]
+        cell = table.row_cells(4 + filled_rows)[0]
         self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[0][0], to_replace[0][1])
 
-        cell = table.row_cells(4 + period_index * stride + payments)[1]
+        cell = table.row_cells(4 + filled_rows + 2)[11]
         self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[1][0], to_replace[1][1])
-        cell = table.row_cells(4 + period_index * stride + payments)[3]
-        self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[2][0], to_replace[2][1])
-        cell = table.row_cells(4 + period_index * stride + payments)[4]
+
+
+    def type_of_row(self, row: dict):
+        """Возвращает тип строки. Если в строке есть текст, значит это строка-заголовок и возвращаем 1.
+        Если текста нет, значит это строка в которой есть формула, ставка, пени и тд, возвращаем 2
+        1 - строка-заголовок
+        2 - строка-куча чисел
+
+        Args:
+            row (dict): строка row представлена в виде словаря с полями, в том числе есть поле "text".
+
+        Returns:
+            _type_: 1 или 2
+        """
+        if row["text"] is None:
+            return 2
+        else:
+            return 1
+
+
+    def count_row_by_types(self, rows):
+        n_header_rows = 0
+        n_number_rows = 0
+        for row in rows:
+            row_type = self.type_of_row(row)
+            if row_type == 1:
+                n_header_rows += 1
+            elif row_type == 2:
+                n_number_rows += 1
+            else:
+                print(f"Строка row={row} не соответствует ни одному формату, не ясно как её обрабатывать.")
+                raise RuntimeError(f"Invalid row: {row}")
+        return (n_header_rows, n_number_rows)
+
+
+    def clone_row_type_1(self, table: Table, source_row_index: int, _target_row_index: int = None):
+        """Клонирует хедер-строку.
+
+        Args:
+            table (Table): Таблица, в которой происходят изменения
+            source_row_index (int, optional): Индекс строки, которую копируем (она является шаблонной).
+            target_row_index (int, optional): Индекс, по которому вставляем копию строки. По 
+            умолчанию вставляется сразу после шаблонной строки.
+        """
+        target_row_index = source_row_index if _target_row_index is None else _target_row_index
+        new_row = self.redactor.insert_row_in_table(table, target_row_index)
+        self.redactor.clone_table_row(table.rows[source_row_index], new_row)
+        self.merge_row_5(table, target_row_index)
+        self.redactor.merge_table_cells(table.rows[target_row_index - 1].cells[0], table.rows[target_row_index].cells[0])
+
+
+    def clone_row_type_2(self, table: Table, source_row_index: int, _target_row_index: int = None):
+        """Клонирует строку с кучей численных данных.
+
+        Args:
+            table (Table): Таблица, в которой происходят изменения
+            source_row_index (int, optional): Индекс строки, которую копируем (она является шаблонной).
+            target_row_index (int, optional): Индекс, по которому вставляем копию строки. По 
+            умолчанию вставляется сразу после шаблонной строки.
+        """
+        target_row_index = source_row_index if _target_row_index is None else _target_row_index
+        new_row = self.redactor.insert_row_in_table(table, target_row_index)
+        self.redactor.clone_table_row(table.rows[source_row_index], new_row)
+        self.merge_row_6(table, target_row_index)
+        self.redactor.merge_table_cells(table.rows[target_row_index - 1].cells[0], table.rows[target_row_index].cells[0])
+
+
+    def fill_row_type_1(self, table: Table, row_index: int, row: dict):
+        to_replace = (
+            (self.borders("сумма начисления"),              row["debt"]),
+            (self.borders("дата начала начисления"),        row["period"][0]),
+            (self.borders("вставляемый текст"),             row["text"]),
+        )
+
+        cell = table.row_cells(row_index)[1]
         self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[0][0], to_replace[0][1])
+        cell = table.row_cells(row_index)[3]
+        self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[1][0], to_replace[1][1])
+        cell = table.row_cells(row_index)[4]
+        self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[2][0], to_replace[2][1])
 
-        cell = table.row_cells(6 + period_index * stride + payments)[1]
+
+    def fill_row_type_2(self, table: Table, row_index: int, row: dict):
+        to_replace = (
+            (self.borders("сумма начисления"),              row["debt"]),
+            (self.borders("дата начала начисления"),        row["period"][0]),
+            (self.borders("дата конца начисления"),         row["period"][1]),
+            (self.borders("кол-во дней начисления"),        str(row["period"][2])),
+            (self.borders("ставка"),                        row["penalty_period_info"][0]),
+            (self.borders("доля ставки"),                   row["penalty_period_info"][1]),
+            (self.borders("формула"),                       row["formulae"]),
+            (self.borders("пени"),                          row["penalty"]),
+        )
+        cell = table.row_cells(row_index)[1]
+        self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[0][0], to_replace[0][1])
+        cell = table.row_cells(row_index)[3]
+        self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[1][0], to_replace[1][1])
+        cell = table.row_cells(row_index)[4]
+        self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[2][0], to_replace[2][1])
+        cell = table.row_cells(row_index)[5]
         self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[3][0], to_replace[3][1])
-        cell = table.row_cells(6 + period_index * stride + payments)[3]
-        self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[4][0], to_replace[4][1])
 
-        cell = table.row_cells(8 + period_index * stride + payments)[11]
+        cell = table.row_cells(row_index)[6]
+        self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[4][0], to_replace[4][1])
+        cell = table.row_cells(row_index)[8]
         self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[5][0], to_replace[5][1])
+        cell = table.row_cells(row_index)[9]
+        self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[6][0], to_replace[6][1])
+        cell = table.row_cells(row_index)[11]
+        self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[7][0], to_replace[7][1])
 
 
     def fill_header_row(self, payment, payment_index: int, table: Table, offset: int):
@@ -323,18 +458,16 @@ class CalculationClaimGenerator:
             # Объединяем ячейки третьей и четвертой строк
             self.merge_row_3_4(new_table, 2)
 
-            # Объединяем ячейки пятой и седьмой строк
+            # Объединяем ячейки пятой строки
             self.merge_row_5(new_table, 4)
-            self.merge_row_5(new_table, 6, True)
 
-            # Объединяем ячейки шестой, восьмой и девятой строк
+            # Объединяем ячейки шестой и седьмой строк
             self.merge_row_6(new_table, 5)
-            self.merge_row_6(new_table, 7)
-            self.merge_row_6(new_table, 8)
+            self.merge_row_6(new_table, 6)
 
-            # Объединяем ячейки десятой и одиннадцатой строк
-            self.merge_row_10(new_table, 9)
-            self.merge_row_10(new_table, 10)
+            # Объединяем ячейки восьмой и девятой строк
+            self.merge_row_8(new_table, 7)
+            self.merge_row_8(new_table, 8)
 
 
     def merge_row_1(self, table, row_index):
@@ -397,37 +530,10 @@ class CalculationClaimGenerator:
         self.redactor.merge_table_cells(previous_row.cells[0], row.cells[0])
 
 
-    def merge_row_10(self, table, row_index):
+    def merge_row_8(self, table, row_index):
         row = table.rows[row_index]
         for i in range(1, 12):
             self.redactor.merge_table_cells(row.cells[0], row.cells[i])
-
-
-    def clone_block(self, table: Table, index: int, count: int = 1):
-        """Клонирует блок. 1 блок - 1 период
-
-        Args:
-            index (int): индекс первой строки копируемого блока
-            count (int): количество копий.
-        """
-
-        stride = 5
-        for i in range(count):
-            for j in range(stride):
-                new_row = self.redactor.insert_row_in_table(table, index + (i + 1) * stride + j)
-                self.redactor.clone_table_row(table.rows[index + j], new_row)
-
-            # self.merge_row_5(table.rows[index + (i + 1) * stride])
-            self.merge_row_5(table, index + (i + 1) * stride)
-            # self.merge_row_6(table.rows[index + (i + 1) * stride + 1])
-            self.merge_row_6(table, index + (i + 1) * stride + 1)
-            # self.merge_row_5(table.rows[index + (i + 1) * stride + 2])
-            self.merge_row_5(table, index + (i + 1) * stride + 2, True)
-            # self.merge_row_6(table.rows[index + (i + 1) * stride + 3])
-            self.merge_row_6(table, index + (i + 1) * stride + 3)
-            # self.merge_row_6(table.rows[index + (i + 1) * stride + 4])
-            self.merge_row_6(table, index + (i + 1) * stride + 4)
-            # self.merge_cols_period(table, index + (i + 1) * stride)
 
 
     def clone_payment_row(self, table: Table, count: int = 1, source_row_index: int = 5, target_row_index: int = None):

@@ -118,10 +118,13 @@ class DocxRedactor:
         """
         result = False
 
+        # runs = []
         for run in paragraph.runs:
+            # runs.append(run.text)
             if old_text in run.text:
                 run.text = run.text.replace(old_text, new_text)
                 result = True
+        # print(f"runs={runs}")
 
         return result
 
@@ -531,6 +534,41 @@ class DocxRedactor:
         v_align = OxmlElement('w:vAlign')
         v_align.set(qn('w:val'), align)  # например, w:val="center"
         tcPr.append(v_align)
+
+
+    def delete_row_in_table(self, table: Table, index: int):
+        """Удаляет строку из таблицы по указанному индексу.
+
+        Args:
+            table (Table): Таблица, из которой нужно удалить строку.
+            index (int): Индекс строки, которую нужно удалить. 
+                        Поддерживает отрицательные индексы (например, -1 — последняя строка).
+
+        Raises:
+            IndexError: Если индекс вне допустимого диапазона.
+            ValueError: Если таблица пустая.
+        """
+        tbl = table._tbl  # Внутренний XML-объект таблицы (CT_Tbl)
+        rows = tbl.tr_lst  # Список всех строк (lxml elements)
+
+        if not rows:
+            raise ValueError("Нельзя удалить строку из пустой таблицы.")
+
+        # Поддержка отрицательных индексов
+        if index < 0:
+            index = len(rows) + index
+
+        if index < 0 or index >= len(rows):
+            raise IndexError(f"Индекс {index} вне допустимого диапазона [0, {len(rows) - 1}]")
+
+        # Получаем XML-элемент строки, которую нужно удалить
+        row_to_delete = rows[index]
+
+        # Удаляем строку из XML
+        row_to_delete.getparent().remove(row_to_delete)
+
+        # python-docx не обновляет кэш строк автоматически, но table.rows
+        # перестраивается при каждом обращении, так что всё будет ок
 
 
     def get_paragraph(self, index: int) -> Paragraph:
