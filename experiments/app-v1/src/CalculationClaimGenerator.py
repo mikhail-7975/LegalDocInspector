@@ -6,7 +6,7 @@ from docx.table import Table
 from DocxRedactor import DocxRedactor
 
 
-class CalculationClaimCreator:
+class CalculationClaimGenerator:
     """
     Класс для создания документа с расчётом для иска
     
@@ -23,7 +23,7 @@ class CalculationClaimCreator:
         template_filename: str - имя файла-шаблона
         output_filename: str - имя файла, созданного по шаблону
         """
-        self.config = config
+        self.config = self.convert_data_from_calculator(config)
 
         self.redactor.clone_file(template_filename, output_filename)
         self.doc = self.redactor.open(output_filename)
@@ -34,10 +34,44 @@ class CalculationClaimCreator:
         self.redactor.close()
 
 
+    def convert_data_from_calculator(self, contracts):
+        converted_contracts = {"contracts": []}
+
+        for contract in contracts:
+            converted_contract = {
+                "contract_number": contract["contract_number"],
+                "start_date_of_delay": contract["start_of_table"]["start"],
+                "end_date_of_delay": contract["start_of_table"]["end"],
+                "total_debt": contract["end_of_table1"]["money"],
+                "total_peny": contract["end_of_table2"]["money"],
+                "periods": [],
+            }
+
+            for period in contract.keys():
+                if period not in ["contract_number", "start_of_table", "end_of_table1", "end_of_table2"]:
+                    new_period = {}
+                    new_period["period"] = period
+
+                    for item in contract[period]:
+                        if item["text"] == "Итого:":
+                            new_period["total"] = item["penalty"]
+
+                    new_period["rows"] = []
+                    for item in contract[period]:
+                        if item["text"] != "Итого:":
+                            new_period["rows"].append(item)
+
+                    converted_contract["periods"].append(new_period)
+
+            converted_contracts["contracts"].append(converted_contract)
+
+        return converted_contracts
+
+
     def fill_file(self):
         self.clone_table(len(self.config["contracts"]) - 1)
 
-        self.redactor.print_table(self.redactor.get_table(0))
+        # self.redactor.print_table(self.redactor.get_table(0))
 
         for i, contract in enumerate(self.config["contracts"]):
             self.fill_contract(contract, i)
@@ -45,16 +79,16 @@ class CalculationClaimCreator:
 
     def fill_contract(self, contract, contract_index):
         table = self.redactor.get_table(contract_index)
-        
+
         self.fill_common_contract_info(contract, table)
 
         self.clone_block(table, 4, len(contract["periods"]) - 1)
 
-        payments = 0
-        for i, period in enumerate(contract["periods"]):
-            self.fill_period(period, i, table, payments)
-            payments += len(period["payments_1"])
-            payments += len(period["payments_2"])
+        # payments = 0
+        # for i, period in enumerate(contract["periods"]):
+        #     self.fill_period(period, i, table, payments)
+        #     payments += len(period["payments_1"])
+        #     payments += len(period["payments_2"])
 
 
     def fill_common_contract_info(self, contract, table: Table):
@@ -62,8 +96,8 @@ class CalculationClaimCreator:
             (self.borders("номер договора"),            contract["contract_number"]),
             (self.borders("дата начала просрочки"),     contract["start_date_of_delay"]),
             (self.borders("дата конца просрочки"),      contract["end_date_of_delay"]),
-            (self.borders("сумма долга"),               contract["sum_debt"]),
-            (self.borders("сумма пеней"),               contract["sum_peny"]),
+            (self.borders("сумма долга"),               contract["total_debt"]),
+            (self.borders("сумма пеней"),               contract["total_peny"]),
         )
 
         cell = table.row_cells(0)[2]
@@ -72,31 +106,36 @@ class CalculationClaimCreator:
         self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[1][0], to_replace[1][1])
         cell = table.row_cells(1)[10]
         self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[2][0], to_replace[2][1])
-        cell = table.row_cells(9)[0]
+        cell = table.row_cells(7)[0]
         self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[3][0], to_replace[3][1])
-        cell = table.row_cells(10)[0]
+        cell = table.row_cells(8)[0]
         self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[4][0], to_replace[4][1])
 
 
-    def fill_period(self, period, period_index, table: Table, payments: int):
-        self.fill_common_period_info(period, period_index, table, payments)
+    def fill_period(self, period, period_index, table: Table, filled_rows: int):
+        self.fill_common_period_info(period, period_index, table, filled_rows)
 
         """
-        offset - это индекс, по которому находится строка-шаблон платежа. Он вычисляется
-        следующим образом. 4 - это первые четыре строки в таблице с контрактом. period_index - 
-        это индекс текущего блока с периодом, а 3 - это 3 фиксированных строки в каждом таком 
-        блоке (Начислено за период, корректировка обязательств и итог). payments - это число 
-        платежей, которые уже заполнены в текущей таблице. Последняя 1 - это фиксированная 
-        строка Начислено за период. 
+        offset - это индекс, по которому находится строка-шаблон header-строки. Он вычисляется
+        следующим образом. 4 - это первые четыре строки в таблице, они содержат информацию о договоре. 
+        period_index - это индекс текущего блока с периодом, а 3 - это 3 фиксированных строки в каждом таком 
+        блоке (Начислено за период, корректировка обязательств и итог). payments - это число платежей, 
+        которые уже заполнены в текущей таблице. Последняя 1 - это фиксированная строка Начислено за период. 
         В итоге в таблицу по индексу offset + 1 вставляются новые строки с платежами, которые нужно
         заполнить
+
+        Update:
+        payments - больше нет
+        filled_rows - количество строк, которые заполнены в таблице (в это число не входят первые четыре 
+        строки в таблице, которые не относятся не к каким периодам)
         """
-        offset = 4 + period_index * 3 + payments + 1
+        offset = 4 + filled_rows
         self.clone_payment_row(table, len(period["payments_2"]) - 1, offset + 2, offset + 3)
         self.clone_payment_row(table, len(period["payments_1"]) - 1, offset, offset + 1)
 
         for i, payment in enumerate(period["payments_1"]):
-            self.fill_payment_1(payment, i, table, offset)
+            # self.fill_payment_1(payment, i, table, offset)
+            pass
 
         for i, payment in enumerate(period["payments_2"]):
             self.fill_payment_2(payment, i, table, offset + len(period["payments_1"]) + 1)

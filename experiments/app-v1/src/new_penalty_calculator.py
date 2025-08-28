@@ -474,3 +474,4 @@ if __name__ == "__main__":
         company_type=company_type,
         end_date=end_date
     )
+res
