@@ -35,6 +35,15 @@ class CalculationClaimGenerator:
 
 
     def convert_data_from_calculator(self, contracts):
+        """На вход метод принимает данные из калькулятора (списком, т.е. в contracts может находится несколько
+        наборов данных полученных от калькулятора), каждый элемент списка - это данные об одном контракте.
+        
+        На выходе возвращаются те же самые данные, но в структуре, удобной для записи в расчёт к иску.
+        """
+
+        # with open("temp.json", "w") as file:
+        #     json.dump(contracts, file, ensure_ascii=False, indent=4)
+
         converted_contracts = {"contracts": []}
 
         for contract in contracts:
@@ -48,16 +57,22 @@ class CalculationClaimGenerator:
             }
 
             for period in contract.keys():
-                if period not in ["contract_number", "start_of_table", "end_of_table1", "end_of_table2"]:
+                if period not in ["contract_number", "start_of_table", "end_of_table1", "end_of_table2", "debt_info"]:
                     new_period = {}
                     new_period["period"] = period
 
                     for item in contract[period]:
+
                         if item["text"] == "Итого:":
                             new_period["total"] = item["penalty"]
 
                     new_period["rows"] = []
                     for item in contract[period]:
+
+                        if "type" in item.keys():
+                            if item["type"] == "debt_info":
+                                continue
+
                         if item["text"] != "Итого:":
                             new_period["rows"].append(item)
 
@@ -273,6 +288,7 @@ class CalculationClaimGenerator:
 
 
     def fill_row_type_2(self, table: Table, row_index: int, row: dict):
+        # print(f"row={row}")
         to_replace = (
             (self.borders("сумма начисления"),              row["debt"]),
             (self.borders("дата начала начисления"),        row["period"][0]),

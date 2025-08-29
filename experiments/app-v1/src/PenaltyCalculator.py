@@ -2,6 +2,7 @@ from TableParser import TableParser
 import datetime
 import requests
 from decimal import Decimal, ROUND_HALF_UP
+# from calculator_adapter import convert_data
 
 class StrictFormattedMoney:
     def __init__(self, amount, currency='RUB'):
@@ -11,6 +12,9 @@ class StrictFormattedMoney:
         if isinstance(amount, str):
             amount = amount.replace(' ', '')
             amount = amount.replace(',','.')
+            if 'руб.' in amount:
+                amount = amount.replace('руб.', '')
+            # print(amount)
             self.amount = Decimal(str(amount))
             self.currency = currency
         if isinstance(amount, StrictFormattedMoney):
@@ -322,19 +326,25 @@ def _split_stage_by_date(stage:dict, split_date: datetime.datetime, split_paymen
                 'text':None,
             })
 
-        return result, str(StrictFormattedMoney(original_debt) - all_split_payment)
+        return result, str(StrictFormattedMoney(original_debt) - all_split_payment), all_split_payment
     
 
 def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, end_date:str) -> dict:
     all_penalty = StrictFormattedMoney(0)
     all_debt = StrictFormattedMoney(0)
+    all_accrual_debt = StrictFormattedMoney(0)
+    all_correcting_debt = StrictFormattedMoney(0)
     end_date = datetime.datetime.strptime(end_date, "%d.%m.%Y") 
-    res = dict()
+    res = {
+        'start_of_table' : {}
+    }
+    
     start_date_flag = False
     for month_name, month_parsed_info in parsed_data.items():
         res[month_name] = list()
         month_debt = StrictFormattedMoney(0) 
-        
+        month_accrual = StrictFormattedMoney(0)
+        month_correcting = StrictFormattedMoney(0)
         #расчёты даты начала просрочки
         month = month_parsed_info['accrual']['accruals'][0]['period']
         parsed = datetime.datetime.strptime(month, "%m.%Y")
@@ -361,6 +371,11 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
             if len(parsed_info['accruals'])>0:
                 for accrual in parsed_info['accruals']:
                     month_debt+= StrictFormattedMoney(accrual['accrual'])
+                    if accrual_or_adjustment == 'accrual':
+                        month_accrual += StrictFormattedMoney(accrual['accrual'])
+                    else:
+                        print('lox')
+                        month_correcting += StrictFormattedMoney(accrual['accrual'])
                     res[month_name].append({
                         'debt': str(StrictFormattedMoney(accrual['accrual'])),
                         'period': (_add_last_day_of_month(accrual['period']), None, None),
@@ -376,6 +391,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
                 for additional in parsed_info['additionals']:
                     all_additional+=StrictFormattedMoney(additional['accrual'])
                 month_debt+=all_additional
+                month_correcting+=all_additional
                 res[month_name].append({
                     'debt':str(all_additional),
                     'period':(period, None, None),
@@ -387,13 +403,17 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
             
         periods = _get_penalty_periods(start_date, end_date, month_debt, company_type)
                 
-        for payment_info in [month_parsed_info['accrual']['payments'], month_parsed_info['adjustment']['payments']]:
+        for i ,payment_info in enumerate([month_parsed_info['accrual']['payments'], month_parsed_info['adjustment']['payments']]):
             
             if len(payment_info)>0:
                 for payment in payment_info:
                     # обработка погашений долга до периодов пени
                     if datetime.datetime.strptime(payment['date'], '%d.%m.%Y') < start_date :
                         month_debt-=StrictFormattedMoney(payment['payment'])
+                        if i == 0:
+                            month_accrual-=StrictFormattedMoney(payment['payment'])
+                        else:
+                            month_correcting-=StrictFormattedMoney(payment[payment])
                         res[month_name].append({
                             'debt': str(StrictFormattedMoney(payment['payment'])*-1),
                             'period':(payment['date'], None, None),
@@ -420,57 +440,96 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
                             if datetime.datetime.strptime(another_payment['date'], '%d.%m.%Y') == split_date:
                                 split_payments.append(another_payment)    
                         # находим нужный подпериод по дате
-                        for i, period in enumerate(periods):
+                        for j, period in enumerate(periods):
                             if period['type'] == 'penalty_period':
                                 lb, ub, _  = period['period']
                                 lb, ub = datetime.datetime.strptime(lb, '%d.%m.%Y'), datetime.datetime.strptime(ub, '%d.%m.%Y')
                                 if split_date >= lb and split_date <= ub:
-                                    splitted_periods, new_month_debt = _split_stage_by_date(period, split_date, split_payments)
-                                    new_periods = periods[:i] + splitted_periods + periods[i+1:]
+                                    splitted_periods, new_month_debt, all_split_payment = _split_stage_by_date(period, split_date, split_payments)
+                                    if i ==0:
+                                        month_accrual -= all_split_payment
+                                    else :
+                                        month_correcting -= all_split_payment
+                                    new_periods = periods[:j] + splitted_periods + periods[j+1:]
                                     # обновляем месячные долги у слудующих периодов
-                                    for next_period in new_periods[i+1:]:
+                                    for next_period in new_periods[j+1:]:
                                         if next_period['type'] == 'penalty_period':
                                             next_period['debt'] = new_month_debt
 
                                     periods = new_periods
-            
+        
         periods, result_penalty, result_debt = _calculate_penalty_for_each_period(periods)
         res[month_name]+= periods
         res[month_name].append({
             'text': "Итого:",
-
+            'type': 'field',
             'penalty': str(result_penalty)
         })
         all_penalty+=result_penalty
         all_debt+=result_debt
+        
+        res[month_name].append({
+            'text': None,
+            'type': 'debt_info',
+            'accrual_debt': str(month_accrual),
+            'correcting_debt': str(month_correcting)
+        })
+        
+        all_accrual_debt+=month_accrual
+        all_correcting_debt+=month_correcting
     
     res['end_of_table1'] = {
         'text': "Сумма Основного долга",
-        'money': str(all_debt)+ ' руб.'
+        'money': str(all_debt)+ ' руб.',
+        'type': 'field'
     }
     
     res['end_of_table2'] = {
         'text': "Сумма пеней по всем задолженностям",
-        'money': str(all_penalty)+' руб.'
+        'money': str(all_penalty)+ ' руб.',
+        'type': 'field'
+    }
+    
+    res['debt_info'] = {
+        'text': None,
+        'type': 'debt_info',
+        'accrual_debt': str(all_accrual_debt),
+        'correcting_debt': str(all_correcting_debt)
     }
         
         
         
     return res
 
-# USAGE EXAMPLE
+# # USAGE EXAMPLE
 
-if __name__ == "__main__":
-    parser = TableParser()
-    parser.open('/home/kirill/neurolumber/docscanner/new_legal_doc_inspector/docinspecor/legal_doc_data/test_data/1/комплект 1/Документы для иска/04.303360-ТЭ/04.303360-ТЭ_справка.XLSM')
-    data = parser.parse()
-    parser.close()
-    day_of_penalty = 20
-    company_type = 'ТСЖ'
-    end_date = '25.07.2025'
-    res = calculate_penalty(
-        parsed_data= data,
-        day_of_penalty=day_of_penalty,
-        company_type=company_type,
-        end_date=end_date
-    )
+# if __name__ == "__main__":
+#     parser = TableParser()
+#     claim_paths = ['/home/kirill/neurolumber/docscanner/new_legal_doc_inspector/docinspecor/legal_doc_data/test_data/1/комплект 1/Документы для иска/04.303360-ТЭ/04.303360-ТЭ_справка.XLSM', '/home/kirill/neurolumber/docscanner/new_legal_doc_inspector/docinspecor/legal_doc_data/test_data/1/комплект 1/Документы для иска/04.303360ГВС/04.303360ГВС_справка (2).XLS' ]
+#     days_of_penalty = [20, 20]
+#     contract_points = ['1.1', '5,5']
+#     calculated_results = []
+#     company_type = 'ТСЖ'
+#     end_date = '25.07.2025'
+#     for claim_path, day_of_penalty in zip(claim_paths, days_of_penalty):
+#         parser.open(str(claim_path))
+#         data = parser.parse()
+#         res = calculate_penalty(
+#             parsed_data= data,
+#             day_of_penalty=day_of_penalty,
+#             company_type=company_type,
+#             end_date=end_date
+#         )
+#         res['contract_number'] = parser.parse_contract_number()
+#         parser.close()
+#         calculated_results.append(res)
+        
+#     converted_data = convert_data(
+#         calculated_data_list=calculated_results,
+#         last_days_of_penalty=days_of_penalty,
+#         contract_points=contract_points,
+#         company_type=company_type,
+#         current_date=end_date
+#     )
+# # calculated_results
+# converted_data

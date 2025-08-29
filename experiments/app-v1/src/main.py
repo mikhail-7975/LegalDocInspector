@@ -1,9 +1,11 @@
 import json
+from datetime import datetime
 
 from TableParser import TableParser
 from PenaltyCalculator import calculate_penalty
-
 from CalculationClaimGenerator import CalculationClaimGenerator
+from ClaimGenerator import ClaimGenerator
+from calculator_adapter import convert_data
 
 
 HARD_PATH_TO_EXCEL = "/home/artyomtrifautsan/IT/python/Work2/LegalDocInspector/experiments/app-v1/documents/docs1/claims/комплект 1 (с долей кор-ки 2024)/Документы для иска/07.300558-ТЭ/справка о задолженности по договору 07.300358.XLSM"
@@ -28,47 +30,50 @@ def generate_claim(config):
 
     table_parser.close()
 
-    # with open("temp.json", "w") as file:
-    #     json.dump(convert_data_from_calculator(None, calculated_data), file, ensure_ascii=False, indent=4)
-
     # 3. Гененрируем расчет к иску
     calc_claim_gen = CalculationClaimGenerator()
     calculated_data_list = []
+    # Для теста запускаем два одинаковых контракта
+    calculated_data_list.append(calculated_data)
     calculated_data_list.append(calculated_data)
     calc_claim_gen.make_instance(calculated_data_list, HARD_PATH_TO_CALCULATION_CLAIM_TEMPLATE, "output/calculation_claim.docx")
 
     # 4. Генерируем иск
+    calculated_data_list = []
+    calculated_data_list.append(calculated_data)
+    calculated_data_list.append(calculated_data)
+    last_days_of_penalty = [20, 19]
+    contract_points = ["4.5", "5.7"]
+    company_type = "ТСЖ"
+    current_date = datetime.now().strftime("%d.%m.%Y")
+    converted_data = convert_data(calculated_data_list, last_days_of_penalty, contract_points, company_type, current_date)
 
-
-def convert_data_from_calculator(self, data):
-    # print(data)
-    converted_data = {
-        "contract_number": data["contract_number"],
-        "delay_start": data["start_of_table"]["start"],
-        "delay_end": data["start_of_table"]["end"],
-        "total_debt": data["end_of_table1"]["money"],
-        "total_peny": data["end_of_table2"]["money"],
-        "periods": [],
+    converted_data["plaintiff_info"] = {
+        "inn": "11111111",
+        "full_name": "ПУБЛИЧНОЕ АКЦИОНЕРНОЕ ОБЩЕСТВО «ИСТЕЦ»",
+        "short_name": "ПАО «МОЭК»",
+        "addres": "119526, Москва, пр-кт Вернадского",
+        "correspondency_addres": "121596, г. Мосфильмовская",
+        "ogrn": "22222222"
+    }
+    converted_data["lawsuit_info"] = {
+        "cost": "546 167,56 руб.", 
+        "tax": "32 308,00 руб.", 
+        "service_type": "ТЭ", 
+        "claims": [
+            "№ 553106 от 28.04.2025",
+            "№ 111111 от 11.11.1111",
+            "№ 222222 от 28.04.2025",
+            "№ 333333 от 28.04.2025",
+            "№ 444444 от 28.04.2025",
+            "№ 555555 от 28.04.2025",
+            "№ 666666 от 28.04.2025",
+            "№ 777777 от 28.04.2025" 
+        ]
     }
 
-    for period in data.keys():
-        if period not in ["contract_number", "start_of_table", "end_of_table1", "end_of_table2"]:
-            new_period = {}
-            new_period["period"] = period
-
-            for item in data[period]:
-                print(item)
-                if item["text"] == "Итого:":
-                    new_period["total"] = item["penalty"]
-
-            new_period["rows"] = []
-            for item in data[period]:
-                if item["text"] != "Итого:":
-                    new_period["rows"].append(item)
-
-            converted_data["periods"].append(new_period)
-
-    return converted_data
+    claim_gen = ClaimGenerator()
+    claim_gen.make_instance(converted_data, HARD_PATH_TO_CLAIM_TEMPLATE, "output/claim.docx")
 
 
 def main():

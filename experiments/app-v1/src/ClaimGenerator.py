@@ -5,7 +5,7 @@ from docx import Document
 from DocxRedactor import DocxRedactor
 
 
-class DocTemplateReplacer:
+class ClaimGenerator:
     """
     Класс создания документа по шаблону. При создании экземпляра принимает три аргумента:
     
@@ -17,13 +17,13 @@ class DocTemplateReplacer:
         self.doc: Document = None
 
 
-    def make_instance(self, config_filename: str, template_filename: str, output_filename: str = None):
+    def make_instance(self, config: str, template_filename: str, output_filename: str = None):
         """
-        config_filename: str - имя файла с конфигами для шаблона
+        config_filename: str - конфиги для шаблона
         template_filename: str - имя файла-шаблона
         output_filename: str - имя файла, созданного по шаблону
         """
-        self.config = self.parse_config(config_filename)
+        self.config = config
 
         self.redactor.clone_file(template_filename, output_filename)
         self.doc = self.redactor.open(output_filename)
