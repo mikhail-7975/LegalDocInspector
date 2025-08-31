@@ -311,6 +311,33 @@ class DocxRedactor:
         target_run.font.color.rgb = source_run.font.color.rgb if source_run.font.color else None
 
 
+    def delete_paragraph(self, index: int) -> None:
+        """
+        Удаляет параграф из документа по заданному индексу.
+
+        Args:
+            index (int): Индекс параграфа, который нужно удалить.
+
+        Raises:
+            IndexError: Если индекс выходит за пределы допустимого диапазона.
+            ValueError: Если попытаться удалить последний оставшийся параграф
+                        (документ должен содержать хотя бы один параграф).
+        """
+        paragraphs = self.doc.paragraphs
+        if not 0 <= index < len(paragraphs):
+            raise IndexError(f"Index {index} is out of range for {len(paragraphs)} paragraphs.")
+
+        # Нельзя удалять последний параграф — документ должен содержать хотя бы один
+        if len(paragraphs) == 1:
+            raise ValueError("Cannot delete the last paragraph in the document. A Word document must have at least one paragraph.")
+
+        # Получаем XML-элемент параграфа
+        p = paragraphs[index]._element
+
+        # Удаляем его из родительского элемента (тела документа)
+        p.getparent().remove(p)
+
+
     def insert_row_in_table(self, table: Table, index: int = None) -> _Row:
         """Создаёт и вставляет пустую строку в таблицу.
 

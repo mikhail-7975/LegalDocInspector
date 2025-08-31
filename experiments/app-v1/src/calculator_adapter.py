@@ -58,6 +58,7 @@ def convert_data(calculated_data_list: list[dict], last_days_of_penalty: list[in
         all_penalty+=penalty
         cost_of_lawsuit += debt_penalty
         contract_dict['contract_periods'] = f"{current_accruals_months[0]}-{current_accruals_months[-1]}"
+        contract_dict['contract_periods_correcting'] = f"{current_correcting_months[0]} - {current_correcting_months[-1]}" if len(current_correcting_months)>0 else None
         contract_dict['debt'] = str(debt)
         contract_dict['penalty'] = str(penalty)
         contract_dict['debt_penalty'] = str(debt_penalty)
@@ -67,12 +68,16 @@ def convert_data(calculated_data_list: list[dict], last_days_of_penalty: list[in
 
         converted_data['table_info'][contract_info['contract_number']] = {
             "contract_periods": contract_dict['contract_periods'],  
+            "contract_periods_correcting": contract_dict['contract_periods_correcting'],
             "debt": contract_dict['debt'], 
             "debt_penalty": contract_dict['debt_penalty'], 
             "penalty": contract_dict['penalty'], 
             "penalty_period": contract_dict['penalty_period'], 
             "last_day": contract_dict['last_day'], 
-            "contract_point": contract_dict['contract_point']
+            "contract_point": contract_dict['contract_point'],
+            "accrual_debt": contract_dict['accrual_debt'],
+            "correcting_debt": contract_dict['correcting_debt'],
+            
         }
     
     converted_data['table_info']['all_debt'] = str(all_debt)
