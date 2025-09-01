@@ -10,10 +10,17 @@ from pathlib import Path
 
 from configs.config import AppConfig, load_yaml_config # конфиги
 # from .llm_functions import parse_contract, parse_zip, parse_claim # функции для работы llm моделей
-from legal_doc_inspector.doc_parser.table_parser import TableParser # Парсер таблиц
-from legal_doc_inspector.penalty_calculator.penalty_calculator import Penalty_calculator # рассчет штрафа
-from legal_doc_inspector.doc_creator.penalty_table_creator import PenaltyTableCreator # создание таблиц для штрафа
-from legal_doc_inspector.doc_creator.lawsuit_creator import LawsuitCreator # СОздание иска
+
+# -------------------------- old -------------------------------
+# from legal_doc_inspector.doc_parser.table_parser import TableParser # Парсер таблиц
+# from legal_doc_inspector.penalty_calculator.penalty_calculator import Penalty_calculator # рассчет штрафа
+# from legal_doc_inspector.doc_creator.penalty_table_creator import PenaltyTableCreator # создание таблиц для штрафа
+# from legal_doc_inspector.doc_creator.lawsuit_creator import LawsuitCreator # СОздание иска
+# --------------------------------------------------------------
+
+from legal_doc_inspector.doc_parser.table_parser_new import TableParser
+from legal_doc_inspector.doc_parser.calculator_adapter import convert_data
+from legal_doc_inspector.penalty_calculator.penalty_calculator_new import calculate_penalty
 # from legal_doc_inspector.doc_parser.contract_parser import ContractParser # Парсе догоора 
 # from legal_doc_inspector.doc_parser.zip_parser import ZipParser # Парсер архива
 # from legal_doc_inspector.doc_parser.claim_parser import ClaimParser # парсер претензии 
@@ -65,13 +72,13 @@ def parse():
     #     json_example = json.load(json_file)
     #     # print(type(data))
 
+    table_parser:TableParser = g.table_parser
     
     current_config = g.config
     save_data_folder = Path(current_config.save_data_folder)
 
     date_request = request.form.get("date")
-    date_request = date.fromisoformat(date_request)
-    company_type = request.form.get("company_type")
+    date_request = date.fromisoformat(date_request).strftime("%d.%m.%Y")
     complects_count = int(request.form.get('complects_count'))
 
     folder = Path(
@@ -80,9 +87,9 @@ def parse():
     request.files
 
     folder.mkdir(exist_ok=True, parents=True)
-    
 
-
+    result_json = dict()
+    parsing_table_results = []
     uploaded_files = defaultdict(lambda : [])
     for complect_id in range(1, complects_count+1):
         complect_folder = Path(folder, f'complect_{complect_id}')
@@ -107,10 +114,21 @@ def parse():
         complect_certificate_file.save(certificate_file_path)
         uploaded_files['certificate_file'].append(str(certificate_file_path))
 
-        day_of_penalty = request.form.get(f'complect_{complect_id}_day_of_penalty')
-   
-    return jsonify(uploaded_files), 200
+        
+        table_parser.open(str(certificate_file_path))
+        result = table_parser.parse()
+        defendant_inn = table_parser.parse_defendant_inn()
+        contract_number = table_parser.parse_contract_number()
+        print(contract_number)
+        table_parser.close()
+        
+        
+        parsing_table_results.append((result, contract_number))
+    
+    result_json['table_parser_result'] = parsing_table_results
 
+    
+    
     # data = dict()
     # with open(str(Path(folder, "index.json")), "w") as json_file:
     #     json.dump(uploaded_files, json_file)
@@ -122,16 +140,12 @@ def parse():
 
     # парсинг договора
     # for i, contract_file in enumerate(uploaded_files["contract_file"]):
-        
+    #   
     #     contract_number, service_type, overdue_date = parse_contract(contract_file, contract_parser)
+    #     _, contract_number = parsing_table_results[i]
     #     pdf_pars_dict[f"contract_{contract_number}"] = {}
     #     pdf_pars_dict[f"contract_{contract_number}"]["service_type"] = service_type
     #     pdf_pars_dict[f"contract_{contract_number}"]["overdue_date"] = overdue_date
-
-    # #  парсинг Zip архива
-    # for i, folder in enumerate(uploaded_files["zip_file"]):
-    #     zip_names = parse_zip(folder, zip_parser)
-    #     pdf_pars_dict[f"zip_{i}"] = zip_names
 
     # # парсинг Претензии
     # for i, claim_file in enumerate(uploaded_files["claim_file"]):
@@ -143,81 +157,33 @@ def parse():
     #     pdf_pars_dict[f"claim_{i}"]["claim_date"] = claim_date
     #     pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_inn"] = plaintiff_inn
         
+    result_json['results_of_name_parser'] = {}
+    result_json['results_of_name_parser']['defendant_info'] = {}
+    result_json['results_of_name_parser']['defendant_info']['inn'] = f'{defendant_inn}'
 
-    # # парсинг таблиц и создание документа с расчётом к иску
-    # table_creator = PenaltyTableCreator()
-    # table_parser = TableParser()
-    # penalty_calculator = Penalty_calculator()
+    # Получение данных ответчика по его инн
+    full_name, short_name, address, kpp, ogrn = parse_html(int(defendant_inn))
+    result_json['results_of_name_parser']['defendant_info']['full_name'] = full_name
+    result_json['results_of_name_parser']['defendant_info']['short_name'] = short_name
+    result_json['results_of_name_parser']['defendant_info']['address'] = address
+    result_json['results_of_name_parser']['defendant_info']['kpp'] = kpp
+    result_json['results_of_name_parser']['defendant_info']['ogrn'] = ogrn
 
-    # list_of_tables_info = []
-
-    # result_dict_json = []
-
-    # parsing_table_results = []
-
-    # for table_path in data["results_of_data_saving"]["certificate_file"]:
-
-    #     parsing_table_result = table_parser.parse_excel_table(table_path)
-    #     defendant_inn = parsing_table_result['ИНН']
-    #     result_dict = penalty_calculator.calculate_penalty_from_doc(data=parsing_table_result,
-    #                                                                     company_type=company_type,
-    #                                                                     current_date=date_request,
-    #                                                                     day_of_penalty=day_of_penalty)
-
-    #     result_dict_json.append(table_creator.convert_datetime_keys(table_creator.group_by_month(result_dict)))
-        
-    #     claim_number = parsing_table_result['номер договора']
-    #     contract_number, start_date, end_date, all_debt, all_penalty = table_creator.create_penalty_table_from_json(
-    #             name = Path(folder,'расчёт к иску.docx') ,
-    #             data=result_dict,
-    #             start_date=result_dict[0]['start'].strftime("%d.%m.%Y"),
-    #             end_date=date_request.strftime('%d.%m.%Y'),
-    #             contract_number=f'№ {claim_number}',
-    #         )
-        
-        
-    #     list_of_tables_info.append((contract_number, start_date, end_date, all_debt, all_penalty))
     
-
-
-
-    # table_name, contracts_info = table_creator.create_result_table(list_of_tables_info,Path(folder,'расчёт к иску.docx'))
-
-    # bio = io.BytesIO()
-    # table_creator.doc.save(bio)
-    # bio.seek(0)
-
-    # uploaded_files['lawsuit_calculating'] = table_name
-
-
-    # result_json = dict()
-
-    # result_json['files_table']  = uploaded_files
-    # result_json['result_of_penalty_calculator'] = result_dict_json
-
-    # # result_json['result_of_llm_parsers'] = json_example['result_of_llm_parsers']
-
-    # result_json['results_of_name_parser'] = {}
-    # result_json['results_of_name_parser']['defendant_info'] = {}
-    # result_json['results_of_name_parser']['defendant_info']['inn'] = f'{defendant_inn}'
-
-    # # Получение данных ответчика по его инн
-    # full_name, short_name, address, kpp, ogrn = parse_html(int(defendant_inn))
-    # result_json['results_of_name_parser']['defendant_info']['full_name'] = full_name
-    # result_json['results_of_name_parser']['defendant_info']['short_name'] = short_name
-    # result_json['results_of_name_parser']['defendant_info']['address'] = address
-    # result_json['results_of_name_parser']['defendant_info']['kpp'] = kpp
-    # result_json['results_of_name_parser']['defendant_info']['ogrn'] = ogrn
-
-    # result_json['contracts_info'] = contracts_info 
-    # # result_json['result_of_penalty_calculator'] = result_dict_json
     # result_json['result_of_llm_parsers'] = pdf_pars_dict
     
     # with open(str(Path(folder, "index.json")),"w") as json_file:
     #     json.dump(uploaded_files, json_file)
 
-    # return jsonify(result_json), 200
+    return jsonify(result_json), 200
 
+@app.route("/calculate_penalty", methods=["POST"])
+def calc_penalty():
+    data = request.json
+    
+    for parsing_result in data['parsing_results']:
+    
+    return jsonify(data), 200
 
 @app.route("/create_doc", methods=["POST"])
 def create_doc():
