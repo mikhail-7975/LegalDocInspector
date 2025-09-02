@@ -213,7 +213,7 @@ def create_doc():
     with open(Path(path_to_save,'lawsuit_create.json'), "w", encoding='utf-8') as f:
         json.dump(request_json, f , indent=4, ensure_ascii=False)
     file = lawsuit_creator.create_lawsuit(request_json, Path(path_to_save,'ИСК.docx'))
-    print(file)
+    # print(file)
     return send_file(file, as_attachment=True), 200
 
 

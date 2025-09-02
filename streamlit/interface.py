@@ -63,21 +63,26 @@ def get_documents_complect_form(form_id:int, day_of_penalty: int | None = None, 
                                             key='debt_certificate_file'+str(form_id))
 
 def get_contract_form(contract_number:str):
-    unique_key = str(uuid4())
+
     st.markdown(f"#### информация из договора {contract_number}")
     st.text(f"{st.session_state.contracts[contract_number]['overdue_date']}")
     st.text(f"{st.session_state.contracts[contract_number]['service_type']}")
     col1, col2 = st.columns(2)
+    st.json(st.session_state.contracts[contract_number])
     with col1:
         st.session_state.contracts[contract_number]['day_of_penalty'] = st.number_input(label="Выберите число месяца, которое является последним днём оплаты счёта",
-                                        value=18,
+                                        value=18 ,
                                         min_value=1,
                                         max_value=31,
-                                        key='day_of_penalty'+str(uuid4()))
+                                        key='day_of_penalty'+str(contract_number),
+                                        on_change=on_change_handler)
+        
+        
     with col2:
-        st.session_state.contracts[contract_number]['contract_point'] = st.text_input(label="напишите номер пункта договора, в котором говорится о дне начала просрочки ",
-                                                                                      key="c_p"+unique_key)
-              
+        st.session_state.contracts[contract_number]['contract_point']  = st.text_input(label="напишите номер пункта договора, в котором говорится о дне начала просрочки ",
+                                                                                      key="c_p"+str(contract_number),
+                                                                                      on_change=on_change_handler)
+    
 
 st.title("Загрузка и обработка документов")
 
@@ -89,10 +94,12 @@ col1, col2 = st.columns(2)
 with col1:
     date_selected = st.date_input("Выберите дату конца просрочки",
                                   format='DD.MM.YYYY',
-                                  value= st.session_state.form_data['end_date'] if 'end_date' in st.session_state else 'today' )
+                                  value= st.session_state.form_data['end_date'] if 'end_date' in st.session_state else 'today',
+                                  on_change=on_change_handler)
     st.session_state.form_data['end_date'] = date_selected.strftime("%d.%m.%Y")
 with col2:
-    st.session_state.form_data['company_type'] = st.selectbox("Выберите тип компании", ["Прочие", "УК", "ТСЖ"])
+    st.session_state.form_data['company_type'] = st.selectbox("Выберите тип компании", ["Прочие", "УК", "ТСЖ"],
+                                                              on_change=on_change_handler)
     
 for form_num, form_info in st.session_state.complects.items():
     get_documents_complect_form(
@@ -312,11 +319,11 @@ if st.session_state.form_data['flag2']:
 
     st.session_state.form_data['lawsuit_info']['cost'] = st.text_input(label="Цена иска", value=f"{st.session_state.form_data['result2']['table_info']['cost_of_lawsuit']} р.", on_change= on_change_handler)
     
-    st.session_state.form_data['lawsuit_info']['tax'] = st.text_input(label="Госпошлина", value=f"{calculate_state_duty(result['contracts_info']['cost_of_lawsuit'])} р." , on_change= on_change_handler)
+    st.session_state.form_data['lawsuit_info']['tax'] = st.text_input(label="Госпошлина", value=f"{calculate_state_duty(st.session_state.form_data['result2']['table_info']['cost_of_lawsuit'])} р." , on_change= on_change_handler)
     st.session_state.form_data['lawsuit_info']['service_type'] = st.selectbox("Выберите вид услугии", ["ГВС + ТЭ", "ТЭ", "ГВС"])
     
 #     service_type_info = []
-    st.session_state.form_data['claims'] = []
+    st.session_state.form_data['lawsuit_info']['claims'] = []
 #     applications = {}
     
     for key, value in result['result_of_llm_parsers'].items():
@@ -340,95 +347,70 @@ if st.session_state.form_data['flag2']:
         )
         claims_edit.append(new_value)
     st.session_state.form_data['lawsuit_info']['claims'] = claims_edit
-#     lawsuit_info['claims'] = st.session_state.form_data['claims']
     
-#     st.markdown("### Данные о приложенных документах")
-
-#     applications_edit = {}
-#     # st.markdown(f"номера и даты претензий\n {'___'.join(f'- {claim}' for claim in claims)}")
-#     for application_path, application_name in applications.items():
-#         new_value = st.text_input(
-#             label=f"{Path(application_path).name}",
-#             value=application_name,
-#             key=f"application_{Path(application_path).name}",
-#             on_change= on_change_handler
-#         )
-#         applications_edit[f"{Path(application_path).name}"] = new_value
-#     st.session_state.form_data['applications_info'] = applications_edit
-#     person_info = {}
-#     st.markdown("### Данные об ответственном лице")
-#     col3, col4 = st.columns(2)
-
-#     with col3:
-#         person_info['vacancy'] = st.text_input(label = "Должность", value=f'Представитель ПАО «МОЭК» по доверенности', on_change= on_change_handler)
-
-#     with col4:
-#         person_info['name'] = st.text_input(label = "ФИО", value=f'Самошкина А.Е.', on_change= on_change_handler)
+    st.session_state.form_data['plaintiff_info'] = plaintiff_info
+    
+    st.session_state.form_data['defendant_info'] = defendant_info
+#     lawsuit_info['claims'] = st.session_state.form_data['claims']
+    st.session_state
+    
+    request_json = st.session_state.form_data['result2']
+    request_json['plaintiff_info'] = st.session_state.form_data['plaintiff_info']
+    request_json['defendant_info'] = st.session_state.form_data['defendant_info']
+    request_json['lawsuit_info'] = st.session_state.form_data['lawsuit_info']
 
 
 
-#     request_json['person_info'] = person_info
-#     request_json['applications_info'] = st.session_state.form_data['applications_info']
-#     request_json['table_info'] = result['contracts_info']
-#     request_json['court_info'] = court_info
-#     request_json['plaintiff_info'] = plaintiff_info
-#     request_json['defendant_info'] = defendant_info
-#     request_json['lawsuit_info'] = lawsuit_info
-#     request_json['files_info'] = result['files_table']
 
-
-
-#     st.markdown(f"### подтверждение данных")
-#     if st.button(label="Нажмите, чтобы подтвердить правильность данных"):
-#             st.session_state.form_data['forms_changed'] = False
-#             first_response = requests.post("http://localhost:5001/create_doc",
-#                                 json=request_json
-#                                 )
+    st.markdown(f"### подтверждение данных и создание документов")
+    if st.button(label="Нажмите, чтобы подтвердить правильность данных"):
+            st.session_state.form_data['forms_changed'] = False
+            first_response = requests.post("http://localhost:5001/create_doc",
+                                json=request_json
+                                )
             
-#             if first_response.status_code == 200:
-#                 lawsuit = BytesIO(first_response.content)
-#                 st.session_state.form_data['lawsuit'] = lawsuit
+            if first_response.status_code == 200:
+                lawsuit = BytesIO(first_response.content)
+                st.session_state.form_data['lawsuit'] = lawsuit
 
                 
             
-#             else:
-#                 st.error(f"Ошибка: {first_response.status_code}")
-#                 st.text(first_response.text)
+            else:
+                st.error(f"Ошибка: {first_response.status_code}")
+                st.text(first_response.text)
 
-#             second_response = requests.post("http://localhost:5001/create_calculating_table",
-#                                      json=request_json['files_info']
-#                             )
+            second_response = requests.post("http://localhost:5001/create_calculating_table",
+                                     json=request_json
+                            )
             
-#             if second_response.status_code == 200:
-#                 lawsuit_table = BytesIO(second_response.content)
-#                 st.session_state.form_data['lawsuite_table'] = lawsuit_table
-#                 st.session_state.form_data['flag2'] = True
+            if second_response.status_code == 200:
+                lawsuit_table = BytesIO(second_response.content)
+                st.session_state.form_data['lawsuite_table'] = lawsuit_table
+                st.session_state.form_data['flag2'] = True
             
-#             elif second_response.status_code == 404:
-#                 st.error("Ошибка")
-#                 st.json(second_response.json())
-#             else:
-#                 st.error(f"Ошибка: {second_response.status_code}")
-#                 st.text(second_response.text)
+            elif second_response.status_code == 404:
+                st.error("Ошибка")
+                st.json(second_response.json())
+            else:
+                st.error(f"Ошибка: {second_response.status_code}")
+                st.text(second_response.text)
 
-#             # with col1:
-#             #     if st.button(label="Создать Иск"):
-# if st.session_state.form_data['flag2'] and st.session_state.form_data['forms_changed']==False:             
-#     col1, col2, = st.columns(2)
+if st.session_state.form_data['flag2'] and st.session_state.form_data['forms_changed']==False:             
+    col1, col2, = st.columns(2)
 
-#     with col1:
-#         st.download_button(
-#             label="Скачать иск",
-#             data=st.session_state.form_data['lawsuit'],
-#             file_name="Иск.docx",
+    with col1:
+        st.download_button(
+            label="Скачать иск",
+            data=st.session_state.form_data['lawsuit'],
+            file_name="Иск.docx",
             
-#         )
+        )
 
-#     with col2:
-#         st.download_button(
-#             label="Скачать расчёт к иску",
-#             data=st.session_state.form_data['lawsuite_table'],
-#             file_name="Расчёт к иску.docx",
+    with col2:
+        st.download_button(
+            label="Скачать расчёт к иску",
+            data=st.session_state.form_data['lawsuite_table'],
+            file_name="Расчёт к иску.docx",
             
-#         )
+        )
 
