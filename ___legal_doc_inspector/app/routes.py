@@ -180,6 +180,7 @@ def parse():
 @app.route("/calculate_penalty", methods=["POST"])
 def calc_penalty():
     data = request.json
+<<<<<<< HEAD
 <<<<<<< HEAD:legal_doc_inspector/app/routes.py
     calculated_results = []
     last_days_of_penalty = []
@@ -206,11 +207,16 @@ def calc_penalty():
 
     return jsonify(converted_data), 200
 =======
+=======
+>>>>>>> c55947ed174b88fcb540bf1466abfe72909be108
     pass
     # for parsing_result in data['parsing_results']:
 
     # return jsonify(data), 200
+<<<<<<< HEAD
 >>>>>>> 2e9417a (rebuild doc inspector structure, add eval file):___legal_doc_inspector/app/routes.py
+=======
+>>>>>>> c55947ed174b88fcb540bf1466abfe72909be108
 
 @app.route("/create_doc", methods=["POST"])
 def create_doc():
