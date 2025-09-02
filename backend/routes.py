@@ -8,22 +8,10 @@ from collections import defaultdict # словари
 from datetime import date, datetime # работа с датой
 from pathlib import Path
 
-from configs.config import AppConfig, load_yaml_config # конфиги
-# from .llm_functions import parse_contract, parse_zip, parse_claim # функции для работы llm моделей
-
-# -------------------------- old -------------------------------
-# from legal_doc_inspector.doc_parser.table_parser import TableParser # Парсер таблиц
-# from legal_doc_inspector.penalty_calculator.penalty_calculator import Penalty_calculator # рассчет штрафа
-# from legal_doc_inspector.doc_creator.penalty_table_creator import PenaltyTableCreator # создание таблиц для штрафа
-# from legal_doc_inspector.doc_creator.lawsuit_creator import LawsuitCreator # СОздание иска
-# --------------------------------------------------------------
 
 from ___legal_doc_inspector.doc_parser.table_parser_new import TableParser
 from ___legal_doc_inspector.doc_parser.calculator_adapter import convert_data
 from ___legal_doc_inspector.penalty_calculator.penalty_calculator_new import calculate_penalty
-# from legal_doc_inspector.doc_parser.contract_parser import ContractParser # Парсе догоора
-# from legal_doc_inspector.doc_parser.zip_parser import ZipParser # Парсер архива
-# from legal_doc_inspector.doc_parser.claim_parser import ClaimParser # парсер претензии
 
 from pathlib import Path
 
