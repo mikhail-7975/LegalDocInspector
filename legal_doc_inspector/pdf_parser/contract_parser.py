@@ -3,7 +3,7 @@ from .utils import split_by_points, retrieve_relevant_chunks, get_conversation_f
 import pytesseract
 import re
 from sentence_transformers import SentenceTransformer
-from pdf2image import convert_from_path  
+from pdf2image import convert_from_path
 
 class ContractParser:
     def __init__(self, llm_model, processor):
@@ -23,14 +23,14 @@ class ContractParser:
             # сканируем текст изобраений при помощи ocr и конкатинируем его
             pdf_text += pytesseract.image_to_string(image, lang="rus")
         # удаляем лишние символы
-        pdf_text = re.sub(r"\x0c", "", pdf_text)  
+        pdf_text = re.sub(r"\x0c", "", pdf_text)
         # разделяем на пункты
         chunks = split_by_points(pdf_text)
         return chunks
-    
+
     def find_info(self, chunks, question, service_flag):
         '''
-        Принимает список строк (разделенный текст), список строк (наиболее подходящие отрывки текста) 
+        Принимает список строк (разделенный текст), список строк (наиболее подходящие отрывки текста)
         '''
         # переделываем запрос и части текста в вектора
         chunk_embeddings = self.embedding_model.encode(chunks, convert_to_tensor=True, device='cpu')
@@ -56,12 +56,12 @@ class ContractParser:
         text_ids = self.llm_model.generate(**inputs)
         # преобразование ответа llm в текст
         text = self.processor.batch_decode(text_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)
-        response = text[0].split("assistant", 1)[-1].strip()        
+        response = text[0].split("assistant", 1)[-1].strip()
         return response
 
 
 
-        
+
 
 
 
