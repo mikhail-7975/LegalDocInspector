@@ -9,8 +9,8 @@ import streamlit as st
 import pandas as pd
 from docx import Document
 
-from ___legal_doc_inspector.app.utils.parse_info_by_inn import parse_html
-from ___legal_doc_inspector.app.utils.calculate_tax import calculate_state_duty
+from LegalDocInspector.legal_doc_inspector.utils.parse_info_by_inn import parse_html
+from LegalDocInspector.legal_doc_inspector.utils.calculate_tax import calculate_state_duty
 
 if 'form_data' not in st.session_state:
     st.session_state.form_data = {

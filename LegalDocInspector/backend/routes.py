@@ -8,6 +8,7 @@ from collections import defaultdict # словари
 from datetime import date, datetime # работа с датой
 from pathlib import Path
 
+# from configs.config import AppConfig, load_yaml_config # конфиги
 
 from ___legal_doc_inspector.doc_parser.table_parser_new import TableParser
 from ___legal_doc_inspector.doc_parser.calculator_adapter import convert_data
@@ -15,37 +16,19 @@ from ___legal_doc_inspector.penalty_calculator.penalty_calculator_new import cal
 
 from pathlib import Path
 
-import pandas as pd # работа с датафреймами
+# import pandas as pd # работа с датафреймами
 import requests # запросы
 from bs4 import BeautifulSoup # раьота с html
 from flask import Flask, Response, g, jsonify, render_template, request, send_file # бекэнд
 from flask import current_app as app
-# from transformers import (
-#     AutoModel,
-#     AutoTokenizer,
-#     Qwen2_5OmniForConditionalGeneration,
-#     Qwen2_5OmniProcessor,
-# ) # библиотека для llm
+
 from werkzeug.utils import secure_filename
 
 from ___legal_doc_inspector.doc_parser.html_parser import parse_html # функция для парсинга html
 from ___legal_doc_inspector.app.utils.parse_info_by_inn import parse_html # класс
 
-# # LLm инициализируется
-# model = Qwen2_5OmniForConditionalGeneration.from_pretrained(
-#     "Qwen/Qwen2.5-Omni-3B",
-#     torch_dtype="auto",
-#     device_map="auto",
-#     enable_audio_output=False,
-# )
-# processor = Qwen2_5OmniProcessor.from_pretrained("Qwen/Qwen2.5-Omni-3B")
-# emb_tokenizer = AutoTokenizer.from_pretrained("DeepPavlov/rubert-base-cased")
-# emb_model = AutoModel.from_pretrained("DeepPavlov/rubert-base-cased")
-
-# # Создание классов для парсинга документов
-# zip_parser = ZipParser(model, processor, emb_model, emb_tokenizer)
-# contract_parser = ContractParser(model, processor)
-# claim_parser = ClaimParser(model, processor)
+from LegalDocInspector.legal_doc_inspector.doc_creator.calculation_claim_generator import CalculationClaimGenerator
+from LegalDocInspector.legal_doc_inspector.doc_creator.claim_generator import ClaimGenerator
 
 @app.route("/")
 def home():
@@ -54,16 +37,11 @@ def home():
 
 @app.route("/parse", methods=["POST"])
 def parse():
-    # для дебага без использования видеокарты
-    # json_example = {}
-    # with open(str('data/response_json_example.json')) as json_file:
-    #     json_example = json.load(json_file)
-    #     # print(type(data))
 
     table_parser:TableParser = g.table_parser
 
-    current_config = g.config
-    save_data_folder = Path(current_config.save_data_folder)
+    # current_config = g.config
+    save_data_folder = Path("/tmp/doc_inspector_data")
 
     date_request = request.form.get("date")
     date_request = date.fromisoformat(date_request).strftime("%d.%m.%Y")
@@ -115,36 +93,6 @@ def parse():
 
     result_json['table_parser_result'] = parsing_table_results
 
-
-
-    # data = dict()
-    # with open(str(Path(folder, "index.json")), "w") as json_file:
-    #     json.dump(uploaded_files, json_file)
-
-    # with open(str(Path(folder, "index.json"))) as json_file:
-    #     data["results_of_data_saving"] = json.load(json_file)
-
-    # pdf_pars_dict = dict()
-
-    # парсинг договора
-    # for i, contract_file in enumerate(uploaded_files["contract_file"]):
-    #
-    #     contract_number, service_type, overdue_date = parse_contract(contract_file, contract_parser)
-    #     _, contract_number = parsing_table_results[i]
-    #     pdf_pars_dict[f"contract_{contract_number}"] = {}
-    #     pdf_pars_dict[f"contract_{contract_number}"]["service_type"] = service_type
-    #     pdf_pars_dict[f"contract_{contract_number}"]["overdue_date"] = overdue_date
-
-    # # парсинг Претензии
-    # for i, claim_file in enumerate(uploaded_files["claim_file"]):
-    #     plaintiff_inn, claim_number, claim_date = parse_claim(claim_file, claim_parser)
-
-    #     pdf_pars_dict[f"claim_{i}"] = {}
-    #     pdf_pars_dict[f"claim_{i}"]["plaintiff_info"] = {}
-    #     pdf_pars_dict[f"claim_{i}"]["claim_number"] = claim_number
-    #     pdf_pars_dict[f"claim_{i}"]["claim_date"] = claim_date
-    #     pdf_pars_dict[f"claim_{i}"]["plaintiff_info"]["plaintiff_inn"] = plaintiff_inn
-
     result_json['results_of_name_parser'] = {}
     result_json['results_of_name_parser']['defendant_info'] = {}
     result_json['results_of_name_parser']['defendant_info']['inn'] = f'{defendant_inn}'
@@ -167,29 +115,55 @@ def parse():
 
 @app.route("/calculate_penalty", methods=["POST"])
 def calc_penalty():
-    pass
+    data = request.json
+    calculated_results = []
+    last_days_of_penalty = []
+    contract_points = []
+    for parsing_result in data['parsing_results']:
+        calculated_data = calculate_penalty(
+            parsed_data=parsing_result['parsed_info'],
+            day_of_penalty=parsing_result['day_of_penalty'],
+            company_type=data['company_type'],
+            end_date=data['end_date'],
+        )
+        calculated_data['contract_number'] = parsing_result['contract_number']
+        last_days_of_penalty.append(parsing_result['day_of_penalty'])
+        contract_points.append(parsing_result['contract_point'])
+        calculated_results.append(calculated_data)
+
+    converted_data = convert_data(
+        calculated_data_list=calculated_results,
+        last_days_of_penalty=last_days_of_penalty,
+        contract_points=contract_points,
+        company_type=data['company_type'],
+        current_date=data['end_date']
+    )
+
+    return jsonify(converted_data), 200
 
 @app.route("/create_doc", methods=["POST"])
 def create_doc():
-    request_json = request.json
-    lawsuit_creator = LawsuitCreator(dict())
-    path_to_save = find_parent_dir_with_name(Path(request_json['files_info']['lawsuit_calculating']),'documents_from_request')
-    with open(Path(path_to_save,'lawsuit_create.json'), "w", encoding='utf-8') as f:
-        json.dump(request_json, f , indent=4, ensure_ascii=False)
-    file = lawsuit_creator.create_lawsuit(request_json, Path(path_to_save,'ИСК.docx'))
-    print(file)
-    return send_file(file, as_attachment=True), 200
+    pass
+    # request_json = "request.json"
+    # lawsuit_creator = LawsuitCreator(dict())
+    # path_to_save = find_parent_dir_with_name(Path(request_json['files_info']['lawsuit_calculating']),'documents_from_request')
+    # with open(Path(path_to_save,'lawsuit_create.json'), "w", encoding='utf-8') as f:
+    #     json.dump(request_json, f , indent=4, ensure_ascii=False)
+    # file = lawsuit_creator.create_lawsuit(request_json, Path(path_to_save,'ИСК.docx'))
+    # # print(file)
+    # return send_file(file, as_attachment=True), 200
 
 
 @app.route("/create_calculating_table", methods=["POST"])
 def create_table():
-    request_json = request.json
-    path_to_table = request_json['lawsuit_calculating']
+    pass
+    # request_json = request.json
+    # path_to_table = request_json['lawsuit_calculating']
 
-    if not os.path.exists(path_to_table):
-        return jsonify({"error": "Файл не найден"}), 404
+    # if not os.path.exists(path_to_table):
+    #     return jsonify({"error": "Файл не найден"}), 404
 
-    return send_file(path_to_table, as_attachment=True), 200
+    # return send_file(path_to_table, as_attachment=True), 200
 
 
 def get_request_files(

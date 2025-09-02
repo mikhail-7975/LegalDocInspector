@@ -3,7 +3,7 @@ import json
 from docx import Document
 from docx.table import Table
 
-from legal_doc_inspector.doc_creator.docx_editor import DocxRedactor
+from LegalDocInspector.legal_doc_inspector.doc_creator.docx_editor import DocxRedactor
 
 
 class CalculationClaimGenerator:
