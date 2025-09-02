@@ -1,0 +1,91 @@
+{
+    "company_type": "ТСЖ",
+    "current_date": "2025-07-25",
+    "contracts_info": [
+        [
+            "4ed0cac2-8c46-4a62-a4ef-27a16620145a",
+            "№ 04.303360-ТЭ от 01.01.2012",
+            {
+                "contract_point": "4.5",
+                "last_day": "До 20 числа месяца, следующего за расчётным",
+                "penalty_period": "21.01.2025 по 25.07.2025",
+                "accrual_debt": "1 599 505,50",
+                "correcting_debt": "787 679,60",
+                "contract_periods": "12.2024-04.2025",
+                "contract_periods_correcting": "01.2025 - 04.2025",
+                "debt": "2 387 185,10",
+                "penalty": "98 538,40",
+                "debt_penalty": "2 485 723,50"
+            }
+        ],
+        [
+            "4ed0cac2-8c46-4a62-a4ef-27a16620145a",
+            "№ 04.303360ГВС от 01.01.2012",
+            {
+                "contract_point": "4.6",
+                "last_day": "До 20 числа месяца, следующего за расчётным",
+                "penalty_period": "21.02.2025 по 25.07.2025",
+                "accrual_debt": "617 756,70",
+                "correcting_debt": "0,00",
+                "contract_periods": "01.2025-02.2025",
+                "contract_periods_correcting": null,
+                "debt": "617 756,70",
+                "penalty": "35 139,34",
+                "debt_penalty": "652 896,04"
+            }
+        ]
+    ],
+    "table_info": {
+        "№ 04.303360-ТЭ от 01.01.2012": {
+            "contract_periods": "12.2024-04.2025",
+            "contract_periods_correcting": "01.2025 - 04.2025",
+            "debt": "2 387 185,10",
+            "debt_penalty": "2 485 723,50",
+            "penalty": "98 538,40",
+            "penalty_period": "21.01.2025 по 25.07.2025",
+            "last_day": "До 20 числа месяца, следующего за расчётным",
+            "contract_point": "4.5",
+            "accrual_debt": "1 599 505,50",
+            "correcting_debt": "787 679,60"
+        },
+        "№ 04.303360ГВС от 01.01.2012": {
+            "contract_periods": "01.2025-02.2025",
+            "contract_periods_correcting": null,
+            "debt": "617 756,70",
+            "debt_penalty": "652 896,04",
+            "penalty": "35 139,34",
+            "penalty_period": "21.02.2025 по 25.07.2025",
+            "last_day": "До 20 числа месяца, следующего за расчётным",
+            "contract_point": "4.6",
+            "accrual_debt": "617 756,70",
+            "correcting_debt": "0,00"
+        },
+        "all_debt": "3 004 941,80",
+        "all_penalty": "133 677,74",
+        "cost_of_lawsuit": "3 138 619,54"
+    },
+    "plaintiff_info": {
+        "inn": "Истец ИНН 1",
+        "full_name": "ПУБЛИЧНОЕ АКЦИОНЕРНОЕ ОБЩЕСТВО «ИСТЕЦ»",
+        "short_name": "ПАО «ИСТЕЦ»",
+        "addres": "119526, Москва, пр-кт Истец",
+        "correspondency_addres": "121596, г. Мосфильмовская",
+        "ogrn": "Истец ОГРН 1"
+    },
+    "defendant_info": {
+        "inn": "Ответчик ИНН 2",
+        "full_name": "ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ «ОТВЕТЧИК»",
+        "short_name": "ООО «ОТВЕТЧИК»",
+        "addres": "119285, Москва, Муниципальный Округ Ответчика",
+        "ogrn": "Ответчик ОГРН 2"
+    },
+    "lawsuit_info": {
+        "cost": "546 167,56 руб.",
+        "tax": "32 308,00 руб.",
+        "service_type": "ТЭ",
+        "claims": [
+            "№ 553106 от 28.04.2025",
+            "№ 111111 от 11.11.1111"
+        ]
+    }
+}

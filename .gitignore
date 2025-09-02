@@ -175,7 +175,6 @@ cython_debug/
 .qodo
 *.ipynb
 *lock*
-data/*/
 .huggingface/
 
 experiments/parser_excel/docs/
