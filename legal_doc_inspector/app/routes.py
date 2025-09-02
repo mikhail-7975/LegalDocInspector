@@ -180,10 +180,30 @@ def parse():
 @app.route("/calculate_penalty", methods=["POST"])
 def calc_penalty():
     data = request.json
-    
+    calculated_results = []
+    last_days_of_penalty = []
+    contract_points = []
     for parsing_result in data['parsing_results']:
-    
-    return jsonify(data), 200
+        calculated_data = calculate_penalty(
+            parsed_data=parsing_result['parsed_info'],
+            day_of_penalty=parsing_result['day_of_penalty'],
+            company_type=data['company_type'],
+            end_date=data['end_date'],
+        )
+        calculated_data['contract_number'] = parsing_result['contract_number']
+        last_days_of_penalty.append(parsing_result['day_of_penalty'])
+        contract_points.append(parsing_result['contract_point'])
+        calculated_results.append(calculated_data)
+
+    converted_data = convert_data(
+        calculated_data_list=calculated_results,
+        last_days_of_penalty=last_days_of_penalty,
+        contract_points=contract_points,
+        company_type=data['company_type'],
+        current_date=data['end_date']
+    )
+
+    return jsonify(converted_data), 200
 
 @app.route("/create_doc", methods=["POST"])
 def create_doc():

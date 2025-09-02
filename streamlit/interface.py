@@ -184,6 +184,9 @@ if st.session_state.form_data['flag']:
                 "service_type":"тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))",
                 "overdue_date":"В следующем фрагменте указан срок, в течение которого Исполнитель должен произвести оплату:\n\n\"5. 5. Исполнитель в срок до 18-го числа месяца, следующего за расчетным, производит оплату стоимости тепловой энергии, теплоносителя, указанной в счете. Датой оплаты считается дата поступления денежных средств на расчетный счет Теплоснабжающей организации.\"",
             }
+            result['result_of_llm_parsers'][f"claim_0"] = {"claim_date":"17.10.2024","claim_number":"517305"}
+            
+
             json_info = result['result_of_llm_parsers'][f"contract_{contract_number}"]
             st.session_state.contracts[contract_number] = {
                 'service_type':json_info['service_type'],
@@ -255,6 +258,8 @@ if st.session_state.form_data['flag']:
             
 
     st.markdown("### Данные об ответчике")
+    
+
     defendant_info['full_name'] = st.text_input(label="Название ответчика", value=f"{result['results_of_name_parser']['defendant_info']['full_name']}", on_change= on_change_handler)
     defendant_info['short_name'] = st.text_input(label="Название ответчика(аббревиатура)", value=f"{result['results_of_name_parser']['defendant_info']['short_name']}", on_change= on_change_handler)
     defendant_info['addres'] = st.text_input(label="Адрес ответчика", value=f"{result['results_of_name_parser']['defendant_info']['address']}", on_change= on_change_handler)
@@ -299,40 +304,42 @@ if st.session_state.form_data['flag']:
     # st.json(st.session_state.form_data)
 
 if st.session_state.form_data['flag2']:
+    st.success('Расчёты успешно произведены !')
     st.json(st.session_state.form_data['result2'])
     
 #     request_json = {}
+    st.markdown("#### Проверьте данные об иске")
+
+    st.session_state.form_data['lawsuit_info']['cost'] = st.text_input(label="Цена иска", value=f"{st.session_state.form_data['result2']['table_info']['cost_of_lawsuit']} р.", on_change= on_change_handler)
     
-#     lawsuit_info['cost'] = st.text_input(label="Цена иска", value=f"{result['contracts_info']['cost_of_lawsuit']} р.", on_change= on_change_handler)
-#     lawsuit_info['tax'] = st.text_input(label="Госпошлина", value=f"{calculate_state_duty(result['contracts_info']['cost_of_lawsuit'])} р." , on_change= on_change_handler)
+    st.session_state.form_data['lawsuit_info']['tax'] = st.text_input(label="Госпошлина", value=f"{calculate_state_duty(result['contracts_info']['cost_of_lawsuit'])} р." , on_change= on_change_handler)
+    st.session_state.form_data['lawsuit_info']['service_type'] = st.selectbox("Выберите вид услугии", ["ГВС + ТЭ", "ТЭ", "ГВС"])
     
 #     service_type_info = []
-#     claims = []
+    st.session_state.form_data['claims'] = []
 #     applications = {}
+    
+    for key, value in result['result_of_llm_parsers'].items():
+        # if "contract" in key:
+        #     service_type_info.append(result['result_of_llm_parsers'][key]['service_type'])
+        if "claim" in key:
+           st.session_state.form_data['lawsuit_info']['claims'].append(f"№ {result['result_of_llm_parsers'][key]['claim_number']} от {result['result_of_llm_parsers'][key]['claim_date']}")
 
-#     for key, value in result['result_of_llm_parsers'].items():
-#         if "contract" in key:
-#             service_type_info.append(result['result_of_llm_parsers'][key]['service_type'])
-#         if "claim" in key:
-#             claims.append(f"№ {result['result_of_llm_parsers'][key]['claim_number']} от {result['result_of_llm_parsers'][key]['claim_date']}")
-#         if "zip" in key:
-#             applications = value
 #     st.markdown(f"### Данные об услуге, полученные из договоров")
 #     st.markdown(f"{'___'.join(f' - {elem}' for elem in service_type_info)}")
-#     lawsuit_info['service_type'] = st.selectbox("Выберите вид услугии", ["ГВС + ТЭ", "ТЭ", "ГВС"])
 
 #     st.markdown(f'### Данные о претензиях')
-#     claims_edit = []
-#     # st.markdown(f"номера и даты претензий\n {'___'.join(f'- {claim}' for claim in claims)}")
-#     for i, claim in enumerate(claims):
-#         new_value = st.text_input(
-#             label=f"Претензия #{i + 1}",
-#             value=claim,
-#             key=f"claim_{i}",
-#             on_change= on_change_handler
-#         )
-#         claims_edit.append(new_value)
-#     st.session_state.form_data['claims'] = claims_edit
+    claims_edit = []
+    # st.markdown(f"номера и даты претензий\n {'___'.join(f'- {claim}' for claim in claims)}")
+    for i, claim in enumerate(st.session_state.form_data['lawsuit_info']['claims']):
+        new_value = st.text_input(
+            label=f"Претензия #{i + 1}",
+            value=claim,
+            key=f"claim_{i}",
+            on_change= on_change_handler
+        )
+        claims_edit.append(new_value)
+    st.session_state.form_data['lawsuit_info']['claims'] = claims_edit
 #     lawsuit_info['claims'] = st.session_state.form_data['claims']
     
 #     st.markdown("### Данные о приложенных документах")

@@ -6,8 +6,6 @@ from xml.etree import ElementTree as ET
 from typing import Tuple,Dict
 
 
-from .utils.HolidayChecker import HolidayChecker
-
 class Penalty_calculator:
 
     def __init__(self):
