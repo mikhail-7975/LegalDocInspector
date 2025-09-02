@@ -79,16 +79,10 @@ def get_contract_form(contract_number:str):
 
 
     with col2:
-<<<<<<< HEAD
         st.session_state.contracts[contract_number]['contract_point']  = st.text_input(label="напишите номер пункта договора, в котором говорится о дне начала просрочки ",
                                                                                       key="c_p"+str(contract_number),
                                                                                       on_change=on_change_handler)
 
-=======
-        st.session_state.contracts[contract_number]['contract_point'] = st.text_input(label="напишите номер пункта договора, в котором говорится о дне начала просрочки ",
-                                                                                      key="c_p"+unique_key)
-
->>>>>>> 2e9417a (rebuild doc inspector structure, add eval file)
 
 st.title("Загрузка и обработка документов")
 
