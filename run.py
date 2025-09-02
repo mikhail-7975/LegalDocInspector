@@ -1,4 +1,4 @@
-from legal_doc_inspector.app import create_app
+from ___legal_doc_inspector.app import create_app
 
 # TODO
 # add llm starting and terminating
