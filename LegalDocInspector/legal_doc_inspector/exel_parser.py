@@ -5,7 +5,7 @@
 import re
 import pandas as pd
 
-from legal_doc_inspector.utils.convert_month import convert_month
+from LegalDocInspector.legal_doc_inspector.utils.convert_month import convert_month
 
 
 class ExcelReader:
@@ -321,4 +321,8 @@ class TableParser:
         contract_type = self.reader.cell(5, 1)
         contract_date = self.reader.cell(6, 1)
 
-        return None if pd.isna(contract_type) else "№ " + contract_type + ' от ' + contract_date
+        return None if pd.isna(contract_type) else "№ " + str(contract_type) + ' от ' + str(contract_date)
+
+    def parse_defendant_inn(self) -> str | None:
+        inn = self.reader.cell(6, 4)
+        return None if pd.isna(inn) else str(inn)

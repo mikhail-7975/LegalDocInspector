@@ -10,7 +10,7 @@ from pathlib import Path
 
 # from configs.config import AppConfig, load_yaml_config # конфиги
 
-from ___legal_doc_inspector.doc_parser.table_parser_new import TableParser
+# from ___legal_doc_inspector.doc_parser.table_parser_new import TableParser
 from ___legal_doc_inspector.doc_parser.calculator_adapter import convert_data
 from ___legal_doc_inspector.penalty_calculator.penalty_calculator_new import calculate_penalty
 
@@ -30,6 +30,8 @@ from ___legal_doc_inspector.app.utils.parse_info_by_inn import parse_html # кл
 from LegalDocInspector.legal_doc_inspector.doc_creator.calculation_claim_generator import CalculationClaimGenerator
 from LegalDocInspector.legal_doc_inspector.doc_creator.claim_generator import ClaimGenerator
 
+from .llm_functions import parse_claim, parse_contract
+
 @app.route("/")
 def home():
     return "server is working"
@@ -38,7 +40,7 @@ def home():
 @app.route("/parse", methods=["POST"])
 def parse():
 
-    table_parser:TableParser = g.table_parser
+    table_parser = g.table_parser
 
     # current_config = g.config
     save_data_folder = Path("/tmp/doc_inspector_data")
@@ -90,9 +92,14 @@ def parse():
 
         # LLM parser
 
-        overdue_date_info  = "(заглушка) В следующем фрагменте указан срок, в течение которого Исполнитель должен произвести оплату:\n\n\"5. 5. Исполнитель в срок до 18-го числа месяца, следующего за расчетным, производит оплату стоимости тепловой энергии, теплоносителя, указанной в счете. Датой оплаты считается дата поступления денежных средств на расчетный счет Теплоснабжающей организации.\""
-        service_type_info = "(заглушка) тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))"
-        claim_info = {"claim_date":"17.10.2024","claim_number":"517305"}
+        llm_contract_number, service_type_info, overdue_date_info = parse_contract(contract_file_path)
+        print("contract parser done!")
+        plaintiff_inn, claim_number, claim_date = parse_claim(claim_file_path)
+        print("claim parser done!")
+
+        # overdue_date_info  = "(заглушка) В следующем фрагменте указан срок, в течение которого Исполнитель должен произвести оплату:\n\n\"5. 5. Исполнитель в срок до 18-го числа месяца, следующего за расчетным, производит оплату стоимости тепловой энергии, теплоносителя, указанной в счете. Датой оплаты считается дата поступления денежных средств на расчетный счет Теплоснабжающей организации.\""
+        # service_type_info = "(заглушка) тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))"
+        claim_info = {"claim_date": claim_date, "claim_number": claim_number}
 
         parsing_table_results.append((result, contract_number, overdue_date_info, service_type_info, claim_info))
 
@@ -157,7 +164,7 @@ def create_doc():
     calculator_list, claim_data = request_json['calculator_list'], request_json['claim_data']
     claim_gen:ClaimGenerator = g.claim_generator
     path_to_save = str(Path('/tmp', 'doc_inspector_data', 'ИСК.docx'))
-    path_to_template = str(Path())
+    path_to_template = str(Path("/home/mkalinichenko/projects/LegalDocInspector/data/templates/claim.docx"))
     claim_gen.make_instance(config=claim_data,
                             template_filename=path_to_template,
                             output_filename=path_to_save)
@@ -177,7 +184,7 @@ def create_table():
     calculator_list, claim_data = request_json['calculator_list'], request_json['claim_data']
     calculator_list_sorted = [sort_data_structure(calculator_list[i]) for i in range(len(calculator_list))]
     path_to_save = str(Path('/tmp', 'doc_inspector_data', 'ИСК.docx'))
-    path_to_template = str(Path())
+    path_to_template = str(Path("/home/mkalinichenko/projects/LegalDocInspector/data/templates/calculation_claim.docx"))
     calc_claim_generator.make_instance(config=calculator_list_sorted,
                                        config2=claim_data,
                                        template_filename=path_to_template,
@@ -295,14 +302,14 @@ def sort_data_structure(data:dict) -> dict:
     5. debt_info
     6. contract_number
     """
-    
+
     # Создаем новый упорядоченный словарь
     sorted_data = {}
-    
+
     # 1. Добавляем start_of_table первым
     if 'start_of_table' in data:
         sorted_data['start_of_table'] = data['start_of_table']
-    
+
     # 2. Собираем и сортируем месяцы
     months = []
     for key in data.keys():
@@ -316,29 +323,29 @@ def sort_data_structure(data:dict) -> dict:
             except (ValueError, IndexError):
                 # Если не получается разобрать, пропускаем
                 continue
-    
+
     # Сортируем месяцы: сначала по году, потом по названию месяца
     month_order = {
         'Январь': 1, 'Февраль': 2, 'Март': 3, 'Апрель': 4,
         'Май': 5, 'Июнь': 6, 'Июль': 7, 'Август': 8,
         'Сентябрь': 9, 'Октябрь': 10, 'Ноябрь': 11, 'Декабрь': 12
     }
-    
+
     def month_sort_key(item):
         key, year, month_name = item
         return (year, month_order.get(month_name, 99))
-    
+
     sorted_months = sorted(months, key=month_sort_key)
-    
+
     # Добавляем отсортированные месяцы
     for month_key, _, _ in sorted_months:
         sorted_data[month_key] = data[month_key]
-    
+
     # 3-6. Добавляем остальные элементы в нужном порядке
     elements_order = ['end_of_table1', 'end_of_table2', 'debt_info', 'contract_number']
-    
+
     for element in elements_order:
         if element in data:
             sorted_data[element] = data[element]
-    
+
     return sorted_data

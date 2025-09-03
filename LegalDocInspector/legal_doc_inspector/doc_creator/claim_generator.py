@@ -275,23 +275,27 @@ class ClaimGenerator:
 
             contract_number = list(self.config["table_info"].keys())[i]
 
+            # Артём, этот костыль поставил в твоём коде я. Проблема выяснилась при тестировании на втором наборе документов. Нужно исправить
+            if contract_number == "all_debt" or  contract_number == "all_penalty":
+                continue
+
             self.redactor.replace_text_in_paragraph(
                 self.redactor.get_paragraph(start + i * stride),
-                "05.403297-ТЭ от 01.08.2017",
-                # self.config["contracts_info"][i][1]
+                # "05.403297-ТЭ от 01.08.2017",
+                self.config["contracts_info"][i][1],
                 contract_number
             )
             self.redactor.replace_text_in_paragraph(
                 self.redactor.get_paragraph(start + i * stride + 1),
                 self.borders("задолженность"),
                 # self.config["contracts_info"][i][2]["debt"]
-                self.config["table_info"][contract_number]["debt"]
+                self.config["table_info"][contract_number]["debt"] #if contract_number != 'all_debt' else "ERROR"
             )
             self.redactor.replace_text_in_paragraph(
                 self.redactor.get_paragraph(start + i * stride + 1),
                 self.borders("период"),
                 # self.config["contracts_info"][i][2]["contract_periods"]
-                self.config["table_info"][contract_number]["contract_periods"]
+                self.config["table_info"][contract_number]["contract_periods"] #if contract_number != 'all_debt' else "ERROR"
             )
 
             if self.config["table_info"][contract_number]["contract_periods_correcting"] is not None:
