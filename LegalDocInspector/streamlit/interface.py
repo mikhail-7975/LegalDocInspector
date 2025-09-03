@@ -68,7 +68,7 @@ def get_contract_form(contract_number:str):
     st.text(f"{st.session_state.contracts[contract_number]['overdue_date']}")
     st.text(f"{st.session_state.contracts[contract_number]['service_type']}")
     col1, col2 = st.columns(2)
-    st.json(st.session_state.contracts[contract_number])
+    # st.json(st.session_state.contracts[contract_number])
     with col1:
         st.session_state.contracts[contract_number]['day_of_penalty'] = st.number_input(label="Выберите число месяца, которое является последним днём оплаты счёта",
                                         value=18 ,
@@ -135,7 +135,7 @@ with col2:
             st.rerun()
 
 
-st.json(st.session_state.complects)
+# st.json(st.session_state.complects)
 
 if st.session_state.complects[st.session_state.form_data['num_complects']]['claim_uploaded_file'] is not None and st.session_state.complects[st.session_state.form_data['num_complects']]['contract_uploaded_file'] is not None and st.session_state.complects[st.session_state.form_data['num_complects']]['debt_certificate_file'] is not None:
 
@@ -199,12 +199,12 @@ if st.session_state.form_data['flag']:
                 'service_type':json_info['service_type'],
                 'overdue_date': json_info['overdue_date']
             }
-    st.json(st.session_state.contracts)
+    # st.json(st.session_state.contracts)
 
 
     st.success("Файл успешно обработан!")
     st.text("Результат обработки документов")
-    st.json(result)
+    # st.json(result)
 
     st.markdown("## Заполение информации для генерациии иска (поля которые будут далее, можно отредактировать)")
 
@@ -279,7 +279,7 @@ if st.session_state.form_data['flag']:
     st.markdown("### Данные о договорах")
     for contract_num, value in st.session_state.contracts.items():
         get_contract_form(contract_number=contract_num)
-
+    calculator_list = {}
     if st.button("Произвести расчёты по загруженным наборам документов"):
         request_json  = {}
         request_json['company_type'] = st.session_state.form_data['company_type']
@@ -312,14 +312,14 @@ if st.session_state.form_data['flag']:
 
 if st.session_state.form_data['flag2']:
     st.success('Расчёты успешно произведены !')
-    st.json(st.session_state.form_data['result2'])
+    # st.json(st.session_state.form_data['result2'])
 
 #     request_json = {}
     st.markdown("#### Проверьте данные об иске")
 
-    st.session_state.form_data['lawsuit_info']['cost'] = st.text_input(label="Цена иска", value=f"{st.session_state.form_data['result2']['table_info']['cost_of_lawsuit']} р.", on_change= on_change_handler)
+    st.session_state.form_data['lawsuit_info']['cost'] = st.text_input(label="Цена иска", value=f"{st.session_state.form_data['result2']['claim_data']['table_info']['cost_of_lawsuit']} р.", on_change= on_change_handler)
 
-    st.session_state.form_data['lawsuit_info']['tax'] = st.text_input(label="Госпошлина", value=f"{calculate_state_duty(st.session_state.form_data['result2']['table_info']['cost_of_lawsuit'])} р." , on_change= on_change_handler)
+    st.session_state.form_data['lawsuit_info']['tax'] = st.text_input(label="Госпошлина", value=f"{calculate_state_duty(st.session_state.form_data['result2']['claim_data']['table_info']['cost_of_lawsuit'])} р." , on_change= on_change_handler)
     st.session_state.form_data['lawsuit_info']['service_type'] = st.selectbox("Выберите вид услугии", ["ГВС + ТЭ", "ТЭ", "ГВС"])
 
 #     service_type_info = []
@@ -352,16 +352,19 @@ if st.session_state.form_data['flag2']:
 
     st.session_state.form_data['defendant_info'] = defendant_info
 #     lawsuit_info['claims'] = st.session_state.form_data['claims']
-    st.session_state
+    
 
-    request_json = st.session_state.form_data['result2']
+    request_json = st.session_state.form_data['result2']['claim_data']
     request_json['plaintiff_info'] = st.session_state.form_data['plaintiff_info']
     request_json['defendant_info'] = st.session_state.form_data['defendant_info']
     request_json['lawsuit_info'] = st.session_state.form_data['lawsuit_info']
 
+    doc_creator_json = {}
+    doc_creator_json['claim_data'] = request_json
+    doc_creator_json['calculator_list'] = st.session_state.form_data['result2']['calculator_list']
 
 
-
+    # print(doc_creator_json)
     st.markdown(f"### подтверждение данных и создание документов")
     if st.button(label="Нажмите, чтобы подтвердить правильность данных"):
             st.session_state.form_data['forms_changed'] = False
@@ -390,7 +393,7 @@ if st.session_state.form_data['flag2']:
 
             elif second_response.status_code == 404:
                 st.error("Ошибка")
-                st.json(second_response.json())
+                # st.json(second_response.json())
             else:
                 st.error(f"Ошибка: {second_response.status_code}")
                 st.text(second_response.text)

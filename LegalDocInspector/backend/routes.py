@@ -119,6 +119,7 @@ def calc_penalty():
     calculated_results = []
     last_days_of_penalty = []
     contract_points = []
+    response = {}
     for parsing_result in data['parsing_results']:
         calculated_data = calculate_penalty(
             parsed_data=parsing_result['parsed_info'],
@@ -138,13 +139,15 @@ def calc_penalty():
         company_type=data['company_type'],
         current_date=data['end_date']
     )
-
-    return jsonify(converted_data), 200
+    print(calculated_results)
+    response['claim_data'] = converted_data
+    response['calculator_list']  = calculated_results
+    return jsonify(response), 200
 
 @app.route("/create_doc", methods=["POST"])
 def create_doc():
-    pass
-    # request_json = "request.json"
+    
+    request_json = request.json
     # lawsuit_creator = LawsuitCreator(dict())
     # path_to_save = find_parent_dir_with_name(Path(request_json['files_info']['lawsuit_calculating']),'documents_from_request')
     # with open(Path(path_to_save,'lawsuit_create.json'), "w", encoding='utf-8') as f:
