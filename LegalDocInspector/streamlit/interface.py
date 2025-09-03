@@ -185,19 +185,23 @@ if st.session_state.form_data['flag']:
     i = 1
     if not "contracts" in st.session_state:
         st.session_state.contracts = {}
-        for _, contract_number in result['table_parser_result']:
-            result['result_of_llm_parsers'] = {}
-            result['result_of_llm_parsers'][f"contract_{contract_number}"] = {
-                "service_type":"тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))",
-                "overdue_date":"В следующем фрагменте указан срок, в течение которого Исполнитель должен произвести оплату:\n\n\"5. 5. Исполнитель в срок до 18-го числа месяца, следующего за расчетным, производит оплату стоимости тепловой энергии, теплоносителя, указанной в счете. Датой оплаты считается дата поступления денежных средств на расчетный счет Теплоснабжающей организации.\"",
-            }
-            result['result_of_llm_parsers'][f"claim_0"] = {"claim_date":"17.10.2024","claim_number":"517305"}
+        for contract_info in result['table_parser_result']:
+            contract_number = contract_info[1]
+            overdue_date_info = contract_info[2]
+            service_type_info = contract_info[3]
+            claim_info = contract_info[4]
+            # result['result_of_llm_parsers'] = {}
+            # result['result_of_llm_parsers'][f"contract_{contract_number}"] = {
+            #     "service_type":"тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))",
+            #     "overdue_date":"В следующем фрагменте указан срок, в течение которого Исполнитель должен произвести оплату:\n\n\"5. 5. Исполнитель в срок до 18-го числа месяца, следующего за расчетным, производит оплату стоимости тепловой энергии, теплоносителя, указанной в счете. Датой оплаты считается дата поступления денежных средств на расчетный счет Теплоснабжающей организации.\"",
+            # }
+            # result['result_of_llm_parsers'][f"claim_0"] = {"claim_date":"17.10.2024","claim_number":"517305"}
 
 
-            json_info = result['result_of_llm_parsers'][f"contract_{contract_number}"]
+            # json_info = result['result_of_llm_parsers'][f"contract_{contract_number}"]
             st.session_state.contracts[contract_number] = {
-                'service_type':json_info['service_type'],
-                'overdue_date': json_info['overdue_date']
+                'service_type': service_type_info,
+                'overdue_date': overdue_date_info
             }
     # st.json(st.session_state.contracts)
 
@@ -352,7 +356,7 @@ if st.session_state.form_data['flag2']:
 
     st.session_state.form_data['defendant_info'] = defendant_info
 #     lawsuit_info['claims'] = st.session_state.form_data['claims']
-    
+
 
     request_json = st.session_state.form_data['result2']['claim_data']
     request_json['plaintiff_info'] = st.session_state.form_data['plaintiff_info']

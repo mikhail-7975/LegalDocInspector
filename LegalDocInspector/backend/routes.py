@@ -88,8 +88,13 @@ def parse():
         print(contract_number)
         table_parser.close()
 
+        # LLM parser
 
-        parsing_table_results.append((result, contract_number))
+        overdue_date_info  = "(заглушка) В следующем фрагменте указан срок, в течение которого Исполнитель должен произвести оплату:\n\n\"5. 5. Исполнитель в срок до 18-го числа месяца, следующего за расчетным, производит оплату стоимости тепловой энергии, теплоносителя, указанной в счете. Датой оплаты считается дата поступления денежных средств на расчетный счет Теплоснабжающей организации.\""
+        service_type_info = "(заглушка) тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))"
+        claim_info = {"claim_date":"17.10.2024","claim_number":"517305"}
+
+        parsing_table_results.append((result, contract_number, overdue_date_info, service_type_info, claim_info))
 
     result_json['table_parser_result'] = parsing_table_results
 
@@ -108,8 +113,9 @@ def parse():
 
     # result_json['result_of_llm_parsers'] = pdf_pars_dict
 
-    # with open(str(Path(folder, "index.json")),"w") as json_file:
-    #     json.dump(uploaded_files, json_file)
+    with open(str(Path(folder, "result_parser.json")),"w") as json_file:
+        # json.dump(result_json, json_file)
+        json.dump(result_json, json_file, indent=4, ensure_ascii=False)
 
     return jsonify(result_json), 200
 
@@ -146,7 +152,7 @@ def calc_penalty():
 
 @app.route("/create_doc", methods=["POST"])
 def create_doc():
-    
+
     request_json = request.json
     # lawsuit_creator = LawsuitCreator(dict())
     # path_to_save = find_parent_dir_with_name(Path(request_json['files_info']['lawsuit_calculating']),'documents_from_request')
