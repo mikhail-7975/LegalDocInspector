@@ -136,7 +136,7 @@ def calc_penalty():
         calculated_data['contract_number'] = parsing_result['contract_number']
         last_days_of_penalty.append(parsing_result['day_of_penalty'])
         contract_points.append(parsing_result['contract_point'])
-        calculated_results.append(calculated_data)
+        calculated_results.append(sort_data_structure(calculated_data))
 
     converted_data = convert_data(
         calculated_data_list=calculated_results,
@@ -145,7 +145,7 @@ def calc_penalty():
         company_type=data['company_type'],
         current_date=data['end_date']
     )
-    print(calculated_results)
+    print(converted_data , '\n' , calculated_results)
     response['claim_data'] = converted_data
     response['calculator_list']  = calculated_results
     return jsonify(response), 200
@@ -154,25 +154,38 @@ def calc_penalty():
 def create_doc():
 
     request_json = request.json
+    calculator_list, claim_data = request_json['calculator_list'], request_json['claim_data']
+    claim_gen:ClaimGenerator = g.claim_generator
+    path_to_save = str(Path('/tmp', 'doc_inspector_data', 'ИСК.docx'))
+    path_to_template = str(Path())
+    claim_gen.make_instance(config=claim_data,
+                            template_filename=path_to_template,
+                            output_filename=path_to_save)
     # lawsuit_creator = LawsuitCreator(dict())
     # path_to_save = find_parent_dir_with_name(Path(request_json['files_info']['lawsuit_calculating']),'documents_from_request')
     # with open(Path(path_to_save,'lawsuit_create.json'), "w", encoding='utf-8') as f:
     #     json.dump(request_json, f , indent=4, ensure_ascii=False)
     # file = lawsuit_creator.create_lawsuit(request_json, Path(path_to_save,'ИСК.docx'))
     # # print(file)
-    # return send_file(file, as_attachment=True), 200
+    return send_file(path_to_save, as_attachment=True), 200
 
 
 @app.route("/create_calculating_table", methods=["POST"])
 def create_table():
-    pass
-    # request_json = request.json
-    # path_to_table = request_json['lawsuit_calculating']
-
+    calc_claim_generator:CalculationClaimGenerator = g.calc_claim_generator
+    request_json = request.json
+    calculator_list, claim_data = request_json['calculator_list'], request_json['claim_data']
+    calculator_list_sorted = [sort_data_structure(calculator_list[i]) for i in range(len(calculator_list))]
+    path_to_save = str(Path('/tmp', 'doc_inspector_data', 'ИСК.docx'))
+    path_to_template = str(Path())
+    calc_claim_generator.make_instance(config=calculator_list_sorted,
+                                       config2=claim_data,
+                                       template_filename=path_to_template,
+                                       output_filename=path_to_save)
     # if not os.path.exists(path_to_table):
     #     return jsonify({"error": "Файл не найден"}), 404
 
-    # return send_file(path_to_table, as_attachment=True), 200
+    return send_file(path_to_save, as_attachment=True), 200
 
 
 def get_request_files(
@@ -270,3 +283,62 @@ def safe_decode_filename(filename_bytes: str): # Windows
         pass
 
     return filename_bytes.encode('cp437').decode('utf-8', errors='replace')
+
+
+def sort_data_structure(data:dict) -> dict:
+    """
+    Сортирует структуру данных в нужном порядке:
+    1. start_of_table
+    2. Месяцы в хронологическом порядке
+    3. end_of_table1
+    4. end_of_table2
+    5. debt_info
+    6. contract_number
+    """
+    
+    # Создаем новый упорядоченный словарь
+    sorted_data = {}
+    
+    # 1. Добавляем start_of_table первым
+    if 'start_of_table' in data:
+        sorted_data['start_of_table'] = data['start_of_table']
+    
+    # 2. Собираем и сортируем месяцы
+    months = []
+    for key in data.keys():
+        # Проверяем, что ключ соответствует формату "Месяц ГГГГ"
+        if isinstance(key, str) and len(key.split()) == 2:
+            try:
+                # Пробуем разобрать месяц и год
+                month_name, year_str = key.split()
+                year = int(year_str)
+                months.append((key, year, month_name))
+            except (ValueError, IndexError):
+                # Если не получается разобрать, пропускаем
+                continue
+    
+    # Сортируем месяцы: сначала по году, потом по названию месяца
+    month_order = {
+        'Январь': 1, 'Февраль': 2, 'Март': 3, 'Апрель': 4,
+        'Май': 5, 'Июнь': 6, 'Июль': 7, 'Август': 8,
+        'Сентябрь': 9, 'Октябрь': 10, 'Ноябрь': 11, 'Декабрь': 12
+    }
+    
+    def month_sort_key(item):
+        key, year, month_name = item
+        return (year, month_order.get(month_name, 99))
+    
+    sorted_months = sorted(months, key=month_sort_key)
+    
+    # Добавляем отсортированные месяцы
+    for month_key, _, _ in sorted_months:
+        sorted_data[month_key] = data[month_key]
+    
+    # 3-6. Добавляем остальные элементы в нужном порядке
+    elements_order = ['end_of_table1', 'end_of_table2', 'debt_info', 'contract_number']
+    
+    for element in elements_order:
+        if element in data:
+            sorted_data[element] = data[element]
+    
+    return sorted_data

@@ -1,7 +1,8 @@
 from flask import Flask, g
 # from configs.config import load_yaml_config
-from ___legal_doc_inspector.doc_parser.table_parser_new import TableParser
-
+from legal_doc_inspector.exel_parser import TableParser
+from legal_doc_inspector.doc_creator.calculation_claim_generator import CalculationClaimGenerator
+from legal_doc_inspector.doc_creator.claim_generator import ClaimGenerator
 def create_app():
     app = Flask(__name__)
 
@@ -17,6 +18,10 @@ def create_app():
         def add_doc_processors():
             if "table_parser" not in g:
                 g.table_parser = TableParser()
+            if 'claim_generator' not in g:
+                g.claim_generator = ClaimGenerator()
+            if 'calc_claim_generator' not in g:
+                g.calc_claim_generator = CalculationClaimGenerator()
             pass
 
         return app

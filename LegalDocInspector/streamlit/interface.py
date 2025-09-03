@@ -289,7 +289,12 @@ if st.session_state.form_data['flag']:
         request_json['company_type'] = st.session_state.form_data['company_type']
         request_json['end_date'] = st.session_state.form_data['end_date']
         request_json['parsing_results'] = []
-        for parsed_info, contract_number in result['table_parser_result']:
+        for contract_info in result['table_parser_result']:
+            parsed_info  = contract_info[0]
+            contract_number = contract_info[1]
+            overdue_date_info = contract_info[2]
+            service_type_info = contract_info[3]
+            claim_info = contract_info[4]
             parsing_result = {}
             parsing_result['parsed_info'] = parsed_info
             parsing_result['contract_point'] = st.session_state.contracts[contract_number]['contract_point']
@@ -305,7 +310,7 @@ if st.session_state.form_data['flag']:
             flag = True
             st.session_state.form_data['flag2'] = flag
             st.session_state.form_data['result2'] = response.json()
-            # st.json(response.json())
+            st.json(response.json())
 
 
         else:
@@ -330,11 +335,9 @@ if st.session_state.form_data['flag2']:
     st.session_state.form_data['lawsuit_info']['claims'] = []
 #     applications = {}
 
-    for key, value in result['result_of_llm_parsers'].items():
-        # if "contract" in key:
-        #     service_type_info.append(result['result_of_llm_parsers'][key]['service_type'])
-        if "claim" in key:
-           st.session_state.form_data['lawsuit_info']['claims'].append(f"№ {result['result_of_llm_parsers'][key]['claim_number']} от {result['result_of_llm_parsers'][key]['claim_date']}")
+    for contract_info in result['table_parser_result']:
+        claim_info = contract_info[4]
+        st.session_state.form_data['lawsuit_info']['claims'].append(f"№ {claim_info['claim_number']} от {claim_info['claim_date']}")
 
 #     st.markdown(f"### Данные об услуге, полученные из договоров")
 #     st.markdown(f"{'___'.join(f' - {elem}' for elem in service_type_info)}")
@@ -367,13 +370,14 @@ if st.session_state.form_data['flag2']:
     doc_creator_json['claim_data'] = request_json
     doc_creator_json['calculator_list'] = st.session_state.form_data['result2']['calculator_list']
 
+    
 
     # print(doc_creator_json)
     st.markdown(f"### подтверждение данных и создание документов")
     if st.button(label="Нажмите, чтобы подтвердить правильность данных"):
             st.session_state.form_data['forms_changed'] = False
             first_response = requests.post("http://localhost:5001/create_doc",
-                                json=request_json
+                                json=doc_creator_json
                                 )
 
             if first_response.status_code == 200:
@@ -387,7 +391,7 @@ if st.session_state.form_data['flag2']:
                 st.text(first_response.text)
 
             second_response = requests.post("http://localhost:5001/create_calculating_table",
-                                     json=request_json
+                                     json=doc_creator_json
                             )
 
             if second_response.status_code == 200:
