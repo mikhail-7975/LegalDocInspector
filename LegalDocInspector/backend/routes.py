@@ -11,11 +11,10 @@ from pathlib import Path
 # from configs.config import AppConfig, load_yaml_config # конфиги
 
 # from ___legal_doc_inspector.doc_parser.table_parser_new import TableParser
-from ___legal_doc_inspector.doc_parser.calculator_adapter import convert_data
-from ___legal_doc_inspector.penalty_calculator.penalty_calculator_new import calculate_penalty
+from LegalDocInspector.legal_doc_inspector.utils.calculator_adapter import convert_data
+from LegalDocInspector.legal_doc_inspector.calculator.penalty_calculator import calculate_penalty
 
-from pathlib import Path
-
+from configs.config import AppConfig
 # import pandas as pd # работа с датафреймами
 import requests # запросы
 from bs4 import BeautifulSoup # раьота с html
@@ -24,8 +23,7 @@ from flask import current_app as app
 
 from werkzeug.utils import secure_filename
 
-from ___legal_doc_inspector.doc_parser.html_parser import parse_html # функция для парсинга html
-from ___legal_doc_inspector.app.utils.parse_info_by_inn import parse_html # класс
+from LegalDocInspector.legal_doc_inspector.utils.parse_info_by_inn import parse_html # класс
 
 from LegalDocInspector.legal_doc_inspector.doc_creator.calculation_claim_generator import CalculationClaimGenerator
 from LegalDocInspector.legal_doc_inspector.doc_creator.claim_generator import ClaimGenerator
@@ -42,8 +40,9 @@ def parse():
 
     table_parser = g.table_parser
 
-    # current_config = g.config
-    save_data_folder = Path("/tmp/doc_inspector_data")
+    current_config:AppConfig = g.config
+    # save_data_folder = Path("/tmp/doc_inspector_data")
+    save_data_folder = current_config.save_data_folder
 
     date_request = request.form.get("date")
     date_request = date.fromisoformat(date_request).strftime("%d.%m.%Y")
@@ -52,6 +51,7 @@ def parse():
     folder = Path(
         save_data_folder, secure_filename(f"documents_from_request_{datetime.now()}")
     )
+    g.path_to_save = str(folder)
     request.files
 
     folder.mkdir(exist_ok=True, parents=True)
@@ -92,14 +92,14 @@ def parse():
 
         # LLM parser
 
-        llm_contract_number, service_type_info, overdue_date_info = parse_contract(contract_file_path)
-        print("contract parser done!")
-        plaintiff_inn, claim_number, claim_date = parse_claim(claim_file_path)
-        print("claim parser done!")
+        # llm_contract_number, service_type_info, overdue_date_info = parse_contract(contract_file_path)
+        # print("contract parser done!")
+        # plaintiff_inn, claim_number, claim_date = parse_claim(claim_file_path)
+        # print("claim parser done!")
 
-        # overdue_date_info  = "(заглушка) В следующем фрагменте указан срок, в течение которого Исполнитель должен произвести оплату:\n\n\"5. 5. Исполнитель в срок до 18-го числа месяца, следующего за расчетным, производит оплату стоимости тепловой энергии, теплоносителя, указанной в счете. Датой оплаты считается дата поступления денежных средств на расчетный счет Теплоснабжающей организации.\""
-        # service_type_info = "(заглушка) тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))"
-        claim_info = {"claim_date": claim_date, "claim_number": claim_number}
+        overdue_date_info  = "(заглушка) В следующем фрагменте указан срок, в течение которого Исполнитель должен произвести оплату:\n\n\"5. 5. Исполнитель в срок до 18-го числа месяца, следующего за расчетным, производит оплату стоимости тепловой энергии, теплоносителя, указанной в счете. Датой оплаты считается дата поступления денежных средств на расчетный счет Теплоснабжающей организации.\""
+        service_type_info = "(заглушка) тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))"
+        claim_info = {"claim_date": '01.01.2000', "claim_number": '123456'}
 
         parsing_table_results.append((result, contract_number, overdue_date_info, service_type_info, claim_info))
 
@@ -163,17 +163,15 @@ def create_doc():
     request_json = request.json
     calculator_list, claim_data = request_json['calculator_list'], request_json['claim_data']
     claim_gen:ClaimGenerator = g.claim_generator
-    path_to_save = str(Path('/tmp', 'doc_inspector_data', 'ИСК.docx'))
-    path_to_template = str(Path("/home/mkalinichenko/projects/LegalDocInspector/data/templates/claim.docx"))
+    # path_to_save = str(Path('/tmp', 'doc_inspector_data', 'ИСК.docx'))
+    path_to_save = str(Path(g.path_to_save, 'ИСК.docx'))
+    # path_to_template = str(Path("/home/mkalinichenko/projects/LegalDocInspector/data/templates/claim.docx"))
+    config:AppConfig = g.config
+    path_to_template = config.claim_template_path
     claim_gen.make_instance(config=claim_data,
                             template_filename=path_to_template,
                             output_filename=path_to_save)
-    # lawsuit_creator = LawsuitCreator(dict())
-    # path_to_save = find_parent_dir_with_name(Path(request_json['files_info']['lawsuit_calculating']),'documents_from_request')
-    # with open(Path(path_to_save,'lawsuit_create.json'), "w", encoding='utf-8') as f:
-    #     json.dump(request_json, f , indent=4, ensure_ascii=False)
-    # file = lawsuit_creator.create_lawsuit(request_json, Path(path_to_save,'ИСК.docx'))
-    # # print(file)
+    
     return send_file(path_to_save, as_attachment=True), 200
 
 
@@ -183,8 +181,13 @@ def create_table():
     request_json = request.json
     calculator_list, claim_data = request_json['calculator_list'], request_json['claim_data']
     calculator_list_sorted = [sort_data_structure(calculator_list[i]) for i in range(len(calculator_list))]
-    path_to_save = str(Path('/tmp', 'doc_inspector_data', 'ИСК.docx'))
-    path_to_template = str(Path("/home/mkalinichenko/projects/LegalDocInspector/data/templates/calculation_claim.docx"))
+    # path_to_save = str(Path('/tmp', 'doc_inspector_data', 'расчёт к иску.docx'))
+    path_to_save = str(Path(g.path_to_save, 'расчёт к иску.docx'))
+
+    config:AppConfig = g.config
+    path_to_template = config.calculation_claim_template_path
+
+    # path_to_template = str(Path("/home/mkalinichenko/projects/LegalDocInspector/data/templates/calculation_claim.docx"))
     calc_claim_generator.make_instance(config=calculator_list_sorted,
                                        config2=claim_data,
                                        template_filename=path_to_template,
