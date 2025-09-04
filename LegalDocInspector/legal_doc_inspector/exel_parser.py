@@ -5,7 +5,7 @@
 import re
 import pandas as pd
 
-from convert_month import convert_month
+from LegalDocInspector.legal_doc_inspector.utils.convert_month import convert_month
 
 
 class ExcelReader:
@@ -302,7 +302,7 @@ class TableParser:
 
         Args:
             period (str): Это период платежа, он приходит в виде ДД.ГГГГ
-            month (str): Это месяц, в котором записан платеж, приходит в виде */Название_месяца ГГГГ/* 
+            month (str): Это месяц, в котором записан платеж, приходит в виде */Название_месяца ГГГГ/*
 
         Если период платежа не совпадает с месяцем, в котором он записан, то это добор.
         """
@@ -315,3 +315,14 @@ class TableParser:
 
     def money_str_to_float(self, money):
         return float(money.replace(" ", "").replace(",", "."))
+
+
+    def parse_contract_number(self):
+        contract_type = self.reader.cell(5, 1)
+        contract_date = self.reader.cell(6, 1)
+
+        return None if pd.isna(contract_type) else "№ " + str(contract_type) + ' от ' + str(contract_date)
+
+    def parse_defendant_inn(self) -> str | None:
+        inn = self.reader.cell(6, 4)
+        return None if pd.isna(inn) else str(inn)

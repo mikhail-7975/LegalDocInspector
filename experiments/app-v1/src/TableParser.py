@@ -315,3 +315,10 @@ class TableParser:
 
     def money_str_to_float(self, money):
         return float(money.replace(" ", "").replace(",", "."))
+
+
+    def parse_contract_number(self):
+        contract_type = self.reader.cell(5, 1)
+        contract_date = self.reader.cell(6, 1)
+
+        return None if pd.isna(contract_type) else "№ " + contract_type + ' от ' + contract_date

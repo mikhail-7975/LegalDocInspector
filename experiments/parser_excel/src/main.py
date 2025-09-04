@@ -2,6 +2,8 @@ from pathlib import Path
 
 from TableParser import TableParser
 
+from new_penalty_calculator import calculate_penalty
+
 
 def collect_contracts_and_files(claims_folder):
     """
@@ -61,6 +63,9 @@ def collect_contracts_and_files(claims_folder):
             contract_names.append(contract_name)
 
     return file_paths, contract_names
+
+
+
 
 
 def print_periods(periods: dict):
@@ -164,7 +169,24 @@ def parse_first_complect(base_folder: str):
         print()
         print(f"Файл:     {file_path}")
         periods = table_parser.parse()
-        print_periods(periods)
+        # print_periods(periods)
+
+        result = calculate_with_calculator(periods)
+        print(f"Вывод:\n{result}")
+        break
+
+
+def calculate_with_calculator(data):
+    day_of_penalty = 20
+    company_type = 'ТСЖ'
+    end_date = '27.08.2025'
+    res = calculate_penalty(
+        parsed_data= data,
+        day_of_penalty=day_of_penalty,
+        company_type=company_type,
+        end_date=end_date
+    )
+    return res
 
 
 def main():

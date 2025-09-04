@@ -1,11 +1,7 @@
-"""
-Класс TableParser реализует интерфейс взаимодействия с excel документом. TableParser работает только на чтение!
-"""
-
 import re
 import pandas as pd
-
-from convert_month import convert_month
+import datetime 
+from .parser_utils.convert_month import convert_month
 
 
 class ExcelReader:
@@ -315,3 +311,16 @@ class TableParser:
 
     def money_str_to_float(self, money):
         return float(money.replace(" ", "").replace(",", "."))
+
+
+    def parse_contract_number(self):
+        contract_type = self.reader.cell(5, 1)
+        contract_date = self.reader.cell(6, 1)
+        if isinstance(contract_date, datetime.datetime):
+            contract_date = contract_date.strftime("%d.%m.%Y")
+
+        return None if pd.isna(contract_type) else "№ " + contract_type + ' от ' + str(contract_date)
+    
+    def parse_defendant_inn(self) -> str | None:
+        inn = self.reader.cell(6, 4)
+        return None if pd.isna(inn) else str(inn)
