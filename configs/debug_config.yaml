@@ -1,0 +1,4 @@
+save_data_folder : data
+debug : True
+claim_template_path : data/templates/claim.docx
+calculation_claim_template_path : data/templates/calculation_claim.docx
