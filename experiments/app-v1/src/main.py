@@ -22,6 +22,9 @@ HARD_PATH_TO_EXCEL_3 = "/home/artyomtrifautsan/IT/python/Work2/LegalDocInspector
 HARD_PATH_TO_EXCEL_4 = "/home/artyomtrifautsan/IT/python/Work2/LegalDocInspector/experiments/app-v1/documents/docs1/claims/комплект 4 (с долей кор-ки 2024)/Документы для иска/07.659095ГВС/07.659095ГВС 12.2024-03.2025.XLS"
 HARD_PATH_TO_EXCEL_5 = "/home/artyomtrifautsan/IT/python/Work2/LegalDocInspector/experiments/app-v1/documents/docs1/claims/комплект 4 (с долей кор-ки 2024)/Документы для иска/07.659095-ТЭ/07.659095-ТЭ 12.2024-03.2025.XLSM"
 
+HARD_PATH_TO_EXCEL_6 = "/home/artyomtrifautsan/IT/python/Work2/LegalDocInspector/experiments/app-v1/new_docs/05.413208ГВС/05.413208ГВС.XLS"
+HARD_PATH_TO_EXCEL_7 = "/home/artyomtrifautsan/IT/python/Work2/LegalDocInspector/experiments/app-v1/new_docs/05.413208-ТЭ/05.413208-ТЭ.XLSM"
+
 OUTPUT_CLAIM = "output/claim.docx"
 OUTPUT_CALCULATION_CLAIM = "output/calculation_claim.docx"
 
@@ -36,7 +39,7 @@ CONTRACT_POINT_1 = "4.5"
 CONTRACT_POINT_2 = "4.6"
 
 def generate_claim():
-    excel_files = [HARD_PATH_TO_EXCEL_4, HARD_PATH_TO_EXCEL_5]
+    excel_files = [HARD_PATH_TO_EXCEL_6, HARD_PATH_TO_EXCEL_7]
     last_days_of_penalty = [LAST_DAY_OF_PENALTY_1, LAST_DAY_OF_PENALTY_2]
     contract_points = [CONTRACT_POINT_1, CONTRACT_POINT_2]
     number_of_contracts = len(excel_files)
