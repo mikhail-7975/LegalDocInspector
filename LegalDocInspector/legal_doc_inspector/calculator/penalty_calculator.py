@@ -480,13 +480,13 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
 
     res['end_of_table1'] = {
         'text': "Сумма Основного долга",
-        'money': str(all_debt)+ ' руб.',
+        'money': str(all_debt),
         'type': 'field'
     }
 
     res['end_of_table2'] = {
         'text': "Сумма пеней по всем задолженностям",
-        'money': str(all_penalty)+ ' руб.',
+        'money': str(all_penalty),
         'type': 'field'
     }
 
@@ -498,38 +498,4 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
     }
 
 
-
     return res
-
-# # USAGE EXAMPLE
-
-# if __name__ == "__main__":
-#     parser = TableParser()
-#     claim_paths = ['/home/kirill/neurolumber/docscanner/new_legal_doc_inspector/docinspecor/legal_doc_data/test_data/1/комплект 1/Документы для иска/04.303360-ТЭ/04.303360-ТЭ_справка.XLSM', '/home/kirill/neurolumber/docscanner/new_legal_doc_inspector/docinspecor/legal_doc_data/test_data/1/комплект 1/Документы для иска/04.303360ГВС/04.303360ГВС_справка (2).XLS' ]
-#     days_of_penalty = [20, 20]
-#     contract_points = ['1.1', '5,5']
-#     calculated_results = []
-#     company_type = 'ТСЖ'
-#     end_date = '25.07.2025'
-#     for claim_path, day_of_penalty in zip(claim_paths, days_of_penalty):
-#         parser.open(str(claim_path))
-#         data = parser.parse()
-#         res = calculate_penalty(
-#             parsed_data= data,
-#             day_of_penalty=day_of_penalty,
-#             company_type=company_type,
-#             end_date=end_date
-#         )
-#         res['contract_number'] = parser.parse_contract_number()
-#         parser.close()
-#         calculated_results.append(res)
-
-#     converted_data = convert_data(
-#         calculated_data_list=calculated_results,
-#         last_days_of_penalty=days_of_penalty,
-#         contract_points=contract_points,
-#         company_type=company_type,
-#         current_date=end_date
-#     )
-# # calculated_results
-# converted_data
