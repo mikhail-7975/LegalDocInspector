@@ -2,6 +2,7 @@ import json
 from datetime import datetime, timedelta
 
 from docx import Document
+from docx.table import Table
 
 from DocxRedactor import DocxRedactor
 
@@ -100,107 +101,287 @@ class ClaimGenerator:
 
 
     def fill_second_table(self):
-        rows_n = len(self.config["contracts_info"]) # Кол-во элементов в списке договоров
+
         table = self.redactor.get_table(1)
+        self.second_table_fill_common_info(table)
+        # self.redactor.print_table(table)
+        
+        # по сути число договоров
+        n_contracts = len(self.config["contracts_info"])
 
-        for i in range(rows_n):
-            if i < rows_n - 1:
-                new_row = self.redactor.insert_row_in_table(table, 2 + i)
-                self.redactor.clone_table_row(table.rows[1 + i], new_row)
-                # for cell in table.row_cells(1 + i):
-                #     # self.redactor._set_borders_to_cell(cell)
-                #     pass
-                #     # self.redactor.set_vertical_alignment_to_cell(cell, "center")
+        # По смыслу, это количство уже заполненных строк в таблице. Начинаем не с 0, а с 1 потому что
+        # в таблице есть заголовочная строка, в которой ничего заполнять не нужна, но она есть сама 
+        # по себе и её нужно учитывать. По сути, значение n_row равно индексу строки, которую мы будем 
+        # заполнять на текущей итерации
+        n_rows = 1
+        for i, contract in enumerate(self.config["contracts_info"]):
 
-            self.redactor.replace_text_in_paragraph(
-                table.row_cells(i + 1)[0].paragraphs[0],
-                self.borders("номер договора"),
-                self.config["contracts_info"][i][1]
-            )
-            self.redactor.replace_text_in_paragraph(
-                table.row_cells(i + 1)[1].paragraphs[0],
-                self.borders("период"),
-                self.config["contracts_info"][i][2]["contract_periods"]
-            )
-            self.redactor.replace_text_in_paragraph(
-                table.row_cells(i + 1)[2].paragraphs[0],
-                self.borders("задолженность"),
-                self.config["contracts_info"][i][2]["debt"]
-            )
-            self.redactor.replace_text_in_paragraph(
-                table.row_cells(i + 1)[3].paragraphs[0],
-                self.borders("срок оплаты"),
-                # "#срок оплаты#".upper()
-                self.config["contracts_info"][i][2]["last_day"]
-            )
-            self.redactor.replace_text_in_paragraph(
-                table.row_cells(i + 1)[4].paragraphs[0],
-                self.borders("пункт"),
-                self.config["contracts_info"][i][2]["contract_point"]
-            )
+            if i < n_contracts - 1:
+                self.third_table_clone_row(table, n_rows)
+
+            contract_number = list(self.config["table_info"].keys())[i]
+
+            if self.config["table_info"][contract_number]["correcting_debt"] == "0,00":
+                self.second_table_fill_simple_row(table, n_rows, i)
+                n_rows += 1
+
+            else:
+                self.third_table_clone_row(table, n_rows)
+                self.second_table_fill_complex_row(table, n_rows, i)
+                n_rows += 2
+
+
+    def second_table_fill_common_info(self, table: Table):
+        self.borders("сумма долга"),
+        self.config["table_info"]["all_debt"]
+
+
+    def second_table_fill_simple_row(self, table: Table, row_index: int, contract_index: int):
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(row_index)[0].paragraphs[0],
+            self.borders("номер договора"),
+            self.config["contracts_info"][contract_index][1]
+        )
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(row_index)[1].paragraphs[0],
+            self.borders("период"),
+            self.config["contracts_info"][contract_index][2]["contract_periods"]
+        )
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(row_index)[2].paragraphs[0],
+            self.borders("задолженность"),
+            self.config["contracts_info"][contract_index][2]["debt"]
+        )
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(row_index)[3].paragraphs[0],
+            self.borders("срок оплаты"),
+            self.config["contracts_info"][contract_index][2]["last_day"]
+        )
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(row_index)[4].paragraphs[0],
+            self.borders("пункт"),
+            self.config["contracts_info"][contract_index][2]["contract_point"]
+        )
+
+
+    def second_table_fill_complex_row(self, table: Table, row_index: int, contract_index: int):
+        self.third_table_merge_rows(table, row_index)
 
         self.redactor.replace_text_in_paragraph(
-            table.row_cells(rows_n + 1)[2].paragraphs[0],
-            self.borders("сумма долга"),
-            self.config["table_info"]["all_debt"]
+            table.row_cells(row_index)[0].paragraphs[0],
+            self.borders("номер договора"),
+            self.config["contracts_info"][contract_index][1]
+        )
+
+        # Ячейка Период
+        source_paragraph = table.row_cells(row_index)[1].paragraphs[0]
+        new_paragraph = table.row_cells(row_index)[1].add_paragraph("")
+        self.redactor.clone_paragraph(source_paragraph, new_paragraph)
+        self.redactor.replace_text_in_paragraph(
+            source_paragraph,
+            self.borders("период"),
+            self.config["contracts_info"][contract_index][2]["contract_periods"]
+        )
+        self.redactor.replace_text_in_paragraph(
+            new_paragraph,
+            self.borders("период"),
+            "текущие начисления"
+        )
+        self.redactor.paragraph_text_set_bold(new_paragraph)
+
+        source_paragraph = table.row_cells(row_index + 1)[1].paragraphs[0]
+        new_paragraph = table.row_cells(row_index + 1)[1].add_paragraph("")
+        self.redactor.clone_paragraph(source_paragraph, new_paragraph)
+        self.redactor.replace_text_in_paragraph(
+            source_paragraph,
+            self.borders("период"),
+            self.config["contracts_info"][contract_index][2]["contract_periods_correcting"]
+        )
+        self.redactor.replace_text_in_paragraph(
+            new_paragraph,
+            self.borders("период"),
+            "доля от ГК"
+        )
+        self.redactor.paragraph_text_set_bold(new_paragraph)
+
+        # Ячейка Задолженность
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(row_index)[2].paragraphs[0],
+            self.borders("задолженность"),
+            self.config["contracts_info"][contract_index][2]["debt"]
+        )
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(row_index + 1)[2].paragraphs[0],
+            self.borders("задолженность"),
+            self.config["contracts_info"][contract_index][2]["correcting_debt"]
+        )
+
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(row_index)[3].paragraphs[0],
+            self.borders("срок оплаты"),
+            self.config["contracts_info"][contract_index][2]["last_day"]
+        )
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(row_index)[4].paragraphs[0],
+            self.borders("пункт"),
+            self.config["contracts_info"][contract_index][2]["contract_point"]
         )
 
 
     def fill_third_table(self):
-        rows_n = len(self.config["contracts_info"]) # Кол-во элементов в списке договоров
+
         table = self.redactor.get_table(2)
+        self.third_table_fill_common_info(table)
+        # self.redactor.print_table(table)
+        
+        # по сути число договоров
+        n_contracts = len(self.config["contracts_info"])
 
-        for i in range(rows_n):
-            if i < rows_n - 1:
-                new_row = self.redactor.insert_row_in_table(table, 2 + i)
-                self.redactor.clone_table_row(table.rows[1 + i], new_row)
-                # for cell in table.row_cells(1 + i):
-                #     self.redactor._set_borders_to_cell(cell)
-                #     self.redactor.set_vertical_alignment_to_cell(cell, "center")
+        # По смыслу, это количство уже заполненных строк в таблице. Начинаем не с 0, а с 1 потому что
+        # в таблице есть заголовочная строка, в которой ничего заполнять не нужна, но она есть сама 
+        # по себе и её нужно учитывать. По сути, значение n_row равно индексу строки, которую мы будем 
+        # заполнять на текущей итерации
+        n_rows = 1
+        for i, contract in enumerate(self.config["contracts_info"]):
 
-            self.redactor.replace_text_in_paragraph(
-                table.row_cells(i + 1)[0].paragraphs[0],
-                self.borders("номер договора"),
-                self.config["contracts_info"][i][1]
-            )
-            self.redactor.replace_text_in_paragraph(
-                table.row_cells(i + 1)[1].paragraphs[0],
-                self.borders("период"),
-                self.config["contracts_info"][i][2]["contract_periods"]
-            )
-            self.redactor.replace_text_in_paragraph(
-                table.row_cells(i + 1)[2].paragraphs[0],
-                self.borders("задолженность"),
-                self.config["contracts_info"][i][2]["debt"]
-            )
-            self.redactor.replace_text_in_paragraph(
-                table.row_cells(i + 1)[3].paragraphs[0],
-                self.borders("неустойка"),
-                # "#неустойка#".upper()
-                self.config["contracts_info"][i][2]["penalty"]
-            )
-            self.redactor.replace_text_in_paragraph(
-                table.row_cells(i + 1)[4].paragraphs[0],
-                self.borders("неустойка+задолженность"),
-                # "#неустойка+задолженность#".upper()
-                self.config["contracts_info"][i][2]["debt_penalty"]
-            )
+            if i < n_contracts - 1:
+                self.third_table_clone_row(table, n_rows)
 
+            contract_number = list(self.config["table_info"].keys())[i]
+
+            if self.config["table_info"][contract_number]["correcting_debt"] == "0,00":
+                self.third_table_fill_simple_row(table, n_rows, i)
+                n_rows += 1
+
+            else:
+                self.third_table_clone_row(table, n_rows)
+                self.third_table_fill_complex_row(table, n_rows, i)
+                n_rows += 2
+
+
+    def third_table_fill_common_info(self, table: Table):
+        # table = self.redactor.get_table(1)
         self.redactor.replace_text_in_paragraph(
-            table.row_cells(rows_n + 1)[2].paragraphs[0],
+            table.row_cells(2)[2].paragraphs[0],
             self.borders("сумма долга"),
             self.config["table_info"]["all_debt"]
         )
         self.redactor.replace_text_in_paragraph(
-            table.row_cells(rows_n + 1)[3].paragraphs[0],
+            table.row_cells(2)[3].paragraphs[0],
             self.borders("неустойка общая"),
             self.config["table_info"]["all_penalty"]
         )
         self.redactor.replace_text_in_paragraph(
-            table.row_cells(rows_n + 1)[4].paragraphs[0],
+            table.row_cells(2)[4].paragraphs[0],
             self.borders("цена иска"),
             self.config["table_info"]["cost_of_lawsuit"]
         )
+
+
+    def third_table_clone_row(self, table: Table, cloning_row_index: int):
+        new_row = self.redactor.insert_row_in_table(table, cloning_row_index + 1)
+        self.redactor.clone_table_row(table.rows[cloning_row_index], new_row)
+
+
+    def third_table_fill_simple_row(self, table: Table, row_index: int, contract_index: int):
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(row_index)[0].paragraphs[0],
+            self.borders("номер договора"),
+            self.config["contracts_info"][contract_index][1]
+        )
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(row_index)[1].paragraphs[0],
+            self.borders("период"),
+            self.config["contracts_info"][contract_index][2]["contract_periods"]
+        )
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(row_index)[2].paragraphs[0],
+            self.borders("задолженность"),
+            self.config["contracts_info"][contract_index][2]["debt"]
+        )
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(row_index)[3].paragraphs[0],
+            self.borders("неустойка"),
+            self.config["contracts_info"][contract_index][2]["penalty"]
+        )
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(row_index)[4].paragraphs[0],
+            self.borders("неустойка+задолженность"),
+            self.config["contracts_info"][contract_index][2]["debt_penalty"]
+        )
+
+
+    def third_table_fill_complex_row(self, table: Table, row_index: int, contract_index: int):
+        self.third_table_merge_rows(table, row_index)
+
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(row_index)[0].paragraphs[0],
+            self.borders("номер договора"),
+            self.config["contracts_info"][contract_index][1]
+        )
+
+        # Ячейка Период
+        source_paragraph = table.row_cells(row_index)[1].paragraphs[0]
+        new_paragraph = table.row_cells(row_index)[1].add_paragraph("")
+        self.redactor.clone_paragraph(source_paragraph, new_paragraph)
+        self.redactor.replace_text_in_paragraph(
+            source_paragraph,
+            self.borders("период"),
+            self.config["contracts_info"][contract_index][2]["contract_periods"]
+        )
+        self.redactor.replace_text_in_paragraph(
+            new_paragraph,
+            self.borders("период"),
+            "текущие начисления"
+        )
+        self.redactor.paragraph_text_set_bold(new_paragraph)
+
+        source_paragraph = table.row_cells(row_index + 1)[1].paragraphs[0]
+        new_paragraph = table.row_cells(row_index + 1)[1].add_paragraph("")
+        self.redactor.clone_paragraph(source_paragraph, new_paragraph)
+        self.redactor.replace_text_in_paragraph(
+            source_paragraph,
+            self.borders("период"),
+            self.config["contracts_info"][contract_index][2]["contract_periods_correcting"]
+        )
+        self.redactor.replace_text_in_paragraph(
+            new_paragraph,
+            self.borders("период"),
+            "доля от ГК"
+        )
+        self.redactor.paragraph_text_set_bold(new_paragraph)
+
+        # Ячейка Задолженность
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(row_index)[2].paragraphs[0],
+            self.borders("задолженность"),
+            self.config["contracts_info"][contract_index][2]["debt"]
+        )
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(row_index + 1)[2].paragraphs[0],
+            self.borders("задолженность"),
+            self.config["contracts_info"][contract_index][2]["correcting_debt"]
+        )
+
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(row_index)[3].paragraphs[0],
+            self.borders("неустойка"),
+            # "#неустойка#".upper()
+            self.config["contracts_info"][contract_index][2]["penalty"]
+        )
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(row_index)[4].paragraphs[0],
+            self.borders("неустойка+задолженность"),
+            # "#неустойка+задолженность#".upper()
+            self.config["contracts_info"][contract_index][2]["debt_penalty"]
+        )
+
+
+    def third_table_merge_rows(self, table: Table, row_index: int):
+        row_1 = table.rows[row_index]
+        row_2 = table.rows[row_index + 1]
+        for i in [0, 3, 4]:
+            self.redactor.merge_table_cells(row_1.cells[i], row_2.cells[i])
 
 
     def fill_first_list(self):
