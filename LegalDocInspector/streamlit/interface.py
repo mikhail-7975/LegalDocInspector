@@ -326,9 +326,9 @@ if st.session_state.form_data['flag2']:
 #     request_json = {}
     st.markdown("#### Проверьте данные об иске")
 
-    st.session_state.form_data['lawsuit_info']['cost'] = st.text_input(label="Цена иска", value=f"{st.session_state.form_data['result2']['claim_data']['table_info']['cost_of_lawsuit']} р.", on_change= on_change_handler)
+    st.session_state.form_data['lawsuit_info']['cost'] = st.text_input(label="Цена иска", value=f"{st.session_state.form_data['result2']['claim_data']['table_info']['cost_of_lawsuit']}", on_change= on_change_handler)
 
-    st.session_state.form_data['lawsuit_info']['tax'] = st.text_input(label="Госпошлина", value=f"{calculate_state_duty(st.session_state.form_data['result2']['claim_data']['table_info']['cost_of_lawsuit'])} р." , on_change= on_change_handler)
+    st.session_state.form_data['lawsuit_info']['tax'] = st.text_input(label="Госпошлина", value=f"{calculate_state_duty(st.session_state.form_data['result2']['claim_data']['table_info']['cost_of_lawsuit'])}" , on_change= on_change_handler)
     st.session_state.form_data['lawsuit_info']['service_type'] = st.selectbox("Выберите вид услугии", ["ГВС + ТЭ", "ТЭ", "ГВС"])
 
 #     service_type_info = []
