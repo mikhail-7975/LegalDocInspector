@@ -89,22 +89,3 @@ def convert_data(calculated_data_list: list[dict], last_days_of_penalty: list[in
 
     return converted_data
 
-
-# EXAMPLE OF USAGE
-
-# if __name__ == "__main__":
-
-#     # Список результатов penalty calculator calculated_data_list
-
-#     calculated_data_list = [ТУТ ДОЛЖНЫ БЫТЬ СПИСКИ ПОСЧИТАННЫХ КАЛЬКУЛЯТОРОМ СПРАВОК]
-#     last_days =  [18, 20] # порядок должен соответствовать посчитанным результатам
-#     contract_points = ['1.1', '5.5'] # аналогично
-#     current_date  = '28.08.2025'
-
-#     convert_data(
-#         calculated_data_list=calculated_data_list,
-#         last_days_of_penalty=last_days,
-#         contract_points=contract_points,
-#         company_type="ТСЖ",
-#         current_date=current_date
-#     )

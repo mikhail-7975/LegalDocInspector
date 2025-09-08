@@ -498,5 +498,4 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
     }
 
 
-
     return res
