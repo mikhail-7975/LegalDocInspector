@@ -20,6 +20,7 @@ import requests # запросы
 from bs4 import BeautifulSoup # раьота с html
 from flask import Flask, Response, g, jsonify, render_template, request, send_file # бекэнд
 from flask import current_app as app
+from flask import session
 
 from werkzeug.utils import secure_filename
 
@@ -28,8 +29,8 @@ from LegalDocInspector.legal_doc_inspector.utils.parse_info_by_inn import parse_
 from LegalDocInspector.legal_doc_inspector.doc_creator.calculation_claim_generator import CalculationClaimGenerator
 from LegalDocInspector.legal_doc_inspector.doc_creator.claim_generator import ClaimGenerator
 
-from .llm_functions import parse_claim, parse_contract
-
+# from .llm_functions import parse_claim, parse_contract
+# app.secret_key = os.urandom(30).hex()
 @app.route("/")
 def home():
     return "server is working"
@@ -51,7 +52,7 @@ def parse():
     folder = Path(
         save_data_folder, secure_filename(f"documents_from_request_{datetime.now()}")
     )
-    g.path_to_save = str(folder)
+    # session['path_to_save'] = str(folder)
     request.files
 
     folder.mkdir(exist_ok=True, parents=True)
@@ -116,7 +117,7 @@ def parse():
     result_json['results_of_name_parser']['defendant_info']['address'] = address
     result_json['results_of_name_parser']['defendant_info']['kpp'] = kpp
     result_json['results_of_name_parser']['defendant_info']['ogrn'] = ogrn
-
+    result_json['path_to_save'] = str(folder.resolve())
 
     # result_json['result_of_llm_parsers'] = pdf_pars_dict
 
@@ -161,10 +162,10 @@ def calc_penalty():
 def create_doc():
 
     request_json = request.json
-    calculator_list, claim_data = request_json['calculator_list'], request_json['claim_data']
+    calculator_list, claim_data, path_to_save = request_json['calculator_list'], request_json['claim_data'], request_json['path_to_save']
     claim_gen:ClaimGenerator = g.claim_generator
     # path_to_save = str(Path('/tmp', 'doc_inspector_data', 'ИСК.docx'))
-    path_to_save = str(Path(g.path_to_save, 'ИСК.docx'))
+    path_to_save = str(Path(path_to_save, 'ИСК.docx'))
     # path_to_template = str(Path("/home/mkalinichenko/projects/LegalDocInspector/data/templates/claim.docx"))
     config:AppConfig = g.config
     path_to_template = config.claim_template_path
@@ -179,10 +180,10 @@ def create_doc():
 def create_table():
     calc_claim_generator:CalculationClaimGenerator = g.calc_claim_generator
     request_json = request.json
-    calculator_list, claim_data = request_json['calculator_list'], request_json['claim_data']
+    calculator_list, claim_data, path_to_save = request_json['calculator_list'], request_json['claim_data'], request_json['path_to_save']
     calculator_list_sorted = [sort_data_structure(calculator_list[i]) for i in range(len(calculator_list))]
     # path_to_save = str(Path('/tmp', 'doc_inspector_data', 'расчёт к иску.docx'))
-    path_to_save = str(Path(g.path_to_save, 'расчёт к иску.docx'))
+    path_to_save = str(Path(path_to_save, 'расчёт к иску.docx'))
 
     config:AppConfig = g.config
     path_to_template = config.calculation_claim_template_path

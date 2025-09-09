@@ -81,7 +81,8 @@ def get_contract_form(contract_number:str):
     with col2:
         st.session_state.contracts[contract_number]['contract_point']  = st.text_input(label="напишите номер пункта договора, в котором говорится о дне начала просрочки ",
                                                                                       key="c_p"+str(contract_number),
-                                                                                      on_change=on_change_handler)
+                                                                                      on_change=on_change_handler,
+                                                                                      value="5.5")
 
 
 st.title("Загрузка и обработка документов")
@@ -172,6 +173,7 @@ if st.session_state.complects[st.session_state.form_data['num_complects']]['clai
             flag = True
             st.session_state.form_data['flag'] = flag
             st.session_state.form_data['result'] = response.json()
+            st.session_state.form_data['path_to_save'] = response.json()['path_to_save']
             # st.json(response.json())
 
 
@@ -370,7 +372,7 @@ if st.session_state.form_data['flag2']:
     doc_creator_json['claim_data'] = request_json
     doc_creator_json['calculator_list'] = st.session_state.form_data['result2']['calculator_list']
 
-    
+    doc_creator_json['path_to_save'] = st.session_state.form_data['path_to_save']
 
     # print(doc_creator_json)
     st.markdown(f"### подтверждение данных и создание документов")
