@@ -400,11 +400,13 @@ if st.session_state.form_data['flag2']:
                 st.session_state.form_data['flag2'] = True
 
             elif second_response.status_code == 404:
-                st.error("Ошибка")
+                st.error("Ошибка, проверьте, все ли поля заполнены корректно")
                 # st.json(second_response.json())
             else:
-                st.error(f"Ошибка: {second_response.status_code}")
-                st.text(second_response.text)
+                st.error("Ошибка, проверьте, все ли поля заполнены корректно")
+
+                # st.error(f"Ошибка: {second_response.status_code}")
+                # st.text(second_response.text)
 
 if st.session_state.form_data['flag2'] and st.session_state.form_data['forms_changed']==False:
     col1, col2, = st.columns(2)
