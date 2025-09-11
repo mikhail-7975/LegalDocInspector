@@ -1,4 +1,4 @@
-from legal_doc_inspector.exel_parser import TableParser
+from LegalDocInspector.legal_doc_inspector.exel_parser import TableParser
 import datetime
 import requests
 from decimal import Decimal, ROUND_HALF_UP

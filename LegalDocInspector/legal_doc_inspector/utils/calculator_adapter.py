@@ -7,8 +7,8 @@
 from uuid import uuid4
 import datetime
 
-from legal_doc_inspector.utils.strict_formatted_money import StrictFormattedMoney
-from legal_doc_inspector.utils.convert_month import convert_month
+from LegalDocInspector.legal_doc_inspector.utils.strict_formatted_money import StrictFormattedMoney
+from LegalDocInspector.legal_doc_inspector.utils.convert_month import convert_month
 
 def convert_data(calculated_data_list: list[dict], last_days_of_penalty: list[int | str], contract_points:list[str], company_type:str, current_date:str) -> dict:
     converted_data = {}
