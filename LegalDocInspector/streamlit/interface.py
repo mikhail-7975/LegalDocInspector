@@ -23,6 +23,7 @@ if 'form_data' not in st.session_state:
         'result': {},
         'flag':False,
         'flag2':False,
+        'flag3':False,
         'plaintiff_correct':True,
         'plaintiff_uncorrect':False,
         'forms_changed': False,
@@ -312,7 +313,7 @@ if st.session_state.form_data['flag']:
             flag = True
             st.session_state.form_data['flag2'] = flag
             st.session_state.form_data['result2'] = response.json()
-            st.json(response.json())
+            # st.json(response.json())
 
 
         else:
@@ -374,6 +375,7 @@ if st.session_state.form_data['flag2']:
 
     doc_creator_json['path_to_save'] = st.session_state.form_data['path_to_save']
 
+    # st.json(doc_creator_json)
     # print(doc_creator_json)
     st.markdown(f"### подтверждение данных и создание документов")
     if st.button(label="Нажмите, чтобы подтвердить правильность данных"):
@@ -399,7 +401,7 @@ if st.session_state.form_data['flag2']:
             if second_response.status_code == 200:
                 lawsuit_table = BytesIO(second_response.content)
                 st.session_state.form_data['lawsuite_table'] = lawsuit_table
-                st.session_state.form_data['flag2'] = True
+                st.session_state.form_data['flag3'] = True
 
             elif second_response.status_code == 404:
                 st.error("Ошибка, проверьте, все ли поля заполнены корректно")
@@ -410,22 +412,22 @@ if st.session_state.form_data['flag2']:
                 # st.error(f"Ошибка: {second_response.status_code}")
                 # st.text(second_response.text)
 
-if st.session_state.form_data['flag2'] and st.session_state.form_data['forms_changed']==False:
-    col1, col2, = st.columns(2)
+            if st.session_state.form_data['flag3'] and st.session_state.form_data['forms_changed']==False:
+                col1, col2, = st.columns(2)
 
-    with col1:
-        st.download_button(
-            label="Скачать иск",
-            data=st.session_state.form_data['lawsuit'],
-            file_name="Иск.docx",
+                with col1:
+                    st.download_button(
+                        label="Скачать иск",
+                        data=st.session_state.form_data['lawsuit'],
+                        file_name="Иск.docx",
 
-        )
+                    )
 
-    with col2:
-        st.download_button(
-            label="Скачать расчёт к иску",
-            data=st.session_state.form_data['lawsuite_table'],
-            file_name="Расчёт к иску.docx",
+                with col2:
+                    st.download_button(
+                        label="Скачать расчёт к иску",
+                        data=st.session_state.form_data['lawsuite_table'],
+                        file_name="Расчёт к иску.docx",
 
-        )
+                    )
 
