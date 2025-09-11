@@ -5,6 +5,7 @@ from docx import Document
 from docx.table import Table
 
 from DocxRedactor import DocxRedactor
+from datetime import datetime
 
 
 class CalculationClaimGenerator:
@@ -47,8 +48,8 @@ class CalculationClaimGenerator:
         На выходе возвращаются те же самые данные, но в структуре, удобной для записи в расчёт к иску.
         """
 
-        # with open("temp.json", "w") as file:
-        #     json.dump(contracts, file, ensure_ascii=False, indent=4)
+        with open("temp.json", "w") as file:
+            json.dump(contracts, file, ensure_ascii=False, indent=4)
 
         converted_contracts = {"contracts": []}
 
@@ -617,6 +618,7 @@ class CalculationClaimGenerator:
         to_replace = {
             "/*цена иска*/": self.config2["lawsuit_info"]["cost"],
             "/*госпошлина*/": self.config2["lawsuit_info"]["tax"],
+            "/*текущая дата*/": datetime.strptime(self.config2["current_date"], "%Y-%m-%d").strftime("%d.%m.%Y")
         }
 
         for paragraph in self.doc.paragraphs:
