@@ -124,6 +124,8 @@ with col1 :
             'claim_uploaded_file':None,
             'debt_certificate_file':None
         }
+            st.session_state.form_data['flag'] = False
+            on_change_handler()
             st.rerun()
 
 with col2:
@@ -134,6 +136,8 @@ with col2:
         else:
             del st.session_state.complects[st.session_state.form_data['num_complects']]
             st.session_state.form_data['num_complects'] -= 1
+            st.session_state.form_data['flag']
+            on_change_handler()
             st.rerun()
 
 
@@ -412,22 +416,22 @@ if st.session_state.form_data['flag2']:
                 # st.error(f"Ошибка: {second_response.status_code}")
                 # st.text(second_response.text)
 
-            if st.session_state.form_data['flag3'] and st.session_state.form_data['forms_changed']==False:
-                col1, col2, = st.columns(2)
+if st.session_state.form_data['flag3'] and st.session_state.form_data['forms_changed']==False:
+    col1, col2, = st.columns(2)
 
-                with col1:
-                    st.download_button(
-                        label="Скачать иск",
-                        data=st.session_state.form_data['lawsuit'],
-                        file_name="Иск.docx",
+    with col1:
+        st.download_button(
+            label="Скачать иск",
+            data=st.session_state.form_data['lawsuit'],
+            file_name="Иск.docx",
 
-                    )
+        )
 
-                with col2:
-                    st.download_button(
-                        label="Скачать расчёт к иску",
-                        data=st.session_state.form_data['lawsuite_table'],
-                        file_name="Расчёт к иску.docx",
+    with col2:
+        st.download_button(
+            label="Скачать расчёт к иску",
+            data=st.session_state.form_data['lawsuite_table'],
+            file_name="Расчёт к иску.docx",
 
-                    )
+        )
 

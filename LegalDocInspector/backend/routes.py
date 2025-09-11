@@ -88,7 +88,7 @@ def parse():
         result = table_parser.parse()
         defendant_inn = table_parser.parse_defendant_inn()
         contract_number = table_parser.parse_contract_number()
-        print(contract_number)
+        # print(contract_number)
         table_parser.close()
 
         # LLM parser
@@ -153,7 +153,7 @@ def calc_penalty():
         company_type=data['company_type'],
         current_date=data['end_date']
     )
-    print(converted_data , '\n' , calculated_results)
+    # print(converted_data , '\n' , calculated_results)
     response['claim_data'] = converted_data
     response['calculator_list']  = calculated_results
     return jsonify(response), 200
