@@ -132,8 +132,11 @@ class ClaimGenerator:
 
 
     def second_table_fill_common_info(self, table: Table):
-        self.borders("сумма долга"),
-        self.config["table_info"]["all_debt"]
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(2)[2].paragraphs[0],
+            self.borders("сумма долга"),
+            self.config["table_info"]["all_debt"]
+        )
 
 
     def second_table_fill_simple_row(self, table: Table, row_index: int, contract_index: int):
@@ -433,7 +436,7 @@ class ClaimGenerator:
 
     def fill_third_list(self):
         rows_n = len(self.config["contracts_info"]) # Кол-во элементов в списке договоров
-        template_text = "по Договору № 05.403297-ТЭ от 01.08.2017:"
+        template_text = "по Договору 05.403297-ТЭ от 01.08.2017:"
         start = self.redactor.find_paragraph_consists_of_text(template_text)   # Индекс первого абзаца списка
 
         # Список индексов тех параграфов, которые нужно удалить после цикла. Почему их нужно удалять?
