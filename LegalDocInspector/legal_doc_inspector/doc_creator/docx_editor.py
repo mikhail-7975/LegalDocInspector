@@ -68,7 +68,7 @@ class DocxRedactor:
 
 
     def find_paragraph_contains_text(self, search_text: str) -> int:
-        """Находит первый параграф, который содержит искомый текст. 
+        """Находит первый параграф, который содержит искомый текст.
         Параграф не обязательно должен состоять только из этого текста
 
         Args:
@@ -231,31 +231,31 @@ class DocxRedactor:
         # Copy paragraph formatting
         source_format = source_paragraph.paragraph_format
         target_format = target_paragraph.paragraph_format
-        
+
         # Копируем отступы
         if source_paragraph.paragraph_format.left_indent is not None:
             target_paragraph.paragraph_format.left_indent = source_paragraph.paragraph_format.left_indent
-        
+
         if source_paragraph.paragraph_format.right_indent is not None:
             target_paragraph.paragraph_format.right_indent = source_paragraph.paragraph_format.right_indent
-        
+
         if source_paragraph.paragraph_format.first_line_indent is not None:
             target_paragraph.paragraph_format.first_line_indent = source_paragraph.paragraph_format.first_line_indent
-        
+
         # Копируем интервалы
         if source_paragraph.paragraph_format.space_before is not None:
             target_paragraph.paragraph_format.space_before = source_paragraph.paragraph_format.space_before
-        
+
         if source_paragraph.paragraph_format.space_after is not None:
             target_paragraph.paragraph_format.space_after = source_paragraph.paragraph_format.space_after
-        
+
         # Копируем межстрочный интервал
         target_paragraph.paragraph_format.line_spacing = source_paragraph.paragraph_format.line_spacing
         target_paragraph.paragraph_format.line_spacing_rule = source_paragraph.paragraph_format.line_spacing_rule
-        
+
         # Копируем выравнивание
         target_paragraph.alignment = source_paragraph.alignment
-        
+
         # Копируем стиль (если есть)
         if source_paragraph.style:
             target_paragraph.style = source_paragraph.style
@@ -311,6 +311,16 @@ class DocxRedactor:
         target_run.font.color.rgb = source_run.font.color.rgb if source_run.font.color else None
 
 
+    def paragraph_text_set_bold(self, target_paragraph: Paragraph):
+        for run in target_paragraph.runs:
+            # run.bold = True
+            self.run_text_set_bold(run)
+
+
+    def run_text_set_bold(self, target_run: Run):
+        target_run.bold = True
+
+
     def delete_paragraph(self, index: int) -> None:
         """
         Удаляет параграф из документа по заданному индексу.
@@ -343,8 +353,8 @@ class DocxRedactor:
 
         Args:
             table (Table): Таблица, в которую надо вставить новую строку
-            index (int, optional): Позиция, куда ставим новую строку. 
-            Если не передать этот параметр, то вставка осуществляется в 
+            index (int, optional): Позиция, куда ставим новую строку.
+            Если не передать этот параметр, то вставка осуществляется в
             конец таблицы. Defaults to None.
 
         Returns:
@@ -538,7 +548,7 @@ class DocxRedactor:
     def set_vertical_alignment_to_cell(self, cell: _Cell, align: str = 'center'):
         """
         Устанавливает вертикальное выравнивание ячейки.
-        
+
         Args:
             cell: объект ячейки python-docx (например, table.cell(0, 0))
             align: 'top', 'center', 'bottom'
@@ -568,7 +578,7 @@ class DocxRedactor:
 
         Args:
             table (Table): Таблица, из которой нужно удалить строку.
-            index (int): Индекс строки, которую нужно удалить. 
+            index (int): Индекс строки, которую нужно удалить.
                         Поддерживает отрицательные индексы (например, -1 — последняя строка).
 
         Raises:
