@@ -5,12 +5,13 @@ from docx import Document
 from docx.table import Table
 
 from LegalDocInspector.legal_doc_inspector.doc_creator.docx_editor import DocxRedactor
+from datetime import datetime
 
 
 class CalculationClaimGenerator:
     """
     Класс для создания документа с расчётом для иска
-
+    
     """
     def __init__(self) -> None:
         self.redactor: DocxRedactor = DocxRedactor()
@@ -43,12 +44,12 @@ class CalculationClaimGenerator:
     def convert_data_from_calculator(self, contracts):
         """На вход метод принимает данные из калькулятора (списком, т.е. в contracts может находится несколько
         наборов данных полученных от калькулятора), каждый элемент списка - это данные об одном контракте.
-
+        
         На выходе возвращаются те же самые данные, но в структуре, удобной для записи в расчёт к иску.
         """
 
-        # with open("temp.json", "w") as file:
-        #     json.dump(contracts, file, ensure_ascii=False, indent=4)
+        with open("temp.json", "w") as file:
+            json.dump(contracts, file, ensure_ascii=False, indent=4)
 
         converted_contracts = {"contracts": []}
 
@@ -161,7 +162,7 @@ class CalculationClaimGenerator:
         """
         template_offset - это индекс, по которому находится строка-шаблон header-строки. Он вычисляется
         следующим образом. 4 - это первые четыре строки в таблице, они содержат информацию о договоре.
-        filled_rows - количество строк, которые заполнены в таблице (в это число не входят первые четыре
+        filled_rows - количество строк, которые заполнены в таблице (в это число не входят первые четыре 
         строки в таблице, которые не относятся не к каким периодам)
         """
         template_offset_1 = 4 + filled_rows
@@ -258,9 +259,9 @@ class CalculationClaimGenerator:
         Args:
             table (Table): Таблица, в которой происходят изменения
             source_row_index (int, optional): Индекс строки, которую копируем (она является шаблонной).
-            target_row_index (int, optional): Индекс, по которому вставляем копию строки. По
+            target_row_index (int, optional): Индекс, по которому вставляем копию строки. По 
             умолчанию вставляется сразу после шаблонной строки.
-
+            
             Update
             merge_flag - нужно ли присоединять строку к первому столбцу
         """
@@ -277,7 +278,7 @@ class CalculationClaimGenerator:
         Args:
             table (Table): Таблица, в которой происходят изменения
             source_row_index (int, optional): Индекс строки, которую копируем (она является шаблонной).
-            target_row_index (int, optional): Индекс, по которому вставляем копию строки. По
+            target_row_index (int, optional): Индекс, по которому вставляем копию строки. По 
             умолчанию вставляется сразу после шаблонной строки.
         """
         target_row_index = source_row_index if _target_row_index is None else _target_row_index
@@ -440,9 +441,9 @@ class CalculationClaimGenerator:
 
         Args:
             table (Table): Таблица, в которой происходят изменения
-            source_row_index (int, optional): Индекс строки, которую копируем (она является шаблонной).
+            source_row_index (int, optional): Индекс строки, которую копируем (она является шаблонной). 
             По умолчанию = 5.
-            target_row_index (int, optional): Индекс, по которому вставляем копию строки. По
+            target_row_index (int, optional): Индекс, по которому вставляем копию строки. По 
             умолчанию вставляется сразу после шаблонной строки.
         """
 
@@ -460,13 +461,13 @@ class CalculationClaimGenerator:
 
         table = self.redactor.get_table(1)
         # self.redactor.print_table(table)
-
+        
         # по сути число договоров
         n_contracts = len(self.config2["contracts_info"])
 
         # По смыслу, это количство уже заполненных строк в таблице. Начинаем не с 0, а с 1 потому что
-        # в таблице есть заголовочная строка, в которой ничего заполнять не нужна, но она есть сама
-        # по себе и её нужно учитывать. По сути, значение n_row равно индексу строки, которую мы будем
+        # в таблице есть заголовочная строка, в которой ничего заполнять не нужна, но она есть сама 
+        # по себе и её нужно учитывать. По сути, значение n_row равно индексу строки, которую мы будем 
         # заполнять на текущей итерации
         n_rows = 1
         for i, contract in enumerate(self.config2["contracts_info"]):
@@ -474,7 +475,8 @@ class CalculationClaimGenerator:
             if i < n_contracts - 1:
                 self.second_table_clone_row(table, n_rows)
 
-            contract_number = list(self.config2["table_info"].keys())[i]
+            # contract_number = list(self.config2["table_info"].keys())[i]
+            contract_number = self.config2["contracts_info"][i][1]
 
             if self.config2["table_info"][contract_number]["correcting_debt"] == "0,00":
                 self.fill_second_table_simple_row(table, n_rows, i)
@@ -617,6 +619,7 @@ class CalculationClaimGenerator:
         to_replace = {
             "/*цена иска*/": self.config2["lawsuit_info"]["cost"],
             "/*госпошлина*/": self.config2["lawsuit_info"]["tax"],
+            "/*текущая дата*/": datetime.strptime(self.config2["current_date"], "%Y-%m-%d").strftime("%d.%m.%Y")
         }
 
         for paragraph in self.doc.paragraphs:
