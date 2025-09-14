@@ -48,8 +48,8 @@ class CalculationClaimGenerator:
         На выходе возвращаются те же самые данные, но в структуре, удобной для записи в расчёт к иску.
         """
 
-        with open("temp.json", "w") as file:
-            json.dump(contracts, file, ensure_ascii=False, indent=4)
+        # with open("temp.json", "w") as file:
+        #     json.dump(contracts, file, ensure_ascii=False, indent=4)
 
         converted_contracts = {"contracts": []}
 
