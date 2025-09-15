@@ -97,7 +97,6 @@ def convert_data(calculated_data_list: list[dict], last_days_of_penalty: list[in
                 date = f"{month}.{year}"
                 for str_item in str_info:
                     if str_item['type'] == 'debt_info':
-                        print(str_item)
                         if (str_item['accrual_debt']) != "0,00":
                             current_accruals_months.append(date)
                         if (str_item['correcting_debt']) != "0,00":
@@ -129,8 +128,6 @@ def convert_data(calculated_data_list: list[dict], last_days_of_penalty: list[in
             "correcting_debt": contract_dict['correcting_debt'],
 
         }
-        print(current_accruals_months)
-        print(current_correcting_months)
     converted_data['table_info']['all_debt'] = str(all_debt)
     converted_data['table_info']['all_penalty'] = str(all_penalty)
     converted_data['table_info']['cost_of_lawsuit'] = str(cost_of_lawsuit)
