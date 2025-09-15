@@ -131,6 +131,8 @@ def parse():
 @app.route("/calculate_penalty", methods=["POST"])
 def calc_penalty():
     data = request.json
+    # with open(str(Path(g.config.save_data_folder, "result_parser.json")),"w") as json_file:
+    #     json.dump(result_json, json_file, indent=4, ensure_ascii=False)
     calculated_results = []
     last_days_of_penalty = []
     contract_points = []

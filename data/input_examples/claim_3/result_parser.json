@@ -1,0 +1,189 @@
+{
+    "table_parser_result": [
+        [
+            {
+                "Февраль 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 202443.58,
+                                "period": "02.2025"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 202443.58,
+                        "total_amount_of_payments": 0,
+                        "debt": 202443.58
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                },
+                "Март 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 200823.53,
+                                "period": "03.2025"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 200823.53,
+                        "total_amount_of_payments": 0,
+                        "debt": 200823.53
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                }
+            },
+            "№ 05.413208ГВС от 01.02.2012",
+            "(заглушка) В следующем фрагменте указан срок, в течение которого Исполнитель должен произвести оплату:\n\n\"5. 5. Исполнитель в срок до 18-го числа месяца, следующего за расчетным, производит оплату стоимости тепловой энергии, теплоносителя, указанной в счете. Датой оплаты считается дата поступления денежных средств на расчетный счет Теплоснабжающей организации.\"",
+            "(заглушка) тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))",
+            {
+                "claim_date": "01.01.2000",
+                "claim_number": "123456"
+            }
+        ],
+        [
+            {
+                "Декабрь 2024": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 456129.97,
+                                "period": "12.2024"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 456129.97,
+                        "total_amount_of_payments": 0,
+                        "debt": 456129.97
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                },
+                "Январь 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 452780.87,
+                                "period": "01.2025"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 452780.87,
+                        "total_amount_of_payments": 0,
+                        "debt": 452780.87
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [
+                            {
+                                "accrual": 8685.49,
+                                "period": "12.2024"
+                            }
+                        ],
+                        "total_amount_of_accruals": 8685.49,
+                        "total_amount_of_payments": 0,
+                        "debt": 8685.49
+                    }
+                },
+                "Февраль 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 452780.87,
+                                "period": "02.2025"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 452780.87,
+                        "total_amount_of_payments": 0,
+                        "debt": 452780.87
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [
+                            {
+                                "accrual": 8685.49,
+                                "period": "12.2024"
+                            }
+                        ],
+                        "total_amount_of_accruals": 8685.49,
+                        "total_amount_of_payments": 0,
+                        "debt": 8685.49
+                    }
+                },
+                "Март 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 452780.87,
+                                "period": "03.2025"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 452780.87,
+                        "total_amount_of_payments": 0,
+                        "debt": 452780.87
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [
+                            {
+                                "accrual": 8685.49,
+                                "period": "12.2024"
+                            }
+                        ],
+                        "total_amount_of_accruals": 8685.49,
+                        "total_amount_of_payments": 0,
+                        "debt": 8685.49
+                    }
+                }
+            },
+            "№ 05.413208-ТЭ от 01.02.2012",
+            "(заглушка) В следующем фрагменте указан срок, в течение которого Исполнитель должен произвести оплату:\n\n\"5. 5. Исполнитель в срок до 18-го числа месяца, следующего за расчетным, производит оплату стоимости тепловой энергии, теплоносителя, указанной в счете. Датой оплаты считается дата поступления денежных средств на расчетный счет Теплоснабжающей организации.\"",
+            "(заглушка) тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))",
+            {
+                "claim_date": "01.01.2000",
+                "claim_number": "123456"
+            }
+        ]
+    ],
+    "results_of_name_parser": {
+        "defendant_info": {
+            "inn": "7722165445",
+            "full_name": "ТОВАРИЩЕСТВО СОБСТВЕННИКОВ ЖИЛЬЯ «ТСЖ »НИЖЕГОРОДСКОЕ\"",
+            "short_name": "«ТСЖ »НИЖЕГОРОДСКОЕ\"",
+            "address": "109052, Москва, ул. Нижегородская, д. 86ка офис 4 тп",
+            "kpp": "КПП 772201001",
+            "ogrn": "1037739540189"
+        }
+    }
+}
