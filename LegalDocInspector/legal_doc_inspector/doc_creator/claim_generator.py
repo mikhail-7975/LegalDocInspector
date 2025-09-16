@@ -546,12 +546,17 @@ class ClaimGenerator:
             "/*истец сокращенное имя*/": self.config["plaintiff_info"]["short_name"],
             "/*ответчик полное имя*/": self.config["defendant_info"]["full_name"],
             "/*ответчик сокращенное имя*/": self.config["defendant_info"]["short_name"],
-            "/*тип договора*/": self.config["lawsuit_info"]["service_type"],
+            "/*тип договора*/": self.config["contract_types_templates"]["contract_type"],
+            "/*тип договора2*/": self.config["contract_types_templates"]["contract_type2"],
             "/*сумма долга*/": self.config["table_info"]["all_debt"],
             "/*истец огрн*/": self.config["plaintiff_info"]["ogrn"],
             "/*истец инн*/": self.config["plaintiff_info"]["inn"],
             "/*ответчик огрн*/": self.config["defendant_info"]["ogrn"],
             "/*ответчик инн*/": self.config["defendant_info"]["inn"],
+            "/*поставляемые ресурсы*/": self.config["contract_types_templates"]["supplied_resources"],
+            "/*поставляемые ресурсы2*/": self.config["contract_types_templates"]["supplied_resources2"],
+            "/*поставляемые ресурсы3*/": self.config["contract_types_templates"]["supplied_resources3"],
+            "/*поставляемые ресурсы4*/": self.config["contract_types_templates"]["supplied_resources4"]
         }
 
         for paragraph in self.doc.paragraphs:

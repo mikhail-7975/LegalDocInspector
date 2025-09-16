@@ -132,8 +132,56 @@ def convert_data(calculated_data_list: list[dict], last_days_of_penalty: list[in
     converted_data['table_info']['all_penalty'] = str(all_penalty)
     converted_data['table_info']['cost_of_lawsuit'] = str(cost_of_lawsuit)
 
-
+    converted_data["contract_types_templates"] = get_templates_of_smt(converted_data["contracts_info"])
 
 
     return converted_data
 
+
+
+def get_templates_of_smt(contracts):
+    """
+    Это вспомогательная функция. Она нужна чтобы определить, какой иск генерировать. 
+    Сейчас есть три вида: ТЭ, ГВС и ТЭ + ГВС. В зависимости от этого, используются 
+    разные шаблоны абзацев.
+    """
+    templates = dict()
+
+    contruct_types = []
+    for contract in contracts:
+        contract_number = contract[1].split(" ")[1]
+
+        if contract_number.endswith("ГВС"):
+            if "ГВС" not in contruct_types:
+                contruct_types.append("ГВС")
+
+        elif contract_number.endswith("ТЭ"):
+            if "ТЭ" not in contruct_types:
+                contruct_types.append("ТЭ")
+
+    # Выбираем нужные шаблоны
+    if ("ГВС" in contruct_types) and ("ТЭ" in contruct_types):
+        templates["supplied_resources"] = "тепловой энергии и/или теплоносителя (далее – ТЭ), горячей воды через присоединенные сети горячего водоснабжения (далее – ГВС)"
+        templates["contract_type"] = "тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС)"
+        templates["contract_type2"] = "Договорами тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС)"
+        templates["supplied_resources2"] = "тепловой энергии/теплоносителя, горячей воды"
+        templates["supplied_resources3"] = "тепловую энергию/теплоноситель, горячую воду"
+        templates["supplied_resources4"] = "ТЭ и ГВС"
+
+    elif "ТЭ" in contruct_types:
+        templates["supplied_resources"] = "тепловой энергии и/или теплоносителя (далее – ТЭ)"
+        templates["contract_type"] = "тепловую энергию/теплоноситель (ТЭ)"
+        templates["contract_type2"] = "Договором тепловую энергию/теплоноситель (ТЭ)"
+        templates["supplied_resources2"] = "тепловой энергии/теплоносителя"
+        templates["supplied_resources3"] = "тепловую энергию/теплоноситель"
+        templates["supplied_resources4"] = "ТЭ"
+
+    elif "ГВС" in contruct_types:
+        templates["supplied_resources"] = "горячей воды через присоединенные сети горячего водоснабжения (далее – ГВС)"
+        templates["contract_type"] = "горячую воду (ГВС)"
+        templates["contract_type2"] = "Договором горячую воду (ГВС)"
+        templates["supplied_resources2"] = "горячей воды"
+        templates["supplied_resources3"] = "горячую воду"
+        templates["supplied_resources4"] = "ГВС"
+
+    return templates

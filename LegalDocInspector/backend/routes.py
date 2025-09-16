@@ -29,7 +29,7 @@ from LegalDocInspector.legal_doc_inspector.utils.parse_info_by_inn import parse_
 from LegalDocInspector.legal_doc_inspector.doc_creator.calculation_claim_generator import CalculationClaimGenerator
 from LegalDocInspector.legal_doc_inspector.doc_creator.claim_generator import ClaimGenerator
 
-from .llm_functions import parse_claim, parse_contract
+# from .llm_functions import parse_claim, parse_contract
 # app.secret_key = os.urandom(30).hex()
 @app.route("/")
 def home():
@@ -93,15 +93,15 @@ def parse():
 
         # LLM parser
 
-        llm_contract_number, service_type_info, overdue_date_info = parse_contract(contract_file_path)
-        # print("contract parser done!")
-        plaintiff_inn, claim_number, claim_date = parse_claim(claim_file_path)
-        claim_info = {"claim_date": str(claim_date), "claim_number": str(claim_number)}
-        # print("claim parser done!")
+        # llm_contract_number, service_type_info, overdue_date_info = parse_contract(contract_file_path)
+        # # print("contract parser done!")
+        # plaintiff_inn, claim_number, claim_date = parse_claim(claim_file_path)
+        # claim_info = {"claim_date": str(claim_date), "claim_number": str(claim_number)}
+        # # print("claim parser done!")
 
-        # overdue_date_info  = "(заглушка) В следующем фрагменте указан срок, в течение которого Исполнитель должен произвести оплату:\n\n\"5. 5. Исполнитель в срок до 18-го числа месяца, следующего за расчетным, производит оплату стоимости тепловой энергии, теплоносителя, указанной в счете. Датой оплаты считается дата поступления денежных средств на расчетный счет Теплоснабжающей организации.\""
-        # service_type_info = "(заглушка) тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))"
-        # claim_info = {"claim_date": '01.01.2000', "claim_number": '123456'}
+        overdue_date_info  = "(заглушка) В следующем фрагменте указан срок, в течение которого Исполнитель должен произвести оплату:\n\n\"5. 5. Исполнитель в срок до 18-го числа месяца, следующего за расчетным, производит оплату стоимости тепловой энергии, теплоносителя, указанной в счете. Датой оплаты считается дата поступления денежных средств на расчетный счет Теплоснабжающей организации.\""
+        service_type_info = "(заглушка) тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))"
+        claim_info = {"claim_date": '01.01.2000', "claim_number": '123456'}
 
         parsing_table_results.append((result, contract_number, overdue_date_info, service_type_info, claim_info))
 
