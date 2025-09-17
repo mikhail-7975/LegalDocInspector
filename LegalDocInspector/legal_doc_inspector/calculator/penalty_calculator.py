@@ -330,6 +330,70 @@ def _split_stage_by_date(stage:dict, split_date: datetime.datetime, split_paymen
         return result, str(StrictFormattedMoney(original_debt) - all_split_payment), all_split_payment
 
 
+
+def _split_stage_by_date_correcting(stage:dict, split_date: datetime.datetime, split_payment:StrictFormattedMoney):
+        """
+        Делит один этап на два подэтапа по заданной дате.
+
+        :param stage: исходный этап с ключами 'start', 'end', 'days', 'rate'
+        :param split_date: дата, по которую делится этап (включительно в первый подэтап)
+        :return: список из одного или двух подэтапов
+        """
+        stage_start, stage_end, _ = stage['period']
+        stage_start, stage_end = datetime.datetime.strptime(stage_start, '%d.%m.%Y'), datetime.datetime.strptime(stage_end, '%d.%m.%Y')
+
+        _ , original_rate = stage['penalty_period_info']
+        original_debt = stage.get('debt', StrictFormattedMoney(0))
+        if split_date < stage_start or split_date > stage_end:
+            raise ValueError("Split date is outside the stage period.")
+
+        # Первый подэтап: от начала до split_date включительно
+        substage1_start = stage_start
+        substage1_end = split_date
+        substage1_days = (substage1_end - substage1_start).days + 1
+
+        # print(original_debt)
+        # print(split_payment)
+
+        substage1 = {
+            'debt': str(original_debt),
+            'period': (substage1_start.strftime("%d.%m.%Y"), substage1_end.strftime("%d.%m.%Y"), substage1_days),
+            'type': 'penalty_period',
+            'penalty_period_info': ("9,5 %", original_rate),
+            'text':None,
+        }
+
+        # Второй подэтап: от следующего дня после split_date до конца этапа
+        substage2_start = split_date + datetime.timedelta(days=1)
+        substage2_end = stage_end
+
+        substage2_days = (substage2_end - substage2_start).days + 1
+        result = [substage1]
+
+
+        payment_stage = {
+            'debt': str(split_payment),
+            'period': (split_date.strftime("%d.%m.%Y"), None, None),
+            'penalty_period_info': None,
+            'type': 'correcting',
+            'text': 'Годовая корректировка долга',
+        }
+
+        result.append(payment_stage)
+        new_debt = StrictFormattedMoney(original_debt) + StrictFormattedMoney(split_payment)
+        if substage2_days > 0:
+            result.append({
+                'debt': str(new_debt),
+                'period': (substage2_start.strftime("%d.%m.%Y"), substage2_end.strftime("%d.%m.%Y"), substage2_days),
+                'penalty_period_info': ("9,5 %", original_rate),
+                'type': 'penalty_period',
+                'text':None,
+            })
+
+
+        return result, str(new_debt)
+
+
 def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, end_date:str) -> dict:
     all_penalty = StrictFormattedMoney(0)
     all_debt = StrictFormattedMoney(0)
@@ -484,11 +548,12 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
                             lb, ub, _  = penalty_period['period']
                             lb, ub = datetime.datetime.strptime(lb, '%d.%m.%Y'), datetime.datetime.strptime(ub, '%d.%m.%Y')
                             if correcting_date >= lb and correcting_date <= ub:
-                                new_periods = periods[:i] + [periods_elem] + periods[i+1:]
+                                splitted_periods, new_month_debt = _split_stage_by_date_correcting(penalty_period, correcting_date, debt)
+                                new_periods = periods[:i] + splitted_periods  + periods[i+1:]
                                 flag = True
                                 for next_period in new_periods[i+1:]:
                                     if next_period['type'] == 'penalty_period':
-                                        next_period['debt'] = str(StrictFormattedMoney(next_period['debt']) - debt)
+                                        next_period['debt'] = new_month_debt
 
         if str(month_accrual+month_correcting) == "0,00" :
             del res[month_name]
