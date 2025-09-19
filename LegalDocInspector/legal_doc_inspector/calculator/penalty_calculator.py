@@ -439,15 +439,14 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
                     if accrual_or_adjustment == 'accrual':
                         month_accrual += StrictFormattedMoney(accrual['accrual'])
                     else:
-                        print('lox')
                         month_correcting += StrictFormattedMoney(accrual['accrual'])
-                    res[month_name].append({
-                        'debt': str(StrictFormattedMoney(accrual['accrual'])),
-                        'period': (_add_last_day_of_month(accrual['period']), None, None),
-                        'type': 'debt_accrual',
-                        'penalty_period_info': None,
-                        'text': text
-                    })
+                res[month_name].append({
+                    'debt': str(month_accrual),
+                    'period': (_add_last_day_of_month(accrual['period']), None, None),
+                    'type': 'debt_accrual',
+                    'penalty_period_info': None,
+                    'text': text
+                })
             # обработка доли годовой корректировки
             if accrual_or_adjustment == 'adjustment':
                 if len(parsed_info['additionals'])>0:
@@ -555,9 +554,23 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
                                     if next_period['type'] == 'penalty_period':
                                         next_period['debt'] = new_month_debt
 
-        if str(month_accrual+month_correcting) == "0,00" :
-            del res[month_name]
-            continue
+
+                        if not flag:
+                            payment_stage = {
+                                'debt': str(debt),
+                                'period': (correcting_date.strftime("%d.%m.%Y")),
+                                'penalty_period_info': None,
+                                'type': 'correcting',
+                                'text': 'Годовая корректировка долга',
+                            }
+                            new_periods = [payment_stage] + periods
+                            for next_period in new_periods[1:]:
+                                    if next_period['type'] == 'penalty_period':
+                                        next_period['debt'] = str(StrictFormattedMoney(next_period['debt']) + debt)
+                        periods = new_periods
+
+
+
         periods, result_penalty, result_debt = _calculate_penalty_for_each_period(periods)
         res[month_name]+= periods
         res[month_name].append({
