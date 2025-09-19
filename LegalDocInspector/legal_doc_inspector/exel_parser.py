@@ -142,7 +142,10 @@ class TableParser:
                 #     periods[current_month]["accrual"][type_operation].append({"period": period, "accrual": accrual})
                 # elif block == 2:
                 #     periods[current_month]["adjustment"][type_operation].append({"period": period, "accrual": accrual})
-                periods[current_month][self.block_type(block)][type_operation].append({"accrual": accrual, "period": period})
+                if self.check_if_is_correcting(row):
+                    periods[current_month]["accrual"]["additionals"].append({"accrual": accrual, "period": period})
+                else:
+                    periods[current_month][self.block_type(block)][type_operation].append({"accrual": accrual, "period": period})
 
             elif row_type == 5:
                 date = self.parse_payment_date(row)
@@ -162,6 +165,9 @@ class TableParser:
                 periods[current_month][self.block_type(block)]["total_amount_of_payments"] = self.parse_total_amount_of_paymnets(row)
 
             row += 1
+
+        # with open("temp_table.json", "w") as file:
+        #     json.dump(periods, file, ensure_ascii=False, indent=4)
 
         return periods
 
@@ -326,3 +332,11 @@ class TableParser:
     def parse_defendant_inn(self) -> str | None:
         inn = self.reader.cell(6, 4)
         return None if pd.isna(inn) else str(inn)
+
+
+    def check_if_is_correcting(self, row):
+        eighth = self.reader.cell(row, 7)
+        checking_pattern = "Годовая корректировка обязательств по оплате до факта начислений"
+        if (not pd.isna(eighth)) and (checking_pattern.lower() in eighth.lower()):
+            return True
+        return False
