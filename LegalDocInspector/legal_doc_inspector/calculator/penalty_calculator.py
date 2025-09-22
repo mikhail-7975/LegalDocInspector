@@ -584,7 +584,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
                         if not flag:
                             payment_stage = {
                                 'debt': str(debt),
-                                'period': (correcting_date.strftime("%d.%m.%Y")),
+                                'period': (correcting_date.strftime("%d.%m.%Y"), None , None),
                                 'penalty_period_info': None,
                                 'type': 'correcting',
                                 'text': 'Годовая корректировка долга',
