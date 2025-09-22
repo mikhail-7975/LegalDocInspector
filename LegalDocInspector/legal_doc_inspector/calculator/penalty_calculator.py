@@ -458,6 +458,9 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
 
                                     periods = new_periods
 
+        if str(month_accrual+month_correcting) == "0,00" :
+            del res[month_name]
+            continue
         periods, result_penalty, result_debt = _calculate_penalty_for_each_period(periods)
         res[month_name]+= periods
         res[month_name].append({
@@ -465,6 +468,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
             'type': 'field',
             'penalty': str(result_penalty)
         })
+        
         all_penalty+=result_penalty
         all_debt+=result_debt
 
