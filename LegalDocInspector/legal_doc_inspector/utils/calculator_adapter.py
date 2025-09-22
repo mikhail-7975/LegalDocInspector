@@ -6,9 +6,57 @@
 """
 from uuid import uuid4
 import datetime
+from dateutil.relativedelta import relativedelta
 
 from LegalDocInspector.legal_doc_inspector.utils.strict_formatted_money import StrictFormattedMoney
 from LegalDocInspector.legal_doc_inspector.utils.convert_month import convert_month
+
+
+def group_consecutive_months(dates_list):
+    # Преобразуем строки в объекты datetime и сортируем
+    date_objects = []
+    for date_str in dates_list:
+        month, year = map(int, date_str.split('.'))
+        date_objects.append(datetime.datetime(year, month, 1))
+    
+    date_objects.sort()
+    
+    # Группируем последовательные даты
+    groups = []
+    current_group = []
+    
+    for i, date in enumerate(date_objects):
+        if not current_group:
+            current_group.append(date)
+        else:
+            # Проверяем, является ли текущая дата следующей за предыдущей
+            prev_date = date_objects[i-1]
+            expected_next_date = prev_date + relativedelta(months=1)
+            
+            if date == expected_next_date:
+                current_group.append(date)
+            else:
+                groups.append(current_group)
+                current_group = [date]
+    
+    if current_group:
+        groups.append(current_group)
+    
+    # Форматируем результат
+    result_parts = []
+    
+    for group in groups:
+        if len(group) == 1:
+            # Одиночная дата
+            result_parts.append(group[0].strftime('%m.%Y'))
+        else:
+            # Диапазон дат
+            start_date = group[0]
+            end_date = group[-1]
+            result_parts.append(f"{start_date.strftime('%m.%Y')}-{end_date.strftime('%m.%Y')}")
+    
+    return ', '.join(result_parts)
+
 
 def convert_data(calculated_data_list: list[dict], last_days_of_penalty: list[int | str], contract_points:list[str], company_type:str, current_date:str) -> dict:
     converted_data = {}
@@ -48,17 +96,18 @@ def convert_data(calculated_data_list: list[dict], last_days_of_penalty: list[in
                 month = convert_month(month)
                 date = f"{month}.{year}"
                 for str_item in str_info:
-                    if str_item['type'] == 'debt_accrual':
-                        current_accruals_months.append(date)
-                    if str_item['type'] == 'correcting':
-                        current_correcting_months.append(date)
+                    if str_item['type'] == 'debt_info':
+                        if (str_item['accrual_debt']) != "0,00":
+                            current_accruals_months.append(date)
+                        if (str_item['correcting_debt']) != "0,00":
+                            current_correcting_months.append(date)
 
         debt_penalty = debt + penalty
         all_debt+=debt
         all_penalty+=penalty
         cost_of_lawsuit += debt_penalty
-        contract_dict['contract_periods'] = f"{current_accruals_months[0]}-{current_accruals_months[-1]}"
-        contract_dict['contract_periods_correcting'] = f"{current_correcting_months[0]} - {current_correcting_months[-1]}" if len(current_correcting_months)>0 else None
+        contract_dict['contract_periods'] = group_consecutive_months(current_accruals_months)
+        contract_dict['contract_periods_correcting'] = group_consecutive_months(current_correcting_months)
         contract_dict['debt'] = str(debt)
         contract_dict['penalty'] = str(penalty)
         contract_dict['debt_penalty'] = str(debt_penalty)
@@ -79,7 +128,6 @@ def convert_data(calculated_data_list: list[dict], last_days_of_penalty: list[in
             "correcting_debt": contract_dict['correcting_debt'],
 
         }
-
     converted_data['table_info']['all_debt'] = str(all_debt)
     converted_data['table_info']['all_penalty'] = str(all_penalty)
     converted_data['table_info']['cost_of_lawsuit'] = str(cost_of_lawsuit)
