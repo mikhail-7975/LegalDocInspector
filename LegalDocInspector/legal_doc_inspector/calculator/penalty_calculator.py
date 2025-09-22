@@ -533,6 +533,32 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
                     new_periods = periods.copy()
                     for additional in parsed_info['additionals']:
                         debt = StrictFormattedMoney(additional['accrual'])
+
+                        period = _add_last_day_of_month(additional['period'])
+                        periods_elem = dict()
+                        month_accrual += debt
+
+                        correcting_date = datetime.datetime.strptime(period, '%d.%m.%Y')
+                        flag = False
+                        for i, penalty_period in enumerate(periods):
+                            lb, ub, _  = penalty_period['period']
+                            lb, ub = datetime.datetime.strptime(lb, '%d.%m.%Y'), datetime.datetime.strptime(ub, '%d.%m.%Y')
+                            if correcting_date >= lb and correcting_date <= ub:
+                                splitted_periods, new_month_debt = _split_stage_by_date_correcting(penalty_period, correcting_date, debt)
+                                new_periods = periods[:i] + splitted_periods  + periods[i+1:]
+                                flag = True
+                                for next_period in new_periods[i+1:]:
+                                    if next_period['type'] == 'penalty_period':
+                                        next_period['debt'] = new_month_debt
+
+        # обработка годовых корректировок
+        for accrual_or_adjustment, parsed_info in month_parsed_info.items():
+            if accrual_or_adjustment == 'accrual':
+                if len(parsed_info['additionals'])>0:
+                    text = f"Годовая корректировка обязательств"
+                    new_periods = periods.copy()
+                    for additional in parsed_info['additionals']:
+                        debt = StrictFormattedMoney(additional['accrual'])
                         period = _add_last_day_of_month(additional['period'])
                         periods_elem = dict()
                         periods_elem['type'] = 'correcting'
