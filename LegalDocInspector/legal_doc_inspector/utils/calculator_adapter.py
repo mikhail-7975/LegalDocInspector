@@ -167,6 +167,12 @@ def get_templates_of_smt(contracts):
         templates["supplied_resources2"] = "тепловой энергии/теплоносителя, горячей воды"
         templates["supplied_resources3"] = "тепловую энергию/теплоноситель, горячую воду"
         templates["supplied_resources4"] = "ТЭ и ГВС"
+        templates["plural_template_1"] = "Договорами"
+        templates["plural_template_2"] = "Договорам"
+        templates["plural_template_3"] = "названных Договорах"
+        templates["plural_template_4"] = "Договоров"
+        templates["plural_template_5"] = "указанных Договоров"
+        templates["plural_template_6"] = "названным Договорам"
 
     elif "ТЭ" in contruct_types:
         templates["supplied_resources"] = "тепловой энергии и/или теплоносителя (далее – ТЭ)"
@@ -175,6 +181,12 @@ def get_templates_of_smt(contracts):
         templates["supplied_resources2"] = "тепловой энергии/теплоносителя"
         templates["supplied_resources3"] = "тепловую энергию/теплоноситель"
         templates["supplied_resources4"] = "ТЭ"
+        templates["plural_template_1"] = "Договором"
+        templates["plural_template_2"] = "Договору"
+        templates["plural_template_3"] = "названном Договоре"
+        templates["plural_template_4"] = "Договора"
+        templates["plural_template_5"] = "указанного Договора"
+        templates["plural_template_6"] = "названному Договору"
 
     elif "ГВС" in contruct_types:
         templates["supplied_resources"] = "горячей воды через присоединенные сети горячего водоснабжения (далее – ГВС)"
@@ -183,5 +195,11 @@ def get_templates_of_smt(contracts):
         templates["supplied_resources2"] = "горячей воды"
         templates["supplied_resources3"] = "горячую воду"
         templates["supplied_resources4"] = "ГВС"
+        templates["plural_template_1"] = "Договором"
+        templates["plural_template_2"] = "Договору"
+        templates["plural_template_3"] = "названном Договоре"
+        templates["plural_template_4"] = "Договора"
+        templates["plural_template_5"] = "указанного Договора"
+        templates["plural_template_6"] = "названному Договору"
 
     return templates
