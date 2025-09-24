@@ -391,7 +391,7 @@ class ClaimGenerator:
 
     def fill_first_list(self):
         rows_n = len(self.config["contracts_info"]) # Кол-во элементов в списке договоров
-        template_text = f"раздел {self.borders('номер раздела')}, в том числе пункт {self.borders('пункт')} договора № {self.borders('номер договора')}"
+        template_text = f"раздел {self.borders('номер раздела')}, в том числе пункт {self.borders('пункт')} договора {self.borders('номер договора')}"
         start = self.redactor.find_paragraph_consists_of_text(template_text)   # Индекс первого абзаца списка
 
         for i in range(rows_n):
