@@ -556,11 +556,19 @@ class ClaimGenerator:
             "/*поставляемые ресурсы*/": self.config["contract_types_templates"]["supplied_resources"],
             "/*поставляемые ресурсы2*/": self.config["contract_types_templates"]["supplied_resources2"],
             "/*поставляемые ресурсы3*/": self.config["contract_types_templates"]["supplied_resources3"],
-            "/*поставляемые ресурсы4*/": self.config["contract_types_templates"]["supplied_resources4"]
+            "/*поставляемые ресурсы4*/": self.config["contract_types_templates"]["supplied_resources4"],
+            "/*мн.ч.*/": self.config["contract_types_templates"]["plural_template_1"],
+            "/*мн.ч.2*/": self.config["contract_types_templates"]["plural_template_2"],
+            "/*мн.ч.3*/": self.config["contract_types_templates"]["plural_template_3"],
+            "/*мн.ч.4*/": self.config["contract_types_templates"]["plural_template_4"],
+            "/*мн.ч.5*/": self.config["contract_types_templates"]["plural_template_5"],
+            "/*мн.ч.6*/": self.config["contract_types_templates"]["plural_template_6"],
         }
-
         for paragraph in self.doc.paragraphs:
+            runs = []
             for run in paragraph.runs:
+                runs.append(run.text)
                 for k, v in to_replace.items():
                     if k in run.text:
                         run.text = run.text.replace(k, v)
+            print(runs)

@@ -86,7 +86,34 @@ class StrictFormattedMoney:
 
         return StrictFormattedMoney(self.amount / Decimal(str(divisor)), self.currency)
 
-
+def sort_dict_by_months(data_dict):
+    """
+    Сортирует словарь по месяцам в хронологическом порядке
+    """
+    # Словарь для преобразования русских названий месяцев
+    month_order = {
+        'Январь': 1, 'Февраль': 2, 'Март': 3, 'Апрель': 4, 'Май': 5, 'Июнь': 6,
+        'Июль': 7, 'Август': 8, 'Сентябрь': 9, 'Октябрь': 10, 'Ноябрь': 11, 'Декабрь': 12
+    }
+    
+    def get_sort_key(month_year):
+        """
+        Извлекает ключ для сортировки из строки "Месяц Год"
+        """
+        try:
+            month_name, year = month_year.split()
+            month_num = month_order.get(month_name, 0)
+            return (int(year), month_num)
+        except (ValueError, AttributeError):
+            return (0, 0)
+    
+    # Сортируем ключи словаря
+    sorted_keys = sorted(data_dict.keys(), key=get_sort_key)
+    
+    # Создаем новый упорядоченный словарь
+    sorted_dict = {key: data_dict[key] for key in sorted_keys}
+    
+    return sorted_dict
 
 def _add_last_day_of_month(date_str):
     """
@@ -400,6 +427,9 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
     all_accrual_debt = StrictFormattedMoney(0)
     all_correcting_debt = StrictFormattedMoney(0)
     end_date = datetime.datetime.strptime(end_date, "%d.%m.%Y")
+    
+    parsed_data = sort_dict_by_months(parsed_data)
+    
     res = {
         'start_of_table' : {}
     }
@@ -595,8 +625,13 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
                                         next_period['debt'] = str(StrictFormattedMoney(next_period['debt']) + debt)
                         periods = new_periods
 
+        if str(month_accrual+month_correcting) == "0,00" :
 
-
+            del res[month_name]
+            continue
+        
+        
+        
         periods, result_penalty, result_debt = _calculate_penalty_for_each_period(periods)
         res[month_name]+= periods
         res[month_name].append({
@@ -606,7 +641,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
         })
 
         all_penalty+=result_penalty
-        all_debt+=result_debt
+        all_debt+= month_correcting + month_accrual
 
         res[month_name].append({
             'text': None,
