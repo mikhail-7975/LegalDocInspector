@@ -169,6 +169,10 @@ class TableParser:
         # with open("temp_table.json", "w") as file:
         #     json.dump(periods, file, ensure_ascii=False, indent=4)
 
+        for key, value in periods.copy().items():
+            if value['accrual']['debt'] in [0, None] and value['adjustment']['debt'] in [0, None]:
+                del periods[key]
+        
         return periods
 
 
