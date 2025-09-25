@@ -459,7 +459,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
         for accrual_or_adjustment, parsed_info in month_parsed_info.items():
 
             if accrual_or_adjustment == 'accrual':
-                text = f"Начисленно за период {parsed_info['accruals'][0]['period']}"
+                text = f"Начислено за период {parsed_info['accruals'][0]['period']}"
             if accrual_or_adjustment == 'adjustment':
                 text = f"Годовая корректировка обязательств"
             # обработка выставленных счетов
