@@ -49,6 +49,7 @@ class ClaimGenerator:
 
     def fill_file(self):
         # self.redactor.print_table(self.redactor.get_table(0))
+        self.prepare_data()
         self.fix_quotes()
         self.fill_first_table()
         self.fill_second_table()
@@ -567,6 +568,11 @@ class ClaimGenerator:
             pass
 
 
+        # # Эту штуку просто не получается запихать в calculator_adapter
+        # # потому что там еще нет service_type
+        # converted_data["lawsuit_info"]["service_type"]
+
+
         to_replace = {
             "/*цена иска*/": self.config["lawsuit_info"]["cost"],
             "/*госпошлина*/": self.config["lawsuit_info"]["tax"],
@@ -591,6 +597,7 @@ class ClaimGenerator:
             "/*мн.ч.4*/": self.config["contract_types_templates"]["plural_template_4"],
             "/*мн.ч.5*/": self.config["contract_types_templates"]["plural_template_5"],
             "/*мн.ч.6*/": self.config["contract_types_templates"]["plural_template_6"],
+            "/*нужная статья*/": self.config["contract_types_templates"]["service_article"],
         }
         for paragraph in self.doc.paragraphs:
             # runs = []
@@ -667,33 +674,65 @@ class ClaimGenerator:
     
     
     def fix_quotes(self):
-        # self.config['plaintiff_info']['full_name'] = self.make_normal_quotes(self.config['plaintiff_info']['full_name'])
-        # self.config['plaintiff_info']['short_name'] = self.make_normal_quotes(self.config['plaintiff_info']['short_name'])
-        # self.config['defendant_info']['full_name'] = self.make_normal_quotes(self.config['defendant_info']['full_name'])
-        # self.config['defendant_info']['short_name'] = self.make_normal_quotes(self.config['defendant_info']['short_name'])
-        pass
+        self.config['plaintiff_info']['full_name'] = self.normalize_quotes(self.config['plaintiff_info']['full_name'])
+        self.config['plaintiff_info']['short_name'] = self.normalize_quotes(self.config['plaintiff_info']['short_name'])
+        self.config['defendant_info']['full_name'] = self.normalize_quotes(self.config['defendant_info']['full_name'])
+        self.config['defendant_info']['short_name'] = self.normalize_quotes(self.config['defendant_info']['short_name'])
+        # pass
 
 
-    def make_normal_quotes(self, string: str) -> str:
-        quotes = [("\'", "\'"), ('\"', '\"'), ("«", "»"), ("„", "“"), ("“", "”"), ("“", "”")]
-        is_quotes_opened = [0 for _ in quotes]
-        open_quotes = "«"
-        close_quotes = "»"
+    # def make_normal_quotes(self, string: str) -> str:
+    #     quotes = [("\'", "\'"), ('\"', '\"'), ("«", "»"), ("„", "“"), ("“", "”"), ("“", "”")]
+    #     is_quotes_opened = [0 for _ in quotes]
+    #     open_quotes = "«"
+    #     close_quotes = "»"
 
-        new_str = ""
-        for letter in string:
-            letter_type = self.quote_type(letter, quotes)
-            if (letter_type is None) or (letter == open_quotes) or (letter == close_quotes):
-                new_str += letter
+    #     new_str = ""
+    #     for letter in string:
+    #         letter_type = self.quote_type(letter, quotes)
+    #         if (letter_type is None) or (letter == open_quotes) or (letter == close_quotes):
+    #             new_str += letter
 
-            else:
-                is_quotes_opened[letter_type[0]] += letter_type[1]
-                if letter_type[1] == 1:
-                    new_str += open_quotes
-                elif letter_type[1] == -1:
-                    new_str += close_quotes
+    #         else:
+    #             is_quotes_opened[letter_type[0]] += letter_type[1]
+    #             if letter_type[1] == 1:
+    #                 new_str += open_quotes
+    #             elif letter_type[1] == -1:
+    #                 new_str += close_quotes
 
-        return new_str
+    #     return new_str
+
+    def normalize_quotes(self, text: str) -> str:
+        # Список всех возможных кавычек, которые нужно заменить
+        quote_chars = {'\'', '"', '«', '»', '„', '“', '”'}
+        
+        # Преобразуем строку в список для удобства замены по индексу
+        chars = list(text)
+        n = len(chars)
+        
+        i = 0
+        while i < n:
+            if chars[i] in quote_chars:
+                # Проверяем по правилам в порядке приоритета
+                
+                # 1) В начале строки
+                if i == 0:
+                    chars[i] = '«'
+                # 2) В конце строки
+                elif i == n - 1:
+                    chars[i] = '»'
+                # 3) Перед кавычкой пробел
+                elif chars[i - 1] == ' ':
+                    chars[i] = '«'
+                # 4) После кавычки пробел
+                elif chars[i + 1] == ' ':
+                    chars[i] = '»'
+                # 5) Во всех остальных случаях
+                else:
+                    chars[i] = '«'
+            i += 1
+        
+        return ''.join(chars)
 
 
     def quote_type(self, quote: str, quotes: list) -> tuple:
@@ -708,3 +747,86 @@ class ClaimGenerator:
             elif quote == item[1]:
                 return (i, -1)    # Закрывающая
         return None
+
+
+    def prepare_data(self):
+        """
+        Это вспомогательная функция. Она нужна чтобы определить, какой иск генерировать. 
+        Сейчас есть три вида: ТЭ, ГВС и ТЭ + ГВС. В зависимости от этого, используются 
+        разные шаблоны абзацев.
+        """
+        templates = dict()
+        contracts = self.config["contracts_info"]
+        company_type = self.config["company_type"]
+        service_type = self.config["lawsuit_info"]["service_type"]
+
+        contruct_types = []
+        if "ГВС" in service_type:
+            contruct_types.append("ГВС")
+        if "ТЭ" in service_type:
+            contruct_types.append("ТЭ")
+        # for contract in contracts:
+        #     contract_number = contract[1].split(" ")[1]
+
+        #     if contract_number.endswith("ГВС"):
+        #         if "ГВС" not in contruct_types:
+        #             contruct_types.append("ГВС")
+
+        #     elif contract_number.endswith("ТЭ"):
+        #         if "ТЭ" not in contruct_types:
+        #             contruct_types.append("ТЭ")
+
+        if len(contracts) == 1:
+            templates["supplied_resources4"] = "ТЭ"
+            templates["plural_template_1"] = "Договором"
+            templates["plural_template_2"] = "Договору"
+            templates["plural_template_3"] = "названном Договоре"
+            templates["plural_template_4"] = "Договора"
+            templates["plural_template_5"] = "указанного Договора"
+            templates["plural_template_6"] = "названному Договору"
+
+        elif len(contracts) > 1:
+            templates["plural_template_1"] = "Договорами"
+            templates["plural_template_2"] = "Договорам"
+            templates["plural_template_3"] = "названных Договорах"
+            templates["plural_template_4"] = "Договоров"
+            templates["plural_template_5"] = "указанных Договоров"
+            templates["plural_template_6"] = "названным Договорам"
+
+
+        templates["types_of_significant_paragraph"] = []
+        # Выбираем нужные шаблоны
+        if ("ГВС" in contruct_types) and ("ТЭ" in contruct_types):
+            templates["supplied_resources"] = "тепловой энергии и/или теплоносителя (далее – ТЭ), горячей воды через присоединенные сети горячего водоснабжения (далее – ГВС)"
+            templates["contract_type"] = "тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС)"
+            # templates["contract_type2"] = "тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС)"
+            templates["supplied_resources2"] = "тепловой энергии/теплоносителя, горячей воды"
+            templates["supplied_resources3"] = "тепловую энергию/теплоноситель, горячую воду"
+            templates["supplied_resources4"] = "ТЭ и ГВС"
+            templates["types_of_significant_paragraph"].append(company_type + "ТЭ")
+            templates["types_of_significant_paragraph"].append(company_type + "ГВС")
+            templates["service_article"] = "ст. 15 Федерального закона от 27.07.2010 № 190-ФЗ «О теплоснабжении», ст. 13 Федерального закона от 07.12.2011 № 416-ФЗ «О водоснабжении и водоотведении»"
+            
+
+        elif "ТЭ" in contruct_types:
+            templates["supplied_resources"] = "тепловой энергии и/или теплоносителя (далее – ТЭ)"
+            templates["contract_type"] = "тепловую энергию/теплоноситель (ТЭ)"
+            # templates["contract_type2"] = "тепловую энергию/теплоноситель (ТЭ)"
+            templates["supplied_resources2"] = "тепловой энергии/теплоносителя"
+            templates["supplied_resources3"] = "тепловую энергию/теплоноситель"
+            templates["supplied_resources4"] = "ТЭ"
+            templates["types_of_significant_paragraph"].append(company_type + "ТЭ")
+            templates["service_article"] = "ст. 15 Федерального закона от 27.07.2010 № 190-ФЗ «О теплоснабжении»"
+
+        elif "ГВС" in contruct_types:
+            templates["supplied_resources"] = "горячей воды через присоединенные сети горячего водоснабжения (далее – ГВС)"
+            templates["contract_type"] = "горячую воду (ГВС)"
+            # templates["contract_type2"] = "горячую воду (ГВС)"
+            templates["supplied_resources2"] = "горячей воды"
+            templates["supplied_resources3"] = "горячую воду"
+            templates["supplied_resources4"] = "ГВС"
+            templates["types_of_significant_paragraph"].append(company_type + "ГВС")
+            templates["service_article"] = "ст. 13 Федерального закона от 07.12.2011 № 416-ФЗ «О водоснабжении и водоотведении»"
+
+
+        self.config["contract_types_templates"] = templates

@@ -29,8 +29,8 @@ class CalculationClaimGenerator:
         """
         self.config = self.convert_data_from_calculator(config)
         self.config2 = config2
-        with open("config2.json", "w") as file:
-            json.dump(config2, file, ensure_ascii=False, indent=4)
+        # with open("config2.json", "w") as file:
+        #     json.dump(config2, file, ensure_ascii=False, indent=4)
 
         self.redactor.clone_file(template_filename, output_filename)
         self.doc = self.redactor.open(output_filename)
@@ -50,8 +50,8 @@ class CalculationClaimGenerator:
         На выходе возвращаются те же самые данные, но в структуре, удобной для записи в расчёт к иску.
         """
 
-        with open("temp.json", "w") as file:
-            json.dump(contracts, file, ensure_ascii=False, indent=4)
+        # with open("temp.json", "w") as file:
+        #     json.dump(contracts, file, ensure_ascii=False, indent=4)
 
         converted_contracts = {"contracts": []}
 
