@@ -29,6 +29,8 @@ class CalculationClaimGenerator:
         """
         self.config = self.convert_data_from_calculator(config)
         self.config2 = config2
+        # with open("config2.json", "w") as file:
+        #     json.dump(config2, file, ensure_ascii=False, indent=4)
 
         self.redactor.clone_file(template_filename, output_filename)
         self.doc = self.redactor.open(output_filename)
