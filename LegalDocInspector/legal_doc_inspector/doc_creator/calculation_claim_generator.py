@@ -126,9 +126,9 @@ class CalculationClaimGenerator:
             (self.borders("сумма пеней"),               contract["total_peny"]),
         )
 
-        cell = table.row_cells(0)[2]
+        cell = table.row_cells(0)[3]
         flag = self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[0][0], to_replace[0][1])
-        cell = table.row_cells(1)[2]
+        cell = table.row_cells(1)[3]
         self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[1][0], to_replace[1][1])
         cell = table.row_cells(1)[10]
         self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[2][0], to_replace[2][1])

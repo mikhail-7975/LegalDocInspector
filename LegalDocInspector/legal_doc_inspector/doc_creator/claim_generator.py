@@ -146,7 +146,7 @@ class ClaimGenerator:
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[0].paragraphs[0],
             self.borders("номер договора"),
-            self.config["contracts_info"][contract_index][1]
+            "Договор " + self.config["contracts_info"][contract_index][1]
         )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[1].paragraphs[0],
@@ -176,7 +176,7 @@ class ClaimGenerator:
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[0].paragraphs[0],
             self.borders("номер договора"),
-            self.config["contracts_info"][contract_index][1]
+            "Договор " + self.config["contracts_info"][contract_index][1]
         )
 
         # Ячейка Период
@@ -392,6 +392,163 @@ class ClaimGenerator:
 
 
     def fill_first_list(self):
+        """
+        Создаем строку такого формата:
+        Договорами (разделы 4, в том числе пункты 4.5 Договора № 02.104560-ТЭ от 16.05.2024, № 09.801771-ТЭ 
+        от 23.08.2022, № 09.801895-ТЭ от 12.03.2024, а также раздел 5, в том числе п. 5.5 Договора № 
+        09.801594-ТЭ от 01.04.2018)
+
+        Сначала сортируем все договоры по разделам. В каждом разделе может быть один или несколько договоров.
+        Если договор один, значит пишем <<раздел>>, если договоров несколько, пишем <<разделы>>. Если это 
+        последний  раздел в списке разделов, и при этом не единственный, то добавляем <<а также>> перед 
+        <<раздел ... >>. 
+        Аналогично поступаем с пунктами. Внутри списка договоров с конкретным разделом разбиваем договоры на 
+        разделы, учитываем единственное и множественное число, и фразу <<а также>>. 
+        
+        В итоге должна получиться структура:
+        {
+            'разделы': [
+                {
+                    'номер раздела': '1',
+                    'кол-во договоров': 6,
+                    'пункты': [
+                        {'номер пункта': '1.1',
+                         'договоры': ['№ 02.104560-ТЭ от 16.05.2024, № 09.801771-ТЭ от 23.08.2022', ...]},
+                        {'номер пункта': '1.2',
+                         'договоры': ['№ 02.104560-ТЭ от 16.05.2024, № 09.801771-ТЭ от 23.08.2022', ...]},
+                        {'номер пункта': '1.3',
+                         'договоры': ['№ 02.104560-ТЭ от 16.05.2024, № 09.801771-ТЭ от 23.08.2022', ...]},
+                    ]
+                },
+                {
+                    'номер раздела': '2',
+                    'кол-во договоров': 6,
+                    'пункты': [
+                        {'номер пункта': '2.1',
+                         'договоры': ['№ 02.104560-ТЭ от 16.05.2024, № 09.801771-ТЭ от 23.08.2022', ...]},
+                        {'номер пункта': '2.2',
+                         'договоры': ['№ 02.104560-ТЭ от 16.05.2024, № 09.801771-ТЭ от 23.08.2022', ...]},
+                        {'номер пункта': '2.3',
+                         'договоры': ['№ 02.104560-ТЭ от 16.05.2024, № 09.801771-ТЭ от 23.08.2022', ...]},
+                    ]
+                },
+            ] 
+        }
+        """
+
+        info = self.parse_info_for_first_list()
+        text = self.create_text_for_first_list(info)
+
+        template_text = "/*список разделов*/"
+        start = self.redactor.find_paragraph_contains_text(template_text)
+
+        self.redactor.replace_text_in_paragraph(
+            self.redactor.get_paragraph(start),
+            self.borders("список разделов"),
+            text
+        )
+
+
+    def parse_info_for_first_list(self):
+        info = {
+            "chapters": []
+        }
+        parsed_chapters = []
+        parsed_points = []
+        rows_n = len(self.config["contracts_info"]) # Кол-во договоров
+        for i in range(rows_n):
+            point = self.config["contracts_info"][i][2]["contract_point"]
+            chapter = point.split(".")[0]
+            contract_number = self.config["contracts_info"][i][1]
+
+            if chapter not in parsed_chapters:
+                info["chapters"].append({
+                    "number_of_chapter": chapter,
+                    "number_of_contracts": 1,
+                    "points": [{
+                        "number_of_point": point,
+                        "contracts": [contract_number]
+                    }],
+                })
+                parsed_chapters.append(chapter)
+                parsed_points.append(point)
+
+            elif point not in parsed_points:
+                for chapter_dict in info["chapters"]:
+                    if chapter_dict["number_of_chapter"] == chapter:
+                        chapter_dict["points"].append({
+                            "number_of_point": point,
+                            "contracts": [contract_number]
+                        })
+                        chapter_dict["number_of_contracts"] += 1
+                        parsed_points.append(point)
+                        break
+
+            else:
+                for chapter_dict in info["chapters"]:
+                    if chapter_dict["number_of_chapter"] == chapter:
+                        for point_dict in chapter_dict["points"]:
+                            if point_dict["number_of_point"] == point:
+                                point_dict["contracts"].append(contract_number)
+                                chapter_dict["number_of_contracts"] += 1
+                                break
+
+        return info
+
+
+    def create_text_for_first_list(self, info: dict):
+        rows_n = len(self.config["contracts_info"]) # Кол-во договоров
+        inserted_text = "("
+
+        chapters_n = len(info["chapters"])
+        for i, chapter_dict in enumerate(info["chapters"]):
+            # Вставляем последний раздел
+            if (i == chapters_n - 1) and (chapters_n > 1):
+                inserted_text += "а также "
+
+            inserted_text += "раздел"
+
+            # обрабатываем случай с множественным числом
+            if chapter_dict["number_of_contracts"] > 1:
+                inserted_text += "ы"
+            inserted_text += " "
+
+            inserted_text += chapter_dict["number_of_chapter"]
+
+            inserted_text += ", в том числе "
+
+            points_n = len(chapter_dict["points"])
+            for j, point_dict in enumerate(chapter_dict["points"]):
+                if (j == points_n - 1) and (points_n > 1):
+                    inserted_text += "а также "
+                inserted_text += "пункт"
+
+                if len(point_dict["contracts"]) > 1:
+                    inserted_text += "ы"
+                inserted_text += " "
+
+                inserted_text += point_dict["number_of_point"]
+                inserted_text += " Договора "
+
+                contracts_n = len(point_dict["contracts"])
+                for k, contract in enumerate(point_dict["contracts"]):
+                    inserted_text += contract
+
+                    if k < contracts_n - 1:
+                        inserted_text += ", "
+
+                if j < points_n - 1:
+                    inserted_text += ", "
+
+            if i < chapters_n - 1:
+                inserted_text += ", "
+
+        inserted_text += ")"
+
+        return inserted_text
+
+
+    def old_fill_first_list(self):
         rows_n = len(self.config["contracts_info"]) # Кол-во элементов в списке договоров
         template_text = f"раздел {self.borders('номер раздела')}, в том числе пункт {self.borders('пункт')} договора {self.borders('номер договора')}"
         start = self.redactor.find_paragraph_consists_of_text(template_text)   # Индекс первого абзаца списка
@@ -591,12 +748,14 @@ class ClaimGenerator:
             "/*поставляемые ресурсы2*/": self.config["contract_types_templates"]["supplied_resources2"],
             "/*поставляемые ресурсы3*/": self.config["contract_types_templates"]["supplied_resources3"],
             "/*поставляемые ресурсы4*/": self.config["contract_types_templates"]["supplied_resources4"],
+            "/*поставляемые ресурсы5*/": self.config["contract_types_templates"]["supplied_resources5"],
             "/*мн.ч.*/": self.config["contract_types_templates"]["plural_template_1"],
             "/*мн.ч.2*/": self.config["contract_types_templates"]["plural_template_2"],
             "/*мн.ч.3*/": self.config["contract_types_templates"]["plural_template_3"],
             "/*мн.ч.4*/": self.config["contract_types_templates"]["plural_template_4"],
             "/*мн.ч.5*/": self.config["contract_types_templates"]["plural_template_5"],
             "/*мн.ч.6*/": self.config["contract_types_templates"]["plural_template_6"],
+            "/*мн.ч.7*/": self.config["contract_types_templates"]["plural_template_7"],
             "/*нужная статья*/": self.config["contract_types_templates"]["service_article"],
         }
         for paragraph in self.doc.paragraphs:
@@ -784,6 +943,7 @@ class ClaimGenerator:
             templates["plural_template_4"] = "Договора"
             templates["plural_template_5"] = "указанного Договора"
             templates["plural_template_6"] = "названному Договору"
+            templates["plural_template_7"] = "был заключен следующий договор (далее именуемый – Договор), предметом которого"
 
         elif len(contracts) > 1:
             templates["plural_template_1"] = "Договорами"
@@ -792,6 +952,7 @@ class ClaimGenerator:
             templates["plural_template_4"] = "Договоров"
             templates["plural_template_5"] = "указанных Договоров"
             templates["plural_template_6"] = "названным Договорам"
+            templates["plural_template_7"] = "были заключены следующие договоры (далее именуемые – Договоры), предметом которых"
 
 
         templates["types_of_significant_paragraph"] = []
@@ -803,10 +964,11 @@ class ClaimGenerator:
             templates["supplied_resources2"] = "тепловой энергии/теплоносителя, горячей воды"
             templates["supplied_resources3"] = "тепловую энергию/теплоноситель, горячую воду"
             templates["supplied_resources4"] = "ТЭ и ГВС"
+            templates["supplied_resources5"] = "тепловую энергию и поставку горячей воды"
             templates["types_of_significant_paragraph"].append(company_type + "ТЭ")
             templates["types_of_significant_paragraph"].append(company_type + "ГВС")
             templates["service_article"] = "ст. 15 Федерального закона от 27.07.2010 № 190-ФЗ «О теплоснабжении», ст. 13 Федерального закона от 07.12.2011 № 416-ФЗ «О водоснабжении и водоотведении»"
-            
+
 
         elif "ТЭ" in contruct_types:
             templates["supplied_resources"] = "тепловой энергии и/или теплоносителя (далее – ТЭ)"
@@ -815,6 +977,7 @@ class ClaimGenerator:
             templates["supplied_resources2"] = "тепловой энергии/теплоносителя"
             templates["supplied_resources3"] = "тепловую энергию/теплоноситель"
             templates["supplied_resources4"] = "ТЭ"
+            templates["supplied_resources5"] = "тепловую энергию"
             templates["types_of_significant_paragraph"].append(company_type + "ТЭ")
             templates["service_article"] = "ст. 15 Федерального закона от 27.07.2010 № 190-ФЗ «О теплоснабжении»"
 
@@ -825,6 +988,7 @@ class ClaimGenerator:
             templates["supplied_resources2"] = "горячей воды"
             templates["supplied_resources3"] = "горячую воду"
             templates["supplied_resources4"] = "ГВС"
+            templates["supplied_resources5"] = "поставку горячей воды"
             templates["types_of_significant_paragraph"].append(company_type + "ГВС")
             templates["service_article"] = "ст. 13 Федерального закона от 07.12.2011 № 416-ФЗ «О водоснабжении и водоотведении»"
 
