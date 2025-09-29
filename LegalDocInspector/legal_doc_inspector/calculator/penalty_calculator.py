@@ -408,7 +408,7 @@ def _split_stage_by_date_correcting(stage:dict, split_date: datetime.datetime, s
             'period': (split_date.strftime("%d.%m.%Y"), None, None),
             'penalty_period_info': None,
             'type': 'correcting',
-            'text': 'Годовая корректировка долга',
+            'text': 'Годовая корректировка обязательств',
         }
 
         result.append(payment_stage)
@@ -602,23 +602,24 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
                         flag = False
                         for i, penalty_period in enumerate(periods):
                             lb, ub, _  = penalty_period['period']
-                            lb, ub = datetime.datetime.strptime(lb, '%d.%m.%Y'), datetime.datetime.strptime(ub, '%d.%m.%Y')
-                            if correcting_date >= lb and correcting_date <= ub:
-                                splitted_periods, new_month_debt = _split_stage_by_date_correcting(penalty_period, correcting_date, debt)
-                                new_periods = periods[:i] + splitted_periods  + periods[i+1:]
-                                flag = True
-                                for next_period in new_periods[i+1:]:
-                                    if next_period['type'] == 'penalty_period':
-                                        next_period['debt'] = new_month_debt
-
-
+                            if ub is not None:
+                                lb, ub = datetime.datetime.strptime(lb, '%d.%m.%Y'), datetime.datetime.strptime(ub, '%d.%m.%Y')
+                                
+                                if correcting_date >= lb and correcting_date <= ub:
+                                    splitted_periods, new_month_debt = _split_stage_by_date_correcting(penalty_period, correcting_date, debt)
+                                    new_periods = periods[:i] + splitted_periods  + periods[i+1:]
+                                    flag = True
+                                    for next_period in new_periods[i+1:]:
+                                        if next_period['type'] == 'penalty_period':
+                                            next_period['debt'] = new_month_debt
+                                            
                         if not flag:
                             payment_stage = {
                                 'debt': str(debt),
                                 'period': (correcting_date.strftime("%d.%m.%Y"), None , None),
                                 'penalty_period_info': None,
                                 'type': 'correcting',
-                                'text': 'Годовая корректировка долга',
+                                'text': 'Годовая корректировка обязательств',
                             }
                             new_periods = [payment_stage] + periods
                             for next_period in new_periods[1:]:
