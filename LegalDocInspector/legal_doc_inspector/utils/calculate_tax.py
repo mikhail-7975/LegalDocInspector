@@ -24,7 +24,7 @@ def calculate_state_duty(amount_str: str):
     value = round(duty, 2)  
     rubbles = int(value)
     kopecks = int(round(value - rubbles, 2) * 100)
-    rubbles_str= str(math.ceil(float(f"{rubbles}.{kopecks}")))
+    rubbles_str= str(round(float(f"{rubbles}.{kopecks}")))
     formatted = ''
     for i, digit in enumerate(rubbles_str[::-1]):
         if i % 3 == 0 and i != 0:
