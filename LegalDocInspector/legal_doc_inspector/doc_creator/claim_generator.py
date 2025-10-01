@@ -146,7 +146,7 @@ class ClaimGenerator:
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[0].paragraphs[0],
             self.borders("номер договора"),
-            "Договор " + self.config["contracts_info"][contract_index][1]
+            self.config["contracts_info"][contract_index][1]
         )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[1].paragraphs[0],
@@ -176,7 +176,7 @@ class ClaimGenerator:
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[0].paragraphs[0],
             self.borders("номер договора"),
-            "Договор " + self.config["contracts_info"][contract_index][1]
+            self.config["contracts_info"][contract_index][1]
         )
 
         # Ячейка Период
