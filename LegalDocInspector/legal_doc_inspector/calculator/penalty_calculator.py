@@ -425,6 +425,15 @@ def _split_stage_by_date_correcting(stage:dict, split_date: datetime.datetime, s
 
         return result, str(new_debt)
 
+def _sort_all_payments(month_parsed_info):
+    res = []
+    for i ,payment_info in enumerate([month_parsed_info['accrual']['payments'], month_parsed_info['adjustment']['payments']]):
+        if len(payment_info)>0:
+            for payment in payment_info:
+                res.append((payment,i))        
+        
+
+    return sorted(res, key=lambda x: datetime.datetime.strptime(x[0]['date'], '%d.%m.%Y'))
 
 def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, end_date:str) -> dict:
     all_penalty = StrictFormattedMoney(0)
@@ -442,7 +451,6 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
     start_date_flag = False
     for month_name, month_parsed_info in parsed_data.items():
         is_four_party = _check_month_for_four_party(month_parsed_info)
-        print(is_four_party)
         res[month_name] = list()
         month_debt = StrictFormattedMoney(0)
         month_accrual = StrictFormattedMoney(0)
@@ -508,69 +516,71 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
         
         periods = _get_penalty_periods(start_date, end_date, month_debt, company_type)
 
-        print(month_parsed_info)
-        print(month_name)
+        
+        payments_info = _sort_all_payments(month_parsed_info)
         if not is_four_party:
-            for i ,payment_info in enumerate([month_parsed_info['accrual']['payments'], month_parsed_info['adjustment']['payments']]):
+        
+            for payment, i in payments_info:
+                # обработка погашений долга до периодов пени
+                if datetime.datetime.strptime(payment['date'], '%d.%m.%Y') < start_date :
+                    # print(payment)
+                    
+                    month_debt-=StrictFormattedMoney(payment['payment'])
+                    if i == 0:
+                        month_accrual-=StrictFormattedMoney(payment['payment'])
+
+                    else:
+                        month_correcting-=StrictFormattedMoney(payment['payment'])
+                    
+                    res[month_name].append({
+                        'debt': str(StrictFormattedMoney(payment['payment'])*-1),
+                        'period':(payment['date'], None, None),
+                        'type': "payment_before_penalty" if datetime.datetime.strptime(payment['date'], '%d.%m.%Y') < start_date else "payment_after_penalty",
+                        'penalty_period_info': None,
+                        'text': "Погашение части долга"
+                    })
+                    # обновляем периуды пени с учётом погашений
+                    for period in periods:
+                        period['debt'] = str(month_debt)
+
+                new_periods = periods.copy()
+                seen_dates = []
+                # обработка погашений долга во время периода пени (дробление подпериодов)
                 
-                if len(payment_info)>0:
-                    for payment in payment_info:
-                        # обработка погашений долга до периодов пени
-                        if datetime.datetime.strptime(payment['date'], '%d.%m.%Y') < start_date :
-                            print(payment)
-                            
-                            month_debt-=StrictFormattedMoney(payment['payment'])
-                            if i == 0:
-                                month_accrual-=StrictFormattedMoney(payment['payment'])
-                            else:
-                                month_correcting-=StrictFormattedMoney(payment['payment'])
-                            
-                            res[month_name].append({
-                                'debt': str(StrictFormattedMoney(payment['payment'])*-1),
-                                'period':(payment['date'], None, None),
-                                'type': "payment_before_penalty" if datetime.datetime.strptime(payment['date'], '%d.%m.%Y') < start_date else "payment_after_penalty",
-                                'penalty_period_info': None,
-                                'text': "Погашение части долга"
-                            })
-                            # обновляем периуды пени с учётом погашений
-                            for period in periods:
-                                period['debt'] = str(month_debt)
 
-                        new_periods = periods.copy()
-                        seen_dates = []
-                        # обработка погашений долга во время периода пени (дробление подпериодов)
-                        
+            for payment, itype in payments_info:
+                if datetime.datetime.strptime(payment['date'], '%d.%m.%Y') >= start_date and payment['date'] not in seen_dates :
 
-                    for payment in payment_info:
-                        if datetime.datetime.strptime(payment['date'], '%d.%m.%Y') >= start_date and payment['date'] not in seen_dates :
-                            print(payment)
-                            split_date = datetime.datetime.strptime(payment['date'], '%d.%m.%Y')
-                            # split_payment = payment['payment']
-                            split_payments = []
-                            # split_payments.append(payment)
-                            seen_dates.append(payment['date'])
-                            # находим оплаты которые были в тот же день если они есть
-                            for another_payment in payment_info:
-                                if datetime.datetime.strptime(another_payment['date'], '%d.%m.%Y') == split_date:
-                                    split_payments.append(another_payment)
-                            # находим нужный подпериод по дате
-                            for j, period in enumerate(periods):
-                                if period['type'] == 'penalty_period':
-                                    lb, ub, _  = period['period']
-                                    lb, ub = datetime.datetime.strptime(lb, '%d.%m.%Y'), datetime.datetime.strptime(ub, '%d.%m.%Y')
-                                    if split_date >= lb and split_date <= ub:
-                                        splitted_periods, new_month_debt, all_split_payment = _split_stage_by_date(period, split_date, split_payments)
-                                        if i ==0:
-                                            month_accrual -= all_split_payment
-                                        else :
-                                            month_correcting -= all_split_payment
-                                        new_periods = periods[:j] + splitted_periods + periods[j+1:]
-                                        # обновляем месячные долги у слудующих периодов
-                                        for next_period in new_periods[j+1:]:
-                                            if next_period['type'] == 'penalty_period':
-                                                next_period['debt'] = new_month_debt
+                    split_date = datetime.datetime.strptime(payment['date'], '%d.%m.%Y')
+                    # split_payment = payment['payment']
+                    split_payments = []
+                    # split_payments.append(payment)
+                    seen_dates.append(payment['date'])
+                    # находим оплаты которые были в тот же день если они есть
+                    for another_payment, i in payments_info:
+                        if datetime.datetime.strptime(another_payment['date'], '%d.%m.%Y') == split_date:
+                            split_payments.append(another_payment)
+                    # находим нужный подпериод по дате
+                    for j, period in enumerate(periods):
+                        if period['type'] == 'penalty_period':
+                            lb, ub, _  = period['period']
+                            lb, ub = datetime.datetime.strptime(lb, '%d.%m.%Y'), datetime.datetime.strptime(ub, '%d.%m.%Y')
+                            if split_date >= lb and split_date <= ub:
+                                splitted_periods, new_month_debt, all_split_payment = _split_stage_by_date(period, split_date, split_payments)
+                                
+                                if itype ==0:
+                                    month_accrual -= all_split_payment
 
-                                        periods = new_periods
+                                else :
+                                    month_correcting -= all_split_payment
+
+                                new_periods = periods[:j] + splitted_periods + periods[j+1:]
+                                # обновляем месячные долги у слудующих периодов
+                                for next_period in new_periods[j+1:]:
+                                    if next_period['type'] == 'penalty_period':
+                                        next_period['debt'] = new_month_debt
+
+                                periods = new_periods
         
         else:
             all_payments = StrictFormattedMoney(0)
