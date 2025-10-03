@@ -631,7 +631,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
                                     flag = True
                                     for next_period in new_periods[i+1:]:
                                         if next_period['type'] == 'penalty_period':
-                                            print(next_period)
+                                            # print(next_period)
                                             next_period['debt'] = str(StrictFormattedMoney(next_period['debt']) + debt)
                         if not flag:
                             payment_stage = {

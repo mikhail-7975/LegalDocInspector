@@ -60,7 +60,7 @@ def get_documents_complect_form(form_id:int, day_of_penalty: int | None = None, 
                                            key='claim_uploaded_file'+str(form_id))
     st.text("Поле для Excel справки о задожленности")
     st.session_state.complects[form_id]['debt_certificate_file'] = st.file_uploader("Выберите Excel справку о задолженности",
-                                            accept_multiple_files=False,
+                                            accept_multiple_files=True,
                                             key='debt_certificate_file'+str(form_id))
 
 def get_contract_form(contract_number:str):
@@ -156,15 +156,22 @@ if st.session_state.complects[st.session_state.form_data['num_complects']]['clai
         for complect_id, complect_info in st.session_state.complects.items():
             claim_uploaded_file = complect_info['claim_uploaded_file']
             contract_uploaded_file = complect_info['contract_uploaded_file']
-            debt_certificate_file  = complect_info['debt_certificate_file']
+            debt_certificate_files  = complect_info['debt_certificate_file']
             claim_uploaded_file.seek(0)
             contract_uploaded_file.seek(0)
-            debt_certificate_file.seek(0)
+            # debt_certificate_file.seek(0)
 
             files[f'complect_{complect_id}_claim_file'] = (claim_uploaded_file.name, claim_uploaded_file)
             files[f'complect_{complect_id}_contract_file'] = (contract_uploaded_file.name, contract_uploaded_file)
-            files[f'complect_{complect_id}_certificate_file'] = (debt_certificate_file.name, debt_certificate_file)
-
+            # files[f'complect_{complect_id}_certificate_file'] = (debt_certificate_file.name, debt_certificate_file)
+            for i, debt_certificate_file in enumerate(debt_certificate_files):
+                if debt_certificate_file is not None:
+                    debt_certificate_file.seek(0)
+                    files[f'complect_{complect_id}_certificate_file_{i}'] = (
+                        debt_certificate_file.name, 
+                        debt_certificate_file   
+                    )
+                    
         data['complects_count'] = str(complect_id)
 
 
