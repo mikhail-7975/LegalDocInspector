@@ -4,6 +4,7 @@
 
 import re
 import pandas as pd
+import json
 
 from LegalDocInspector.legal_doc_inspector.utils.convert_month import convert_month
 
@@ -64,6 +65,7 @@ class TableParser:
         self.pattern_month = r"(январь|февраль|март|апрель|май|июнь|июль|август|сентябрь|октябрь|ноябрь|декабрь)\s+\d{4}"
         self.pattern_date = r"\d{4}"
         self.pattern_adjustment = "доля от размера годовой корректировки платы за тепловую энергию"
+        self.pattern_adjustment_2 = r"(январе|феврале|марте|апреле|мае|июне|июле|августе|сентябре|октябре|ноябре|декабре)\s+\d{4}"
         self.pattern_end = "итого по договору"
         self.pattern_period = r"(0?[1-9]|1[0-9])\.\d{4}"
 
@@ -96,26 +98,12 @@ class TableParser:
             if row_type == 1:
                 block = 1
                 current_month = self.find_month(row)
-                periods[current_month] = {
-                    "accrual": {
-                        "accruals": [],
-                        "payments": [],
-                        "additionals": [],
-                        "total_amount_of_accruals": None,
-                        "total_amount_of_payments": None,
-                        "debt": None
-                    },
-                    "adjustment": {
-                        "accruals": [],
-                        "payments": [],
-                        "additionals": [],
-                        "total_amount_of_accruals": None,
-                        "total_amount_of_payments": None,
-                        "debt": None
-                    }
-                }
+                self.add_period_if_is_new(current_month, periods)
 
             elif row_type == 2:
+                adjustment_block_text = self.read_text_from_adjustment_block_row(row)
+                current_month = self.transform_month_to_another_form(adjustment_block_text)
+                self.add_period_if_is_new(current_month, periods)
                 block = 2
 
             elif row_type == 3:
@@ -173,6 +161,10 @@ class TableParser:
             if value['accrual']['debt'] in [0, None] and value['adjustment']['debt'] in [0, None]:
                 del periods[key]
         
+        # for month in periods:
+        #     print(f"{month}: {periods[month]}")
+        # with open("parser.json", "w") as file:
+        #     json.dump(periods, file, ensure_ascii=False, indent=4)
         return periods
 
 
@@ -238,6 +230,46 @@ class TableParser:
 
     def find_month(self, row: int):
         return self.find_pattern(self.pattern_month, self.reader.cell(row, 0)).group(0)
+
+
+    def transform_month_to_another_form(self, block_text: str):
+        """
+        Этот метод нужен для того, чтобы получить форму именительного падежа для названия месяца.
+        В блоке "Доля от размера годовой корректировки ... " названия месяцев стоят в предложном
+        патеже. Метод получается на вход паттерн в виде <название_месяца ГГГГ> и меняет 
+        название_месяца с именительного падежа на предложный
+        """
+        month_pairs = (
+            ("декабре", "Декабрь"),
+            ("январе", "Январь"),
+            ("феврале", "Февраль"),
+            
+            ("марте", "Март"),
+            ("апреле", "Апрель"),
+            ("мае", "Май"),
+            
+            ("июне", "Июнь"),
+            ("июле", "Июль"),
+            ("августе", "Август"),
+            
+            ("сентябре", "Сентябрь"),
+            ("октябре", "Октябрь"),
+            ("ноябре", "Ноябрь"),
+        )
+        
+        finding_pattern = self.find_pattern(self.pattern_adjustment_2, block_text)
+        if finding_pattern is None:
+            print(f"Месяц block_text={block_text} не может быть обработан корректно")
+            raise RuntimeError(f"Invalid block_text: {block_text}")
+
+        finded_text = finding_pattern.group(0)
+        for month_pair in month_pairs:
+
+            if month_pair[0] in finded_text:
+                return finded_text.replace(month_pair[0], month_pair[1])
+
+        print(f"Месяц block_text={block_text} не может быть обработан корректно")
+        raise RuntimeError(f"Invalid block_text: {block_text}")
 
 
     # def read_accrual(self, row: int) -> float:
@@ -344,3 +376,40 @@ class TableParser:
         if (not pd.isna(eighth)) and (checking_pattern.lower() in eighth.lower()):
             return True
         return False
+
+
+    def check_if_is_new_period(self, period: str, periods: dict):
+        """
+        Этот метод проверяет, если ли месяц period в данных или он еще не встречался
+        """
+        return period not in periods
+
+
+    def add_period_if_is_new(self, period: str, periods: dict):
+        """
+        Если месяц period появляется впервые (его нет в periods), то создаем новый период
+        в структуре periods
+        """
+        if self.check_if_is_new_period(period, periods):
+            periods[period] = {
+                "accrual": {
+                    "accruals": [],
+                    "payments": [],
+                    "additionals": [],
+                    "total_amount_of_accruals": None,
+                    "total_amount_of_payments": None,
+                    "debt": None
+                },
+                "adjustment": {
+                    "accruals": [],
+                    "payments": [],
+                    "additionals": [],
+                    "total_amount_of_accruals": None,
+                    "total_amount_of_payments": None,
+                    "debt": None
+                }
+            }
+
+
+    def read_text_from_adjustment_block_row(self, row: int):
+        return self.reader.cell(row, 0)
