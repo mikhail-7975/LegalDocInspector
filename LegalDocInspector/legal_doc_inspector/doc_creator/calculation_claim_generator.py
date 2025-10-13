@@ -125,6 +125,8 @@ class CalculationClaimGenerator:
             (self.borders("сумма долга"),               contract["total_debt"]),
             (self.borders("сумма пеней"),               contract["total_peny"]),
         )
+        
+        # self.redactor.print_table(self.redactor.get_table(0))
 
         cell = table.row_cells(0)[3]
         flag = self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[0][0], to_replace[0][1])
@@ -214,11 +216,13 @@ class CalculationClaimGenerator:
             (self.borders("период месяц.год"),              period["period"]),
             (self.borders("сумма пени за период"),          period["total"]),
         )
+        
+        # self.redactor.print_table(self.redactor.get_table(0))
 
         cell = table.row_cells(4 + filled_rows)[0]
         self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[0][0], to_replace[0][1])
 
-        cell = table.row_cells(4 + filled_rows + 3)[11]
+        cell = table.row_cells(4 + filled_rows + 3)[10]
         self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[1][0], to_replace[1][1])
 
 
@@ -328,11 +332,11 @@ class CalculationClaimGenerator:
 
         cell = table.row_cells(row_index)[6]
         self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[4][0], to_replace[4][1])
-        cell = table.row_cells(row_index)[8]
+        cell = table.row_cells(row_index)[7]
         self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[5][0], to_replace[5][1])
-        cell = table.row_cells(row_index)[9]
+        cell = table.row_cells(row_index)[8]
         self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[6][0], to_replace[6][1])
-        cell = table.row_cells(row_index)[11]
+        cell = table.row_cells(row_index)[10]
         self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[7][0], to_replace[7][1])
 
 
@@ -414,7 +418,7 @@ class CalculationClaimGenerator:
         """
         row = table.rows[row_index]
         self.redactor.merge_table_cells(row.cells[1], row.cells[2])
-        for i in range(5, 12):
+        for i in range(5, 11):
             self.redactor.merge_table_cells(row.cells[4], row.cells[i])
 
         if first_cell_flag:
@@ -424,9 +428,11 @@ class CalculationClaimGenerator:
 
     def merge_row_6(self, table, row_index):
         row = table.rows[row_index]
+        # self.redactor.merge_table_cells(row.cells[1], row.cells[2])
+        # self.redactor.merge_table_cells(row.cells[6], row.cells[7])
+        # self.redactor.merge_table_cells(row.cells[9], row.cells[10])
         self.redactor.merge_table_cells(row.cells[1], row.cells[2])
-        self.redactor.merge_table_cells(row.cells[6], row.cells[7])
-        self.redactor.merge_table_cells(row.cells[9], row.cells[10])
+        self.redactor.merge_table_cells(row.cells[8], row.cells[9])
 
         previous_row = table.rows[row_index - 1]
         self.redactor.merge_table_cells(previous_row.cells[0], row.cells[0])
