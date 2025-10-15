@@ -593,9 +593,10 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
                     all_payments += StrictFormattedMoney(payment['payment'])
                     # print(payment)
             periods = _get_penalty_periods(start_date, end_date, month_accrual+month_correcting, company_type)
+            
             payment_1 = {
                 'debt': str(all_payments * -1),
-                'period': (start_date.strftime("%d.%m.%Y"), None, None),
+                'period': (_add_last_day_of_month(start_date.strftime("%d.%m.%Y")), None, None),
                 'penalty_period_info': None,
                 'type': 'payment_after_penalty',
                 'text': 'Погашение части долга',
