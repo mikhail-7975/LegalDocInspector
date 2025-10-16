@@ -135,6 +135,23 @@ def _add_last_day_of_month(date_str):
     except (ValueError, IndexError):
         return "Неверный формат даты"
 
+def _add_last_day_of_next_month(date_str):
+    try:
+        month, year = map(int, date_str.split('.'))
+
+        # Вычисляем первый день следующего месяца и вычитаем 1 день
+        if month == 12:
+            next_month = datetime.date(year + 1, 1, 1)
+        else:
+            next_month = datetime.date(year, month + 1, 1)
+
+        last_day = next_month - datetime.timedelta(days=1)
+        
+        return _add_last_day_of_month(last_day.strftime('%m.%Y'))
+
+
+    except (ValueError, IndexError):
+        return "Неверный формат даты"
 
 def _get_start_date(day: datetime.date):
 
@@ -610,7 +627,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
             
             payment_1 = {
                 'debt': str(all_payments * -1),
-                'period': (_add_last_day_of_month(start_date.strftime("%d.%m.%Y")), None, None),
+                'period': (_add_last_day_of_next_month(start_date.strftime("%m.%Y")), None, None),
                 'penalty_period_info': None,
                 'type': 'payment_after_penalty',
                 'text': 'Погашение части долга',
