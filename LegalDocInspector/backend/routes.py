@@ -7,7 +7,7 @@ import zipfile # рабоат с архивами
 from collections import defaultdict # словари
 from datetime import date, datetime # работа с датой
 from pathlib import Path
-
+import traceback
 # from configs.config import AppConfig, load_yaml_config # конфиги
 
 # from ___legal_doc_inspector.doc_parser.table_parser_new import TableParser
@@ -38,166 +38,176 @@ def home():
 
 @app.route("/parse", methods=["POST"])
 def parse():
+    try:
+        table_parser = g.table_parser
 
-    table_parser = g.table_parser
+        current_config:AppConfig = g.config
+        # save_data_folder = Path("/tmp/doc_inspector_data")
+        save_data_folder = current_config.save_data_folder
 
-    current_config:AppConfig = g.config
-    # save_data_folder = Path("/tmp/doc_inspector_data")
-    save_data_folder = current_config.save_data_folder
+        date_request = request.form.get("date")
+        date_request = date.fromisoformat(date_request).strftime("%d.%m.%Y")
+        complects_count = int(request.form.get('complects_count'))
 
-    date_request = request.form.get("date")
-    date_request = date.fromisoformat(date_request).strftime("%d.%m.%Y")
-    complects_count = int(request.form.get('complects_count'))
+        folder = Path(
+            save_data_folder, secure_filename(f"documents_from_request_{datetime.now()}")
+        )
+        # session['path_to_save'] = str(folder)
+        request.files
 
-    folder = Path(
-        save_data_folder, secure_filename(f"documents_from_request_{datetime.now()}")
-    )
-    # session['path_to_save'] = str(folder)
-    request.files
+        folder.mkdir(exist_ok=True, parents=True)
 
-    folder.mkdir(exist_ok=True, parents=True)
+        result_json = dict()
+        parsing_table_results = []
+        uploaded_files = defaultdict(lambda : [])
+        for complect_id in range(1, complects_count+1):
+            complect_folder = Path(folder, f'complect_{complect_id}')
+            complect_folder.mkdir(exist_ok=True, parents=True)
 
-    result_json = dict()
-    parsing_table_results = []
-    uploaded_files = defaultdict(lambda : [])
-    for complect_id in range(1, complects_count+1):
-        complect_folder = Path(folder, f'complect_{complect_id}')
-        complect_folder.mkdir(exist_ok=True, parents=True)
+            complect_claim_file = request.files[f"complect_{complect_id}_claim_file"]
+            complect_contract_file = request.files[f'complect_{complect_id}_contract_file']
+            complect_certificate_file = request.files[f'complect_{complect_id}_certificate_file']
 
-        complect_claim_file = request.files[f"complect_{complect_id}_claim_file"]
-        complect_contract_file = request.files[f'complect_{complect_id}_contract_file']
-        complect_certificate_file = request.files[f'complect_{complect_id}_certificate_file']
+            # договор
+            contract_file_path = Path(complect_folder, secure_filename(complect_contract_file.filename))
+            complect_contract_file.save(contract_file_path)
+            uploaded_files['contract_file'].append(str(contract_file_path))
 
-        # договор
-        contract_file_path = Path(complect_folder, secure_filename(complect_contract_file.filename))
-        complect_contract_file.save(contract_file_path)
-        uploaded_files['contract_file'].append(str(contract_file_path))
+            # претензия
+            claim_file_path = Path(complect_folder, secure_filename(complect_claim_file.filename))
+            complect_claim_file.save(claim_file_path)
+            uploaded_files['claim_file'].append(str(claim_file_path))
 
-        # претензия
-        claim_file_path = Path(complect_folder, secure_filename(complect_claim_file.filename))
-        complect_claim_file.save(claim_file_path)
-        uploaded_files['claim_file'].append(str(claim_file_path))
-
-        # справка
-        certificate_file_path = Path(complect_folder, secure_filename(complect_certificate_file.filename))
-        complect_certificate_file.save(certificate_file_path)
-        uploaded_files['certificate_file'].append(str(certificate_file_path))
+            # справка
+            certificate_file_path = Path(complect_folder, secure_filename(complect_certificate_file.filename))
+            complect_certificate_file.save(certificate_file_path)
+            uploaded_files['certificate_file'].append(str(certificate_file_path))
 
 
-        table_parser.open(str(certificate_file_path))
-        result = table_parser.parse()
-        defendant_inn = table_parser.parse_defendant_inn()
-        contract_number = table_parser.parse_contract_number()
-        # print(contract_number)
-        table_parser.close()
+            table_parser.open(str(certificate_file_path))
+            result = table_parser.parse()
+            defendant_inn = table_parser.parse_defendant_inn()
+            contract_number = table_parser.parse_contract_number()
+            # print(contract_number)
+            table_parser.close()
 
-        # LLM parser
+            # LLM parser
 
-        # llm_contract_number, service_type_info, overdue_date_info = parse_contract(contract_file_path)
-        # # print("contract parser done!")
-        # plaintiff_inn, claim_number, claim_date = parse_claim(claim_file_path)
-        # claim_info = {"claim_date": str(claim_date), "claim_number": str(claim_number)}
-        # # print("claim parser done!")
+            # llm_contract_number, service_type_info, overdue_date_info = parse_contract(contract_file_path)
+            # # print("contract parser done!")
+            # plaintiff_inn, claim_number, claim_date = parse_claim(claim_file_path)
+            # claim_info = {"claim_date": str(claim_date), "claim_number": str(claim_number)}
+            # # print("claim parser done!")
 
-        overdue_date_info  = "(заглушка) В следующем фрагменте указан срок, в течение которого Исполнитель должен произвести оплату:\n\n\"5. 5. Исполнитель в срок до 18-го числа месяца, следующего за расчетным, производит оплату стоимости тепловой энергии, теплоносителя, указанной в счете. Датой оплаты считается дата поступления денежных средств на расчетный счет Теплоснабжающей организации.\""
-        service_type_info = "(заглушка) тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))"
-        claim_info = {"claim_date": '01.01.2000', "claim_number": '123456'}
+            overdue_date_info  = "(заглушка) В следующем фрагменте указан срок, в течение которого Исполнитель должен произвести оплату:\n\n\"5. 5. Исполнитель в срок до 18-го числа месяца, следующего за расчетным, производит оплату стоимости тепловой энергии, теплоносителя, указанной в счете. Датой оплаты считается дата поступления денежных средств на расчетный счет Теплоснабжающей организации.\""
+            service_type_info = "(заглушка) тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))"
+            claim_info = {"claim_date": '01.01.2000', "claim_number": '123456'}
 
-        parsing_table_results.append((result, contract_number, overdue_date_info, service_type_info, claim_info))
+            parsing_table_results.append((result, contract_number, overdue_date_info, service_type_info, claim_info))
 
-    result_json['table_parser_result'] = parsing_table_results
+        result_json['table_parser_result'] = parsing_table_results
 
-    result_json['results_of_name_parser'] = {}
-    result_json['results_of_name_parser']['defendant_info'] = {}
-    result_json['results_of_name_parser']['defendant_info']['inn'] = f'{defendant_inn}'
+        result_json['results_of_name_parser'] = {}
+        result_json['results_of_name_parser']['defendant_info'] = {}
+        result_json['results_of_name_parser']['defendant_info']['inn'] = f'{defendant_inn}'
 
-    # Получение данных ответчика по его инн
-    full_name, short_name, address, kpp, ogrn = parse_html(int(defendant_inn))
-    result_json['results_of_name_parser']['defendant_info']['full_name'] = full_name
-    result_json['results_of_name_parser']['defendant_info']['short_name'] = short_name
-    result_json['results_of_name_parser']['defendant_info']['address'] = address
-    result_json['results_of_name_parser']['defendant_info']['kpp'] = kpp
-    result_json['results_of_name_parser']['defendant_info']['ogrn'] = ogrn
-    result_json['path_to_save'] = str(folder.resolve())
+        # Получение данных ответчика по его инн
+        full_name, short_name, address, kpp, ogrn = parse_html(int(defendant_inn))
+        result_json['results_of_name_parser']['defendant_info']['full_name'] = full_name
+        result_json['results_of_name_parser']['defendant_info']['short_name'] = short_name
+        result_json['results_of_name_parser']['defendant_info']['address'] = address
+        result_json['results_of_name_parser']['defendant_info']['kpp'] = kpp
+        result_json['results_of_name_parser']['defendant_info']['ogrn'] = ogrn
+        result_json['path_to_save'] = str(folder.resolve())
 
-    # result_json['result_of_llm_parsers'] = pdf_pars_dict
+        # result_json['result_of_llm_parsers'] = pdf_pars_dict
 
-    with open(str(Path(folder, "result_parser.json")),"w") as json_file:
-        # json.dump(result_json, json_file)
-        json.dump(result_json, json_file, indent=4, ensure_ascii=False)
+        with open(str(Path(folder, "result_parser.json")),"w") as json_file:
+            # json.dump(result_json, json_file)
+            json.dump(result_json, json_file, indent=4, ensure_ascii=False)
 
-    return jsonify(result_json), 200
-
+        return jsonify(result_json), 200
+    except Exception as e:
+        return traceback.format_exc(), 500
 @app.route("/calculate_penalty", methods=["POST"])
 def calc_penalty():
-    data = request.json
-    calculated_results = []
-    last_days_of_penalty = []
-    contract_points = []
-    response = {}
-    for parsing_result in data['parsing_results']:
-        calculated_data = calculate_penalty(
-            parsed_data=parsing_result['parsed_info'],
-            day_of_penalty=parsing_result['day_of_penalty'],
-            company_type=data['company_type'],
-            end_date=data['end_date'],
-        )
-        calculated_data['contract_number'] = parsing_result['contract_number']
-        last_days_of_penalty.append(parsing_result['day_of_penalty'])
-        contract_points.append(parsing_result['contract_point'])
-        calculated_results.append(sort_data_structure(calculated_data))
+    try:
+        data = request.json
+        calculated_results = []
+        last_days_of_penalty = []
+        contract_points = []
+        response = {}
+        for parsing_result in data['parsing_results']:
+            calculated_data = calculate_penalty(
+                parsed_data=parsing_result['parsed_info'],
+                day_of_penalty=parsing_result['day_of_penalty'],
+                company_type=data['company_type'],
+                end_date=data['end_date'],
+            )
+            calculated_data['contract_number'] = parsing_result['contract_number']
+            last_days_of_penalty.append(parsing_result['day_of_penalty'])
+            contract_points.append(parsing_result['contract_point'])
+            calculated_results.append(sort_data_structure(calculated_data))
 
-    converted_data = convert_data(
-        calculated_data_list=calculated_results,
-        last_days_of_penalty=last_days_of_penalty,
-        contract_points=contract_points,
-        company_type=data['company_type'],
-        current_date=data['end_date']
-    )
-    # print(converted_data , '\n' , calculated_results)
-    response['claim_data'] = converted_data
-    response['calculator_list']  = calculated_results
-    return jsonify(response), 200
+        converted_data = convert_data(
+            calculated_data_list=calculated_results,
+            last_days_of_penalty=last_days_of_penalty,
+            contract_points=contract_points,
+            company_type=data['company_type'],
+            current_date=data['end_date']
+        )
+        # print(converted_data , '\n' , calculated_results)
+        response['claim_data'] = converted_data
+        response['calculator_list']  = calculated_results
+        return jsonify(response), 200
+    except Exception as e:
+        return traceback.format_exc(), 500
+
 
 @app.route("/create_doc", methods=["POST"])
 def create_doc():
-
-    request_json = request.json
-    calculator_list, claim_data, path_to_save = request_json['calculator_list'], request_json['claim_data'], request_json['path_to_save']
-    claim_gen:ClaimGenerator = g.claim_generator
-    # path_to_save = str(Path('/tmp', 'doc_inspector_data', 'ИСК.docx'))
-    path_to_save = str(Path(path_to_save, 'ИСК.docx'))
-    # path_to_template = str(Path("/home/mkalinichenko/projects/LegalDocInspector/data/templates/claim.docx"))
-    config:AppConfig = g.config
-    path_to_template = config.claim_template_path
-    claim_gen.make_instance(config=claim_data,
-                            template_filename=path_to_template,
-                            output_filename=path_to_save)
-    
-    return send_file(path_to_save, as_attachment=True), 200
+    try:
+        request_json = request.json
+        calculator_list, claim_data, path_to_save = request_json['calculator_list'], request_json['claim_data'], request_json['path_to_save']
+        claim_gen:ClaimGenerator = g.claim_generator
+        # path_to_save = str(Path('/tmp', 'doc_inspector_data', 'ИСК.docx'))
+        path_to_save = str(Path(path_to_save, 'ИСК.docx'))
+        # path_to_template = str(Path("/home/mkalinichenko/projects/LegalDocInspector/data/templates/claim.docx"))
+        config:AppConfig = g.config
+        path_to_template = config.claim_template_path
+        claim_gen.make_instance(config=claim_data,
+                                template_filename=path_to_template,
+                                output_filename=path_to_save)
+        
+        return send_file(path_to_save, as_attachment=True), 200
+    except Exception as e:
+        return traceback.format_exc(), 500
 
 
 @app.route("/create_calculating_table", methods=["POST"])
 def create_table():
-    calc_claim_generator:CalculationClaimGenerator = g.calc_claim_generator
-    request_json = request.json
-    calculator_list, claim_data, path_to_save = request_json['calculator_list'], request_json['claim_data'], request_json['path_to_save']
-    calculator_list_sorted = [sort_data_structure(calculator_list[i]) for i in range(len(calculator_list))]
-    # path_to_save = str(Path('/tmp', 'doc_inspector_data', 'расчёт к иску.docx'))
-    path_to_save = str(Path(path_to_save, 'расчёт к иску.docx'))
+    try:
+        calc_claim_generator:CalculationClaimGenerator = g.calc_claim_generator
+        request_json = request.json
+        calculator_list, claim_data, path_to_save = request_json['calculator_list'], request_json['claim_data'], request_json['path_to_save']
+        calculator_list_sorted = [sort_data_structure(calculator_list[i]) for i in range(len(calculator_list))]
+        # path_to_save = str(Path('/tmp', 'doc_inspector_data', 'расчёт к иску.docx'))
+        path_to_save = str(Path(path_to_save, 'расчёт к иску.docx'))
 
-    config:AppConfig = g.config
-    path_to_template = config.calculation_claim_template_path
+        config:AppConfig = g.config
+        path_to_template = config.calculation_claim_template_path
 
-    # path_to_template = str(Path("/home/mkalinichenko/projects/LegalDocInspector/data/templates/calculation_claim.docx"))
-    calc_claim_generator.make_instance(config=calculator_list_sorted,
-                                       config2=claim_data,
-                                       template_filename=path_to_template,
-                                       output_filename=path_to_save)
-    # if not os.path.exists(path_to_table):
-    #     return jsonify({"error": "Файл не найден"}), 404
+        # path_to_template = str(Path("/home/mkalinichenko/projects/LegalDocInspector/data/templates/calculation_claim.docx"))
+        calc_claim_generator.make_instance(config=calculator_list_sorted,
+                                        config2=claim_data,
+                                        template_filename=path_to_template,
+                                        output_filename=path_to_save)
+        # if not os.path.exists(path_to_table):
+        #     return jsonify({"error": "Файл не найден"}), 404
 
-    return send_file(path_to_save, as_attachment=True), 200
+        return send_file(path_to_save, as_attachment=True), 200
+    except Exception as e:
+        return traceback.format_exc(), 500
 
 
 def get_request_files(
