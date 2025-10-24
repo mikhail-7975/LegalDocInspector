@@ -588,7 +588,7 @@ class CalculationClaimGenerator:
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[2].paragraphs[0],
             self.borders("задолженность"),
-            self.config2["contracts_info"][contract_index][2]["debt"]
+            self.config2["contracts_info"][contract_index][2]["accrual_debt"]
         )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index + 1)[2].paragraphs[0],
