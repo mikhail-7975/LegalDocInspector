@@ -1,4 +1,5 @@
 from LegalDocInspector.legal_doc_inspector.exel_parser import TableParser
+from LegalDocInspector.legal_doc_inspector.utils.convert_month import convert_month
 import datetime
 import requests
 from decimal import Decimal, ROUND_HALF_UP
@@ -458,6 +459,8 @@ def _check_is_correcting_done(month_correcting:StrictFormattedMoney, payments_in
             month_correcting -= StrictFormattedMoney(payment['payment'])
     
     return str(month_correcting) == '0,00'
+def _check_month_for_only_correcting_debt(month_parsed_info:dict):
+    return month_parsed_info['accrual']['debt'] == 0
 
 def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, end_date:str) -> dict:
     all_penalty = StrictFormattedMoney(0)
@@ -474,13 +477,20 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
 
     start_date_flag = False
     for month_name, month_parsed_info in parsed_data.items():
+        only_correcting_flag = _check_month_for_only_correcting_debt(month_parsed_info)
+        print(only_correcting_flag)
         is_four_party = _check_month_for_four_party(month_parsed_info)
         res[month_name] = list()
         month_debt = StrictFormattedMoney(0)
         month_accrual = StrictFormattedMoney(0)
         month_correcting = StrictFormattedMoney(0)
         #расчёты даты начала просрочки
-        month = month_parsed_info['accrual']['accruals'][0]['period']
+        #TODO если только корректировка, то дата может быть другой
+        if not only_correcting_flag:
+            month = month_parsed_info['accrual']['accruals'][0]['period']
+        else:
+            month = f"{(convert_month(month_name.split()[0]))}.{month_name.split()[1]}"
+            print(month)
         parsed = datetime.datetime.strptime(month, "%m.%Y")
         next_month = parsed.month+1 if parsed.month != 12 else 1
         next_year = parsed.year if parsed.month != 12 else parsed.year+1
@@ -504,18 +514,21 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
             # обработка выставленных счетов
             if len(parsed_info['accruals'])>0:
                 for accrual in parsed_info['accruals']:
-                    month_debt+= StrictFormattedMoney(accrual['accrual'])
                     if accrual_or_adjustment == 'accrual':
-                        month_accrual += StrictFormattedMoney(accrual['accrual'])
+                        if not only_correcting_flag:
+                            month_debt+= StrictFormattedMoney(accrual['accrual'])
+                            month_accrual += StrictFormattedMoney(accrual['accrual'])
                     else:
+                        month_debt+= StrictFormattedMoney(accrual['accrual'])
                         month_correcting += StrictFormattedMoney(accrual['accrual'])
-                res[month_name].append({
-                    'debt': str(month_accrual),
-                    'period': (_add_last_day_of_month(accrual['period']), None, None),
-                    'type': 'debt_accrual',
-                    'penalty_period_info': None,
-                    'text': text
-                })
+                if (not only_correcting_flag and accrual_or_adjustment=='accrual') or accrual_or_adjustment=='adjustment': 
+                    res[month_name].append({
+                        'debt': str(month_accrual),
+                        'period': (_add_last_day_of_month(accrual['period']), None, None),
+                        'type': 'debt_accrual',
+                        'penalty_period_info': None,
+                        'text': text
+                    })
             # обработка доли годовой корректировки
             if accrual_or_adjustment == 'adjustment':
                 if len(parsed_info['additionals'])>0:
@@ -551,24 +564,28 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
                 if datetime.datetime.strptime(payment['date'], '%d.%m.%Y') < start_date or (i == 1 and correcting_done_flag) :
                     # print(payment)
                     
-                    month_debt-=StrictFormattedMoney(payment['payment'])
                     if i == 0:
-                        month_accrual-=StrictFormattedMoney(payment['payment'])
+                        if not only_correcting_flag:
+                            month_accrual-=StrictFormattedMoney(payment['payment'])
+                            month_debt-=StrictFormattedMoney(payment['payment'])
+
 
                     else:
                         # print(payment['payment'])
                         month_correcting-=StrictFormattedMoney(payment['payment'])
-                    
-                    res[month_name].append({
-                        'debt': str(StrictFormattedMoney(payment['payment'])*-1),
-                        'period':(payment['date'], None, None),
-                        'type': "payment_before_penalty" if datetime.datetime.strptime(payment['date'], '%d.%m.%Y') < start_date else "payment_before_penalty",
-                        'penalty_period_info': None,
-                        'text': "Погашение части долга"
-                    })
-                    # обновляем периуды пени с учётом погашений
-                    for period in periods:
-                        period['debt'] = str(month_debt)
+                        month_debt-=StrictFormattedMoney(payment['payment'])
+
+                    if (i==0 and not only_correcting_flag) or i==1:
+                        res[month_name].append({
+                            'debt': str(StrictFormattedMoney(payment['payment'])*-1),
+                            'period':(payment['date'], None, None),
+                            'type': "payment_before_penalty" if datetime.datetime.strptime(payment['date'], '%d.%m.%Y') < start_date else "payment_after_penalty",
+                            'penalty_period_info': None,
+                            'text': "Погашение части долга"
+                        })
+                        # обновляем периуды пени с учётом погашений
+                        for period in periods:
+                            period['debt'] = str(month_debt)
 
                 new_periods = periods.copy()
             seen_dates = []
@@ -578,8 +595,9 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
 
             # print(payments_info)
             for payment, itype in payments_info:
-                if datetime.datetime.strptime(payment['date'], '%d.%m.%Y') >= start_date and payment['date'] not in seen_dates and (itype==0 or (itype==1 and not correcting_done_flag)) :
                     # print(f"{payment}, {itype}, {month_name}")
+                if datetime.datetime.strptime(payment['date'], '%d.%m.%Y') >= start_date and payment['date'] not in seen_dates and (not only_correcting_flag and itype==0 or itype==1) and (itype==0 or (itype==1 and not correcting_done_flag)):
+
                     split_date = datetime.datetime.strptime(payment['date'], '%d.%m.%Y')
                     # split_payment = payment['payment']
                     split_payments = []
