@@ -478,7 +478,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
     start_date_flag = False
     for month_name, month_parsed_info in parsed_data.items():
         only_correcting_flag = _check_month_for_only_correcting_debt(month_parsed_info)
-        print(only_correcting_flag)
+        # print(only_correcting_flag)
         is_four_party = _check_month_for_four_party(month_parsed_info)
         res[month_name] = list()
         month_debt = StrictFormattedMoney(0)
@@ -490,7 +490,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
             month = month_parsed_info['accrual']['accruals'][0]['period']
         else:
             month = f"{(convert_month(month_name.split()[0]))}.{month_name.split()[1]}"
-            print(month)
+            # print(month)
         parsed = datetime.datetime.strptime(month, "%m.%Y")
         next_month = parsed.month+1 if parsed.month != 12 else 1
         next_year = parsed.year if parsed.month != 12 else parsed.year+1
@@ -681,7 +681,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
                                     flag = True
                                     for next_period in new_periods[i+1:]:
                                         if next_period['type'] == 'penalty_period':
-                                            print(next_period)
+                                            # print(next_period)
                                             next_period['debt'] = str(StrictFormattedMoney(next_period['debt']) + debt)
                         if not flag:
                             payment_stage = {
