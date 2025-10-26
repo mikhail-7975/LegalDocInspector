@@ -30,6 +30,8 @@ class ClaimGenerator:
 
         self.redactor.clone_file(template_filename, output_filename)
         self.doc = self.redactor.open(output_filename)
+        # with open("claim_config.json", "w") as file:
+        #     json.dump(self.config, file, ensure_ascii=False, indent=4)
 
         self.fill_file()
 
@@ -757,6 +759,14 @@ class ClaimGenerator:
             "/*мн.ч.6*/": self.config["contract_types_templates"]["plural_template_6"],
             "/*мн.ч.7*/": self.config["contract_types_templates"]["plural_template_7"],
             "/*нужная статья*/": self.config["contract_types_templates"]["service_article"],
+
+            "/*направлен окончание*/": self.config["contract_types_templates"]["directed_ending"],
+            "/*претензия окончание и.п*/": self.config["contract_types_templates"]["claim_ending_1"],
+            "/*которая окончание*/": self.config["contract_types_templates"]["which_ending"],
+            "/*оставлен окончание*/": self.config["contract_types_templates"]["abandoned_ending"],
+            "/*претензии окончание р.п*/": self.config["contract_types_templates"]["claim_ending_2"],
+            "/*её число*/": self.config["contract_types_templates"]["her_ending"],
+            "/*копия окончание*/": self.config["contract_types_templates"]["copy_ending"],
         }
         for paragraph in self.doc.paragraphs:
             # runs = []
@@ -992,5 +1002,26 @@ class ClaimGenerator:
             templates["types_of_significant_paragraph"].append(company_type + "ГВС")
             templates["service_article"] = "ст. 13 Федерального закона от 07.12.2011 № 416-ФЗ «О водоснабжении и водоотведении»"
 
+
+        number_of_claims = len(self.config["lawsuit_info"]["claims"]) 
+        if number_of_claims == 1:
+            templates["directed_ending"] = "а"
+            templates["claim_ending_1"] = "я"
+            templates["which_ending"] = "ая"
+            templates["abandoned_ending"] = "а"
+            templates["claim_ending_2"] = "и"
+            templates["her_ending"] = "её"
+            templates["copy_ending"] = "я"
+        elif number_of_claims > 1:
+            templates["directed_ending"] = "ы"
+            templates["claim_ending_1"] = "и"
+            templates["which_ending"] = "ые"
+            templates["abandoned_ending"] = "ы"
+            templates["claim_ending_2"] = "й"
+            templates["her_ending"] = "их"
+            templates["copy_ending"] = "и"
+        else:
+            print(f"В списке претензий в данных нет ни одной претензии")
+            raise RuntimeError(f"No claims in config data: {self.config["lawsuit_info"]}")
 
         self.config["contract_types_templates"] = templates
