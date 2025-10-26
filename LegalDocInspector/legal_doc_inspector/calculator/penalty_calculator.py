@@ -460,7 +460,7 @@ def _check_is_correcting_done(month_correcting:StrictFormattedMoney, payments_in
     
     return str(month_correcting) == '0,00'
 def _check_month_for_only_correcting_debt(month_parsed_info:dict):
-    return month_parsed_info['accrual']['debt'] == 0
+    return (month_parsed_info['accrual']['debt'] in [None, 0]) and month_parsed_info['adjustment']['debt'] not in [None, 0]
 
 def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, end_date:str) -> dict:
     all_penalty = StrictFormattedMoney(0)
@@ -478,7 +478,8 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
     start_date_flag = False
     for month_name, month_parsed_info in parsed_data.items():
         only_correcting_flag = _check_month_for_only_correcting_debt(month_parsed_info)
-        # print(only_correcting_flag)
+        print(only_correcting_flag)
+        print(month_name)
         is_four_party = _check_month_for_four_party(month_parsed_info)
         res[month_name] = list()
         month_debt = StrictFormattedMoney(0)
@@ -508,7 +509,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
         for accrual_or_adjustment, parsed_info in month_parsed_info.items():
 
             if accrual_or_adjustment == 'accrual':
-                text = f"Начислено за период {parsed_info['accruals'][0]['period']}"
+                text = f"Начислено за период {month}"
             if accrual_or_adjustment == 'adjustment':
                 text = f"Годовая корректировка обязательств"
             # обработка выставленных счетов
@@ -533,7 +534,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
             if accrual_or_adjustment == 'adjustment':
                 if len(parsed_info['additionals'])>0:
                     all_additional = StrictFormattedMoney(0)
-                    period = _add_last_day_of_month(month_parsed_info['accrual']['accruals'][0]['period'])
+                    period = _add_last_day_of_month(month)
                     text = f"Доля от годовой корректировки {parsed_info['additionals'][0]['period'].split('.')[-1]} за период {month}"
                     for additional in parsed_info['additionals']:
                         all_additional+=StrictFormattedMoney(additional['accrual'])
