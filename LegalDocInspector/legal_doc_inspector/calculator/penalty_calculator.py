@@ -478,8 +478,8 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
     start_date_flag = False
     for month_name, month_parsed_info in parsed_data.items():
         only_correcting_flag = _check_month_for_only_correcting_debt(month_parsed_info)
-        print(only_correcting_flag)
-        print(month_name)
+        # print(only_correcting_flag)
+        # print(month_name)
         is_four_party = _check_month_for_four_party(month_parsed_info)
         res[month_name] = list()
         month_debt = StrictFormattedMoney(0)
@@ -580,7 +580,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
                         res[month_name].append({
                             'debt': str(StrictFormattedMoney(payment['payment'])*-1),
                             'period':(payment['date'], None, None),
-                            'type': "payment_before_penalty" if datetime.datetime.strptime(payment['date'], '%d.%m.%Y') < start_date else "payment_after_penalty",
+                            'type': "payment_before_penalty" if datetime.datetime.strptime(payment['date'], '%d.%m.%Y') < start_date else "payment_before_penalty",
                             'penalty_period_info': None,
                             'text': "Погашение части долга"
                         })
