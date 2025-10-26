@@ -1022,6 +1022,6 @@ class ClaimGenerator:
             templates["copy_ending"] = "и"
         else:
             print(f"В списке претензий в данных нет ни одной претензии")
-            raise RuntimeError(f"No claims in config data: {self.config["lawsuit_info"]}")
+            raise RuntimeError(f"No claims in config data: {self.config['lawsuit_info']}")
 
         self.config["contract_types_templates"] = templates
