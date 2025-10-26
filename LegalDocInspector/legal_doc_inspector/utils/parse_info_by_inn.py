@@ -9,7 +9,10 @@ def parse_html(inn):
     kpp = soup.find('div', {'id': 'kpp'}).text.strip()
     ogrn = soup.find('span', {'id': 'ogrn'}).text.strip()
     short_name = soup.find('h1', {'id': 'short_name'}).text.strip()
-    full_name = soup.find('h2', {'id': 'full_name'}).text.strip()
+    try:
+        full_name = soup.find('h2', {'id': 'full_name'}).text.strip()
+    except AttributeError:
+        full_name = short_name
     return replace_quotes(full_name), replace_quotes(short_name), clean_address(address), kpp, ogrn
 
 def replace_quotes(text:str):
