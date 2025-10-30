@@ -87,6 +87,52 @@ class StrictFormattedMoney:
 
         return StrictFormattedMoney(self.amount / Decimal(str(divisor)), self.currency)
 
+    def __eq__(self, other):
+        """Равно (==)"""
+        if not isinstance(other, StrictFormattedMoney):
+            return NotImplemented  # Позволяет Python попробовать other.__eq__(self)
+        return self.currency == other.currency and self.amount == other.amount
+
+    def __ne__(self, other):
+        """Не равно (!=)"""
+        result = self.__eq__(other)
+        if result is NotImplemented:
+            return NotImplemented
+        return not result
+
+    def __lt__(self, other):
+        """Меньше (<)"""
+        if not isinstance(other, StrictFormattedMoney):
+            return NotImplemented
+        if self.currency != other.currency:
+            raise ValueError("Нельзя сравнивать StrictFormattedMoney с разными валютами")
+        return self.amount < other.amount
+
+    def __le__(self, other):
+        """Меньше или равно (<=)"""
+        if not isinstance(other, StrictFormattedMoney):
+            return NotImplemented
+        if self.currency != other.currency:
+            raise ValueError("Нельзя сравнивать StrictFormattedMoney с разными валютами")
+        return self.amount <= other.amount
+
+    def __gt__(self, other):
+        """Больше (>)"""
+        if not isinstance(other, StrictFormattedMoney):
+            return NotImplemented
+        if self.currency != other.currency:
+            raise ValueError("Нельзя сравнивать StrictFormattedMoney с разными валютами")
+        return self.amount > other.amount
+
+    def __ge__(self, other):
+        """Больше или равно (>=)"""
+        if not isinstance(other, StrictFormattedMoney):
+            return NotImplemented
+        if self.currency != other.currency:
+            raise ValueError("Нельзя сравнивать StrictFormattedMoney с разными валютами")
+        return self.amount >= other.amount
+
+
 def sort_dict_by_months(data_dict):
     """
     Сортирует словарь по месяцам в хронологическом порядке
@@ -155,15 +201,15 @@ def _add_last_day_of_next_month(date_str):
         return "Неверный формат даты"
 
 def _get_start_date(day: datetime.date):
+    
+    if not _is_holiday(day):
+        return day + datetime.timedelta(days=1)
 
-        if not _is_holiday(day):
-            return day + datetime.timedelta(days=1)
+    if _is_holiday(day):
+        while _is_holiday(day):
+            day = day + datetime.timedelta(days=1)
 
-        if _is_holiday(day):
-            while _is_holiday(day):
-                day = day + datetime.timedelta(days=1)
-
-            return day + datetime.timedelta(days=1)
+        return day + datetime.timedelta(days=1)
 
 def _is_holiday(day: datetime.date):
 
@@ -656,11 +702,19 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
         for accrual_or_adjustment, parsed_info in month_parsed_info.items():
             if accrual_or_adjustment == 'accrual':
                 if len(parsed_info['additionals'])>0:
-                    text = f"Годовая корректировка обязательств"
+                    text = f"Корректировка обязательств"
                     new_periods = periods.copy()
                     for additional in parsed_info['additionals']:
                         debt = StrictFormattedMoney(additional['accrual'])
-                        period = _add_last_day_of_month(additional['period'])
+                        if debt < StrictFormattedMoney(0):
+                            period = _add_last_day_of_month(additional['period'])
+                        else:
+                            month_cur, year_cur = map(int, additional['period'].split('.'))
+                            year_cur = year_cur if month_cur != 12 else year_cur+1
+                            month_cur = month_cur+1 if month_cur != 12 else 1
+                            period = _get_start_date(datetime.datetime(year=year_cur, month=month_cur, day=int(day_of_penalty)))
+                            period = period - datetime.timedelta(days=1)
+                            period = period.strftime("%d.%m.%Y")
                         periods_elem = dict()
                         periods_elem['type'] = 'correcting'
                         periods_elem['text'] = text
