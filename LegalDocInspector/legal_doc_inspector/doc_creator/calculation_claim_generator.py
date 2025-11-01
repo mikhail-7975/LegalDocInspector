@@ -483,6 +483,10 @@ class CalculationClaimGenerator:
             if self.config2["table_info"][contract_number]["correcting_debt"] == "0,00":
                 self.fill_second_table_simple_row(table, n_rows, i)
                 n_rows += 1
+            
+            elif self.config2["table_info"][contract_number]["accrual_debt"] == "0,00":
+                self.fill_second_table_row_with_year_adjustment_only(table, n_rows, i)
+                n_rows += 1
 
             else:
                 self.second_table_clone_row(table, n_rows)
@@ -592,6 +596,70 @@ class CalculationClaimGenerator:
         )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index + 1)[2].paragraphs[0],
+            self.borders("задолженность"),
+            self.config2["contracts_info"][contract_index][2]["correcting_debt"]
+        )
+
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(row_index)[3].paragraphs[0],
+            self.borders("неустойка"),
+            # "#неустойка#".upper()
+            self.config2["contracts_info"][contract_index][2]["penalty"]
+        )
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(row_index)[4].paragraphs[0],
+            self.borders("неустойка+задолженность"),
+            # "#неустойка+задолженность#".upper()
+            self.config2["contracts_info"][contract_index][2]["debt_penalty"]
+        )
+
+
+    def fill_second_table_row_with_year_adjustment_only(self, table: Table, row_index: int, contract_index: int):
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(row_index)[0].paragraphs[0],
+            self.borders("номер договора"),
+            self.config2["contracts_info"][contract_index][1]
+        )
+
+        # Ячейка Период
+        # source_paragraph = table.row_cells(row_index)[1].paragraphs[0]
+        # new_paragraph = table.row_cells(row_index)[1].add_paragraph("")
+        # self.redactor.clone_paragraph(source_paragraph, new_paragraph)
+        # self.redactor.replace_text_in_paragraph(
+        #     source_paragraph,
+        #     self.borders("период"),
+        #     self.config2["contracts_info"][contract_index][2]["contract_periods"]
+        # )
+        # self.redactor.replace_text_in_paragraph(
+        #     new_paragraph,
+        #     self.borders("период"),
+        #     "текущие начисления"
+        # )
+        # self.redactor.paragraph_text_set_bold(new_paragraph)
+
+        source_paragraph = table.row_cells(row_index)[1].paragraphs[0]
+        new_paragraph = table.row_cells(row_index)[1].add_paragraph("")
+        self.redactor.clone_paragraph(source_paragraph, new_paragraph)
+        self.redactor.replace_text_in_paragraph(
+            source_paragraph,
+            self.borders("период"),
+            self.config2["contracts_info"][contract_index][2]["contract_periods_correcting"]
+        )
+        self.redactor.replace_text_in_paragraph(
+            new_paragraph,
+            self.borders("период"),
+            "доля от ГК"
+        )
+        self.redactor.paragraph_text_set_bold(new_paragraph)
+
+        # Ячейка Задолженность
+        # self.redactor.replace_text_in_paragraph(
+        #     table.row_cells(row_index)[2].paragraphs[0],
+        #     self.borders("задолженность"),
+        #     self.config2["contracts_info"][contract_index][2]["accrual_debt"]
+        # )
+        self.redactor.replace_text_in_paragraph(
+            table.row_cells(row_index)[2].paragraphs[0],
             self.borders("задолженность"),
             self.config2["contracts_info"][contract_index][2]["correcting_debt"]
         )
