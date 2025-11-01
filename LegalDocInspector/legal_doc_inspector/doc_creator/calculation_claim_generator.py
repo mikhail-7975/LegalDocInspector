@@ -621,22 +621,6 @@ class CalculationClaimGenerator:
             self.config2["contracts_info"][contract_index][1]
         )
 
-        # Ячейка Период
-        # source_paragraph = table.row_cells(row_index)[1].paragraphs[0]
-        # new_paragraph = table.row_cells(row_index)[1].add_paragraph("")
-        # self.redactor.clone_paragraph(source_paragraph, new_paragraph)
-        # self.redactor.replace_text_in_paragraph(
-        #     source_paragraph,
-        #     self.borders("период"),
-        #     self.config2["contracts_info"][contract_index][2]["contract_periods"]
-        # )
-        # self.redactor.replace_text_in_paragraph(
-        #     new_paragraph,
-        #     self.borders("период"),
-        #     "текущие начисления"
-        # )
-        # self.redactor.paragraph_text_set_bold(new_paragraph)
-
         source_paragraph = table.row_cells(row_index)[1].paragraphs[0]
         new_paragraph = table.row_cells(row_index)[1].add_paragraph("")
         self.redactor.clone_paragraph(source_paragraph, new_paragraph)
@@ -652,12 +636,6 @@ class CalculationClaimGenerator:
         )
         self.redactor.paragraph_text_set_bold(new_paragraph)
 
-        # Ячейка Задолженность
-        # self.redactor.replace_text_in_paragraph(
-        #     table.row_cells(row_index)[2].paragraphs[0],
-        #     self.borders("задолженность"),
-        #     self.config2["contracts_info"][contract_index][2]["accrual_debt"]
-        # )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[2].paragraphs[0],
             self.borders("задолженность"),

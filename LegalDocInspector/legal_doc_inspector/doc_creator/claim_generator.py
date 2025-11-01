@@ -247,22 +247,6 @@ class ClaimGenerator:
             self.config["contracts_info"][contract_index][1]
         )
 
-        # Ячейка Период
-        # source_paragraph = table.row_cells(row_index)[1].paragraphs[0]
-        # new_paragraph = table.row_cells(row_index)[1].add_paragraph("")
-        # self.redactor.clone_paragraph(source_paragraph, new_paragraph)
-        # self.redactor.replace_text_in_paragraph(
-        #     source_paragraph,
-        #     self.borders("период"),
-        #     self.config["contracts_info"][contract_index][2]["contract_periods"]
-        # )
-        # self.redactor.replace_text_in_paragraph(
-        #     new_paragraph,
-        #     self.borders("период"),
-        #     "текущие начисления"
-        # )
-        # self.redactor.paragraph_text_set_bold(new_paragraph)
-
         source_paragraph = table.row_cells(row_index)[1].paragraphs[0]
         new_paragraph = table.row_cells(row_index)[1].add_paragraph("")
         self.redactor.clone_paragraph(source_paragraph, new_paragraph)
@@ -278,12 +262,6 @@ class ClaimGenerator:
         )
         self.redactor.paragraph_text_set_bold(new_paragraph)
 
-        # Ячейка Задолженность
-        # self.redactor.replace_text_in_paragraph(
-        #     table.row_cells(row_index)[2].paragraphs[0],
-        #     self.borders("задолженность"),
-        #     self.config["contracts_info"][contract_index][2]["accrual_debt"]
-        # )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[2].paragraphs[0],
             self.borders("задолженность"),
@@ -463,22 +441,6 @@ class ClaimGenerator:
             self.config["contracts_info"][contract_index][1]
         )
 
-        # Ячейка Период
-        # source_paragraph = table.row_cells(row_index)[1].paragraphs[0]
-        # new_paragraph = table.row_cells(row_index)[1].add_paragraph("")
-        # self.redactor.clone_paragraph(source_paragraph, new_paragraph)
-        # self.redactor.replace_text_in_paragraph(
-        #     source_paragraph,
-        #     self.borders("период"),
-        #     self.config["contracts_info"][contract_index][2]["contract_periods"]
-        # )
-        # self.redactor.replace_text_in_paragraph(
-        #     new_paragraph,
-        #     self.borders("период"),
-        #     "текущие начисления"
-        # )
-        # self.redactor.paragraph_text_set_bold(new_paragraph)
-
         source_paragraph = table.row_cells(row_index)[1].paragraphs[0]
         new_paragraph = table.row_cells(row_index)[1].add_paragraph("")
         self.redactor.clone_paragraph(source_paragraph, new_paragraph)
@@ -494,12 +456,6 @@ class ClaimGenerator:
         )
         self.redactor.paragraph_text_set_bold(new_paragraph)
 
-        # Ячейка Задолженность
-        # self.redactor.replace_text_in_paragraph(
-        #     table.row_cells(row_index)[2].paragraphs[0],
-        #     self.borders("задолженность"),
-        #     self.config["contracts_info"][contract_index][2]["accrual_debt"]
-        # )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[2].paragraphs[0],
             self.borders("задолженность"),
@@ -763,18 +719,6 @@ class ClaimGenerator:
                 # self.config["contracts_info"][i][1]
                 contract_number
             )
-            # self.redactor.replace_text_in_paragraph(
-            #     self.redactor.get_paragraph(start + i * stride + 1),
-            #     self.borders("задолженность"),
-            #     # self.config["contracts_info"][i][2]["debt"]
-            #     self.config["table_info"][contract_number]["debt"]
-            # )
-            # self.redactor.replace_text_in_paragraph(
-            #     self.redactor.get_paragraph(start + i * stride + 1),
-            #     self.borders("период"),
-            #     # self.config["contracts_info"][i][2]["contract_periods"]
-            #     self.config["table_info"][contract_number]["contract_periods"]
-            # )
             
             if self.config["table_info"][contract_number]["accrual_debt"] is not None:
                 if self.config["table_info"][contract_number]["accrual_debt"] != "0,00":
@@ -1008,29 +952,6 @@ class ClaimGenerator:
         self.config['plaintiff_info']['short_name'] = self.normalize_quotes(self.config['plaintiff_info']['short_name'])
         self.config['defendant_info']['full_name'] = self.normalize_quotes(self.config['defendant_info']['full_name'])
         self.config['defendant_info']['short_name'] = self.normalize_quotes(self.config['defendant_info']['short_name'])
-        # pass
-
-
-    # def make_normal_quotes(self, string: str) -> str:
-    #     quotes = [("\'", "\'"), ('\"', '\"'), ("«", "»"), ("„", "“"), ("“", "”"), ("“", "”")]
-    #     is_quotes_opened = [0 for _ in quotes]
-    #     open_quotes = "«"
-    #     close_quotes = "»"
-
-    #     new_str = ""
-    #     for letter in string:
-    #         letter_type = self.quote_type(letter, quotes)
-    #         if (letter_type is None) or (letter == open_quotes) or (letter == close_quotes):
-    #             new_str += letter
-
-    #         else:
-    #             is_quotes_opened[letter_type[0]] += letter_type[1]
-    #             if letter_type[1] == 1:
-    #                 new_str += open_quotes
-    #             elif letter_type[1] == -1:
-    #                 new_str += close_quotes
-
-    #     return new_str
 
     def normalize_quotes(self, text: str) -> str:
         # Список всех возможных кавычек, которые нужно заменить
@@ -1095,16 +1016,6 @@ class ClaimGenerator:
             contruct_types.append("ГВС")
         if "ТЭ" in service_type:
             contruct_types.append("ТЭ")
-        # for contract in contracts:
-        #     contract_number = contract[1].split(" ")[1]
-
-        #     if contract_number.endswith("ГВС"):
-        #         if "ГВС" not in contruct_types:
-        #             contruct_types.append("ГВС")
-
-        #     elif contract_number.endswith("ТЭ"):
-        #         if "ТЭ" not in contruct_types:
-        #             contruct_types.append("ТЭ")
 
         if len(contracts) == 1:
             templates["supplied_resources4"] = "ТЭ"
