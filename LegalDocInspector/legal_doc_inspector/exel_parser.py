@@ -360,10 +360,16 @@ class TableParser:
 
 
     def parse_contract_number(self):
-        contract_type = self.reader.cell(5, 1)
+        contract_number = self.reader.cell(5, 1)
         contract_date = self.reader.cell(6, 1)
 
-        return None if pd.isna(contract_type) else "№ " + str(contract_type) + ' от ' + str(contract_date)
+        contract_number = " " if pd.isna(contract_number) else contract_number
+        contract_date = " " if pd.isna(contract_date) else " от " + contract_date
+
+        result = "№ " + str(contract_number) + str(contract_date)
+        print(result)
+        return result
+
 
     def parse_defendant_inn(self) -> str | None:
         inn = self.reader.cell(6, 4)

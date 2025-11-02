@@ -1,5 +1,6 @@
 import json
 from datetime import datetime, timedelta
+import re
 
 from docx import Document
 from docx.table import Table
@@ -52,6 +53,10 @@ class ClaimGenerator:
     def fill_file(self):
         # self.redactor.print_table(self.redactor.get_table(0))
         self.prepare_data()
+
+        # with open("claim_config.json", "w") as file:
+        #     json.dump(self.config, file, ensure_ascii=False, indent=4)
+
         self.fix_quotes()
         self.fill_first_table()
         self.fill_second_table()
@@ -746,20 +751,17 @@ class ClaimGenerator:
                     self.redactor.replace_text_in_paragraph(
                         self.redactor.get_paragraph(start + i * stride + 2),
                         self.borders("доля годовой корректировки"),
-                        # self.config["contracts_info"][i][2]["debt_penalty"]
                         self.config["table_info"][contract_number]["correcting_debt"]
                     )
                     self.redactor.replace_text_in_paragraph(
                         self.redactor.get_paragraph(start + i * stride + 2),
                         self.borders("период корректировки"),
-                        # self.config["contracts_info"][i][2]["debt_penalty"]
                         self.config["table_info"][contract_number]["contract_periods_correcting"]
                     )
                     self.redactor.replace_text_in_paragraph(
                         self.redactor.get_paragraph(start + i * stride + 2),
                         self.borders("год корректировки"),
-                        # self.config["contracts_info"][i][2]["debt_penalty"]
-                        self.config["table_info"][contract_number]["contract_periods_correcting"][-4:]
+                        self.config["table_info"][contract_number]["correcting_year"]
                     )
                 else:
                     if start + i * stride + 2 not in delete_par_indices:
@@ -1098,5 +1100,19 @@ class ClaimGenerator:
 
         self.config["contract_types_templates"] = templates
 
-        if self.config["defendant_info"]["full_name"].lower().startswith("ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ".lower()):
-            self.config["defendant_info"]["full_name"] = "Общество с ограниченной ответственностью"
+        # if self.config["defendant_info"]["full_name"].lower().startswith("ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ".lower()):
+        #     self.config["defendant_info"]["full_name"] = "Общество с ограниченной ответственностью"
+        # self.config["defendant_info"]["full_name"] = self.config["defendant_info"]["full_name"].replace()
+
+        _pattern = r"ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ"
+        _replacement = "Общество с ограниченной ответственностью"
+        text = self.config["defendant_info"]["full_name"]
+        self.config["defendant_info"]["full_name"] = re.sub(_pattern, _replacement, text, flags=re.IGNORECASE)
+
+
+
+        # УБРАТЬ ЭТУ ЗАГЛУШКУ
+        rows_n = len(self.config["contracts_info"])
+        for i in range(rows_n):
+            contract_number = self.config["contracts_info"][i][1]
+            self.config["table_info"][contract_number]["correcting_year"] = "2024"
