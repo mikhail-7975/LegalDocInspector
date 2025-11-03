@@ -508,6 +508,9 @@ def _check_is_correcting_done(month_correcting:StrictFormattedMoney, payments_in
 def _check_month_for_only_correcting_debt(month_parsed_info:dict):
     return (month_parsed_info['accrual']['debt'] in [None, 0]) and month_parsed_info['adjustment']['debt'] not in [None, 0]
 
+def _check_month_for_only_accrual_additionals(month_parsed_info:dict):
+    return len(month_parsed_info['accrual']['accruals']) == 0 and len(month_parsed_info['accrual']['additionals'])>0
+
 def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, end_date:str) -> dict:
     all_penalty = StrictFormattedMoney(0)
     all_debt = StrictFormattedMoney(0)
@@ -520,7 +523,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
     res = {
         'start_of_table' : {}
     }
-
+    start_dates = []
     start_date_flag = False
     for month_name, month_parsed_info in parsed_data.items():
         only_correcting_flag = _check_month_for_only_correcting_debt(month_parsed_info)
@@ -533,24 +536,35 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
         month_correcting = StrictFormattedMoney(0)
         #расчёты даты начала просрочки
         #TODO если только корректировка, то дата может быть другой
-        if not only_correcting_flag:
-            month = month_parsed_info['accrual']['accruals'][0]['period']
-        else:
-            month = f"{(convert_month(month_name.split()[0]))}.{month_name.split()[1]}"
+        # if not only_correcting_flag:
+        #     month = month_parsed_info['accrual']['accruals'][0]['period']
+        # else:
+        month = f"{(convert_month(month_name.split()[0]))}.{month_name.split()[1]}"
             # print(month)
         parsed = datetime.datetime.strptime(month, "%m.%Y")
         next_month = parsed.month+1 if parsed.month != 12 else 1
         next_year = parsed.year if parsed.month != 12 else parsed.year+1
-        start_date = datetime.datetime(next_year, next_month, int(day_of_penalty))  # дефолтная дата окончания договора без учёта нерабочих дней
-        start_date = _get_start_date(start_date) # дата начала периода просрочки
+        if not _check_month_for_only_accrual_additionals(month_parsed_info):
+            start_date = datetime.datetime(next_year, next_month, int(day_of_penalty))  # дефолтная дата окончания договора без учёта нерабочих дней
+            start_date = _get_start_date(start_date) # дата начала периода просрочки
+        else:
+            additional_month = month_parsed_info['accrual']['additionals'][0]['period']
+            additional_parsed = datetime.datetime.strptime(additional_month, "%m.%Y")
+            additional_next_month = additional_parsed.month+1 if additional_parsed.month != 12 else 1
+            additional_next_year = additional_parsed.year if additional_parsed.month != 12 else additional_parsed.year+1
+            start_date = datetime.datetime(additional_next_year, additional_next_month, int(day_of_penalty))
+            start_date = _get_start_date(start_date)
+            month_parsed_info['accrual']['accruals'].extend(month_parsed_info['accrual']['additionals'])
+            month_parsed_info['accrual']['additionals'].clear()
         if not start_date_flag:
+            start_dates.append(start_date)
             res['start_of_table'] = {
                 'text1': 'Начало просрочки',
                 'text2': 'Конец просрочки',
-                'start': start_date.strftime('%d.%m.%Y'),
+                'start': min(start_dates).strftime('%d.%m.%Y'),
                 'end': end_date.strftime('%d.%m.%Y')
             }
-            start_date_flag = True
+            # start_date_flag = True
         # добавление полей, не являющихся периодами пени
         for accrual_or_adjustment, parsed_info in month_parsed_info.items():
 
@@ -561,6 +575,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
             # обработка выставленных счетов
             if len(parsed_info['accruals'])>0:
                 for accrual in parsed_info['accruals']:
+                    # print(accrual)
                     if accrual_or_adjustment == 'accrual':
                         if not only_correcting_flag:
                             month_debt+= StrictFormattedMoney(accrual['accrual'])
@@ -583,6 +598,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
                     period = _add_last_day_of_month(month)
                     text = f"Доля от годовой корректировки {parsed_info['additionals'][0]['period'].split('.')[-1]} за период {month}"
                     for additional in parsed_info['additionals']:
+                        # print(additional)
                         all_additional+=StrictFormattedMoney(additional['accrual'])
                     month_debt+=all_additional
                     month_correcting+=all_additional
