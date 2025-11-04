@@ -1111,8 +1111,8 @@ class ClaimGenerator:
 
 
 
-        # УБРАТЬ ЭТУ ЗАГЛУШКУ
-        rows_n = len(self.config["contracts_info"])
-        for i in range(rows_n):
-            contract_number = self.config["contracts_info"][i][1]
-            self.config["table_info"][contract_number]["correcting_year"] = "2024"
+        # # УБРАТЬ ЭТУ ЗАГЛУШКУ
+        # rows_n = len(self.config["contracts_info"])
+        # for i in range(rows_n):
+        #     contract_number = self.config["contracts_info"][i][1]
+        #     self.config["table_info"][contract_number]["correcting_year"] = "2024"
