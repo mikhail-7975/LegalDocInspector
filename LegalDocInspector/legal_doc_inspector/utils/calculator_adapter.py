@@ -5,6 +5,8 @@
 обусловлен тем, что договоров может быть несколько ( обычно 2 )
 """
 from uuid import uuid4
+import re
+
 import datetime
 from dateutil.relativedelta import relativedelta
 
@@ -76,6 +78,7 @@ def convert_data(calculated_data_list: list[dict], last_days_of_penalty: list[in
         contract_dict = {}
         list_unit.append(str(id))
         list_unit.append(contract_info['contract_number'])
+        contract_dict['correcting_year'] = None
         contract_dict['contract_point'] = contract_points[i]
         contract_dict['last_day'] = f"До {last_days_of_penalty[i]} числа месяца, следующего за расчётным"
         for month_or_type, str_info in contract_info.items():
@@ -101,6 +104,10 @@ def convert_data(calculated_data_list: list[dict], last_days_of_penalty: list[in
                             current_accruals_months.append(date)
                         if (str_item['correcting_debt']) != "0,00":
                             current_correcting_months.append(date)
+                    if str_item['type'] == 'correcting':
+                        matched = re.search(r'\b(19|20)\d{2}\b', str_item['text'])
+                        if matched:
+                            contract_dict['correcting_year'] = matched.group()
 
         debt_penalty = debt + penalty
         all_debt+=debt
