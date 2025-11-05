@@ -591,6 +591,24 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
                         'penalty_period_info': None,
                         'text': text
                     })
+            # обработка отриц. доборов (они должны быть в начале)
+            if accrual_or_adjustment == "accrual":
+                if len(parsed_info['additionals'])>0:
+                    for additional in parsed_info['additionals']:
+                        debt = StrictFormattedMoney(additional['accrual'])
+                        if debt < StrictFormattedMoney(0):
+                            month_debt+= debt
+                            month_accrual += debt
+                            period = _add_last_day_of_month(additional['period'])
+                            res[month_name].append({
+                                'debt': str(debt),
+                                'period': (period, None, None),
+                                'type': 'correcting',
+                                'penalty_period_info':None,
+                                'text': "Корректировка начислений"
+                            })
+                        else:
+                            continue
             # обработка доли годовой корректировки
             if accrual_or_adjustment == 'adjustment':
                 if len(parsed_info['additionals'])>0:
@@ -613,7 +631,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
 
             #предварительный расчёт периодов пени без учёта погашений
         
-        
+        print(month_debt)
         periods = _get_penalty_periods(start_date, end_date, month_debt, company_type)
 
         
@@ -723,7 +741,8 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
                     for additional in parsed_info['additionals']:
                         debt = StrictFormattedMoney(additional['accrual'])
                         if debt < StrictFormattedMoney(0):
-                            period = _add_last_day_of_month(additional['period'])
+                            # period = _add_last_day_of_month(additional['period'])
+                            continue
                         else:
                             month_cur, year_cur = map(int, additional['period'].split('.'))
                             year_cur = year_cur if month_cur != 12 else year_cur+1
