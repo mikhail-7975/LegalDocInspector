@@ -591,12 +591,12 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
                         'penalty_period_info': None,
                         'text': text
                     })
-            # обработка отриц. доборов (они должны быть в начале)
+            # обработка отриц. доборов (они должны быть в начале) (только если 4-х сторонний)
             if accrual_or_adjustment == "accrual":
                 if len(parsed_info['additionals'])>0:
                     for additional in parsed_info['additionals']:
                         debt = StrictFormattedMoney(additional['accrual'])
-                        if debt < StrictFormattedMoney(0):
+                        if debt < StrictFormattedMoney(0) and is_four_party:
                             month_debt+= debt
                             month_accrual += debt
                             period = _add_last_day_of_month(additional['period'])
@@ -740,9 +740,9 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
                     new_periods = periods.copy()
                     for additional in parsed_info['additionals']:
                         debt = StrictFormattedMoney(additional['accrual'])
-                        if debt < StrictFormattedMoney(0):
-                            # period = _add_last_day_of_month(additional['period'])
-                            continue
+                        if debt < StrictFormattedMoney(0) and not is_four_party:
+                            period = _add_last_day_of_month(additional['period'])
+                            
                         else:
                             month_cur, year_cur = map(int, additional['period'].split('.'))
                             year_cur = year_cur if month_cur != 12 else year_cur+1
