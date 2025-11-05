@@ -48,6 +48,7 @@ def parse():
         date_request = request.form.get("date")
         date_request = date.fromisoformat(date_request).strftime("%d.%m.%Y")
         complects_count = int(request.form.get('complects_count'))
+        certificates_count = int(request.form.get("certificates_count"))
 
         folder = Path(
             save_data_folder, secure_filename(f"documents_from_request_{datetime.now()}")
@@ -66,7 +67,7 @@ def parse():
 
             complect_claim_file = request.files[f"complect_{complect_id}_claim_file"]
             complect_contract_file = request.files[f'complect_{complect_id}_contract_file']
-            complect_certificate_file = request.files[f'complect_{complect_id}_certificate_file']
+            # complect_certificate_file = request.files[f'complect_{complect_id}_certificate_file']
 
             # договор
             contract_file_path = Path(complect_folder, secure_filename(complect_contract_file.filename))
@@ -77,19 +78,24 @@ def parse():
             claim_file_path = Path(complect_folder, secure_filename(complect_claim_file.filename))
             complect_claim_file.save(claim_file_path)
             uploaded_files['claim_file'].append(str(claim_file_path))
+            table_parser_results = []
+            # справки
+            for claim_id in range(certificates_count):
+                complect_certificate_file = request.files[f'complect_{complect_id}_certificate_file_{claim_id}']
+                certificate_file_path = Path(complect_folder, secure_filename(complect_certificate_file.filename))
+                complect_certificate_file.save(certificate_file_path)
+                uploaded_files['certificate_file'].append(str(certificate_file_path))
+                table_parser.open(str(certificate_file_path))
+                result = table_parser.parse()
+                defendant_inn = table_parser.parse_defendant_inn()
+                contract_number = table_parser.parse_contract_number()
+                # print(contract_number)
+                table_parser.close()
+                table_parser_results.append(result)
 
-            # справка
-            certificate_file_path = Path(complect_folder, secure_filename(complect_certificate_file.filename))
-            complect_certificate_file.save(certificate_file_path)
-            uploaded_files['certificate_file'].append(str(certificate_file_path))
-
-
-            table_parser.open(str(certificate_file_path))
-            result = table_parser.parse()
-            defendant_inn = table_parser.parse_defendant_inn()
-            contract_number = table_parser.parse_contract_number()
-            # print(contract_number)
-            table_parser.close()
+            merged_table_result = {}
+            for table_result in table_parser_results :
+                merged_table_result.update(table_result)
 
             # LLM parser
 
@@ -103,7 +109,7 @@ def parse():
             service_type_info = "(заглушка) тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))"
             claim_info = {"claim_date": '01.01.2000', "claim_number": '123456'}
 
-            parsing_table_results.append((result, contract_number, overdue_date_info, service_type_info, claim_info))
+            parsing_table_results.append((merged_table_result, contract_number, overdue_date_info, service_type_info, claim_info))
 
         result_json['table_parser_result'] = parsing_table_results
 
