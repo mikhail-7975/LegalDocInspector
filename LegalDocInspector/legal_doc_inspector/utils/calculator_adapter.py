@@ -133,12 +133,12 @@ def convert_data(calculated_data_list: list[dict], last_days_of_penalty: list[in
             "contract_point": contract_dict['contract_point'],
             "accrual_debt": contract_dict['accrual_debt'],
             "correcting_debt": contract_dict['correcting_debt'],
-
+            "correcting_year": contract_dict['correcting_year']
         }
     converted_data['table_info']['all_debt'] = str(all_debt)
     converted_data['table_info']['all_penalty'] = str(all_penalty)
     converted_data['table_info']['cost_of_lawsuit'] = str(cost_of_lawsuit)
-
+    # print(converted_data)
     # converted_data["contract_types_templates"] = get_templates_of_smt(converted_data["contracts_info"], converted_data["company_type"], )
 
     return converted_data
