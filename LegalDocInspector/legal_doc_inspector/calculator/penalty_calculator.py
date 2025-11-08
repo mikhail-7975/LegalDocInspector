@@ -3,6 +3,7 @@ from LegalDocInspector.legal_doc_inspector.utils.convert_month import convert_mo
 import datetime
 import requests
 from decimal import Decimal, ROUND_HALF_UP
+from collections import defaultdict
 # from calculator_adapter import convert_data
 
 class StrictFormattedMoney:
@@ -131,6 +132,11 @@ class StrictFormattedMoney:
         if self.currency != other.currency:
             raise ValueError("Нельзя сравнивать StrictFormattedMoney с разными валютами")
         return self.amount >= other.amount
+    
+    def __radd__(self, other):
+        if other == 0:
+            return self
+        return self.__add__(other)
 
 
 def sort_dict_by_months(data_dict):
@@ -489,13 +495,34 @@ def _split_stage_by_date_correcting(stage:dict, split_date: datetime.datetime, s
 
         return result, str(new_debt)
 
+import datetime
+
 def _sort_all_payments(month_parsed_info):
+    grouped = {}  # dict: ключ -> (date, i), значение -> StrictFormattedMoney
+
+    for i, payment_info in enumerate([
+        month_parsed_info['accrual']['payments'],
+        month_parsed_info['adjustment']['payments']
+    ]):
+        for payment in payment_info:
+            key = (payment['date'], i)
+            money = StrictFormattedMoney(payment['payment'])  # создаём объект из строки/данных
+            if key in grouped:
+                grouped[key] = grouped[key] + money  # предполагается, что `+` поддерживается
+            else:
+                grouped[key] = money
+
+    # Теперь формируем список для сортировки
     res = []
-    for i ,payment_info in enumerate([month_parsed_info['accrual']['payments'], month_parsed_info['adjustment']['payments']]):
-        if len(payment_info)>0:
-            for payment in payment_info:
-                res.append((payment,i))        
-        
+    for (date, i), total_money in grouped.items():
+        # Преобразуем обратно в формат, совместимый с исходной структурой.
+        # Например, если вам нужно хранить строковое представление:
+        combined_payment = {
+            'date': date,
+            'payment': str(total_money)  # или total_money.to_string(), в зависимости от API
+            # добавьте другие поля при необходимости
+        }
+        res.append((combined_payment, i))
 
     return sorted(res, key=lambda x: datetime.datetime.strptime(x[0]['date'], '%d.%m.%Y'))
 
@@ -510,6 +537,73 @@ def _check_month_for_only_correcting_debt(month_parsed_info:dict):
 
 def _check_month_for_only_accrual_additionals(month_parsed_info:dict):
     return len(month_parsed_info['accrual']['accruals']) == 0 and len(month_parsed_info['accrual']['additionals'])>0
+
+def _add_month(period_str):
+    """Возвращает строку следующего месяца в формате 'MM.YYYY'."""
+    m, y = map(int, period_str.split('.'))
+    if m == 12:
+        return f"01.{y + 1}"
+    else:
+        return f"{m + 1:02d}.{y}"
+
+def _find_overdue_start(month_parsed_info, base_period:str, is_four_party:bool):
+    """
+    month_parsed_info — словарь вида из вашего примера.
+    base_period — строка, например '10.2024'
+    """
+    # 1. Основной долг
+    base_accruals = month_parsed_info['accrual']['accruals']
+    base_debt = sum((StrictFormattedMoney(item['accrual']) for item in base_accruals), StrictFormattedMoney(0))
+    adjustments = month_parsed_info['accrual'].get('additionals', [])
+    if is_four_party:
+        pos_adj = []
+        for adj in adjustments:
+            accrual = StrictFormattedMoney(adj['accrual'])
+            if accrual < StrictFormattedMoney(0):
+                base_debt+= accrual
+            else:
+                pos_adj.append(adj)
+        
+        adjustments = pos_adj
+
+    # 2. Все оплаты
+    all_payments = []
+    all_payments.extend(month_parsed_info['accrual']['payments'])
+    # all_payments.extend(month_parsed_info.get('adjustment', {}).get('payments', []))
+    total_paid = sum((StrictFormattedMoney(p['payment']) for p in all_payments), StrictFormattedMoney(0))
+
+    # 3. Если основной долг не покрыт — просрочка с base_period + 1
+    if total_paid < base_debt:
+        return base_period
+
+    # 4. Основной долг покрыт. Смотрим корректировки.
+    remaining_after_base = total_paid - base_debt
+
+    # Собираем корректировки (additionals)
+    # Если есть adjustment accruals — добавьте их тоже, если нужно
+    # Например: adjustments.extend(month_parsed_info.get('adjustment', {}).get('accruals', []))
+
+    if not adjustments:
+        return base_period  # нет долга
+
+    # Сортируем по периоду
+    def parse_period(p):
+        return datetime.datetime.strptime(p, '%m.%Y')
+    adjustments.sort(key=lambda x: parse_period(x['period']))
+
+    # Применяем остаток оплат к корректировкам
+    remaining_to_cover = remaining_after_base
+    for adj in adjustments:
+        if remaining_to_cover >= StrictFormattedMoney(adj['accrual']):
+            remaining_to_cover -= StrictFormattedMoney(adj['accrual'])
+        else:
+            # Эта корректировка не покрыта → просрочка начинается со следующего месяца
+            return adj['period']
+
+    # Все корректировки покрыты
+    return base_period
+
+
 
 def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, end_date:str) -> dict:
     all_penalty = StrictFormattedMoney(0)
@@ -545,8 +639,15 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
         next_month = parsed.month+1 if parsed.month != 12 else 1
         next_year = parsed.year if parsed.month != 12 else parsed.year+1
         if not _check_month_for_only_accrual_additionals(month_parsed_info):
-            start_date = datetime.datetime(next_year, next_month, int(day_of_penalty))  # дефолтная дата окончания договора без учёта нерабочих дней
+            real_month = _find_overdue_start(month_parsed_info, month, is_four_party)
+            real_parsed = datetime.datetime.strptime(real_month, "%m.%Y")
+            real_next_month = real_parsed.month+1 if real_parsed.month != 12 else 1
+            real_next_year = real_parsed.year if real_parsed.month != 12 else real_parsed.year+1
+
+            print(real_month, month_name)
+            start_date = datetime.datetime(real_next_year, real_next_month, int(day_of_penalty))  # дефолтная дата окончания договора без учёта нерабочих дней
             start_date = _get_start_date(start_date) # дата начала периода просрочки
+            
         else:
             additional_month = month_parsed_info['accrual']['additionals'][0]['period']
             additional_parsed = datetime.datetime.strptime(additional_month, "%m.%Y")
@@ -632,8 +733,11 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
             #предварительный расчёт периодов пени без учёта погашений
         
         print(month_debt)
-        periods = _get_penalty_periods(start_date, end_date, month_debt, company_type)
 
+        #TODO скорее всего проверку на другую start_date надо добавить сюда
+        
+        periods = _get_penalty_periods(start_date, end_date, month_debt, company_type)
+        
         
         payments_info = _sort_all_payments(month_parsed_info)
         correcting_done_flag = _check_is_correcting_done(month_correcting, payments_info)
@@ -641,7 +745,9 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
         if not is_four_party:
         
             for payment, i in payments_info:
+                #TODO скорее всего проверку на другую start_date надо добавить сюда
                 # обработка погашений долга до периодов пени либо погашений доли ГК
+                
                 if datetime.datetime.strptime(payment['date'], '%d.%m.%Y') < start_date or (i == 1 and correcting_done_flag) :
                     # print(payment)
                     
@@ -740,7 +846,9 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
                     new_periods = periods.copy()
                     for additional in parsed_info['additionals']:
                         debt = StrictFormattedMoney(additional['accrual'])
-                        if debt < StrictFormattedMoney(0) and not is_four_party:
+                        if debt < StrictFormattedMoney(0) and is_four_party:
+                            continue
+                        elif debt < StrictFormattedMoney(0) and not is_four_party:
                             period = _add_last_day_of_month(additional['period'])
                             
                         else:
