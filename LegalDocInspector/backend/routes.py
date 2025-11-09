@@ -48,13 +48,13 @@ def parse():
         date_request = request.form.get("date")
         date_request = date.fromisoformat(date_request).strftime("%d.%m.%Y")
         complects_count = int(request.form.get('complects_count'))
-        certificates_count = int(request.form.get("certificates_count"))
+        # certificates_count = int(request.form.get("certificates_count"))
 
         folder = Path(
             save_data_folder, secure_filename(f"documents_from_request_{datetime.now()}")
         )
         # session['path_to_save'] = str(folder)
-        request.files
+        print(request.files)
 
         folder.mkdir(exist_ok=True, parents=True)
 
@@ -75,12 +75,14 @@ def parse():
             uploaded_files['contract_file'].append(str(contract_file_path))
 
             # претензия
+            certificates_count = int(request.form.get(f"{complect_id}_certificates_count"))
             claim_file_path = Path(complect_folder, secure_filename(complect_claim_file.filename))
             complect_claim_file.save(claim_file_path)
             uploaded_files['claim_file'].append(str(claim_file_path))
             table_parser_results = []
             # справки
             for claim_id in range(certificates_count):
+                print(complect_id, claim_id)
                 complect_certificate_file = request.files[f'complect_{complect_id}_certificate_file_{claim_id}']
                 certificate_file_path = Path(complect_folder, secure_filename(complect_certificate_file.filename))
                 complect_certificate_file.save(certificate_file_path)
