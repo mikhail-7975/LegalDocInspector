@@ -2,7 +2,7 @@ from LegalDocInspector.legal_doc_inspector.exel_parser import TableParser
 from LegalDocInspector.legal_doc_inspector.utils.convert_month import convert_month
 import datetime
 import requests
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, ROUND_HALF_UP, ROUND_DOWN
 from collections import defaultdict
 # from calculator_adapter import convert_data
 
@@ -347,22 +347,67 @@ def _get_penalty_periods(start_date:datetime.datetime, end_date:datetime.datetim
 
     return result
 
-def _calculate_penalty_for_each_period(periods:list[dict]) -> tuple[list[dict], StrictFormattedMoney, StrictFormattedMoney]:
+# def _calculate_penalty_for_each_period(periods:list[dict]) -> tuple[list[dict], StrictFormattedMoney, StrictFormattedMoney]:
+#     result_penalty = StrictFormattedMoney(0)
+#     result_debt = StrictFormattedMoney(0)
+#     for period in periods:
+#         if period['type'] == 'penalty_period':
+#             debt = StrictFormattedMoney(period['debt'])
+#             _, _, days_count = period['period']
+#             rate, share = period['penalty_period_info']
+
+#             denominator, separator = _get_dec_float(share)
+
+#             penalty = debt * Decimal(days_count) * (Decimal(str(denominator)) / Decimal(str(separator))) * Decimal("0.095")
+#             period['penalty'] = str(penalty)
+#             period['formulae'] = f"{str(debt)} × {str(days_count)} × {share} × 9,5%"
+#             result_penalty += penalty
+#     result_debt += debt
+#     return periods, result_penalty, result_debt
+
+
+def _calculate_penalty_for_each_period(periods: list[dict]) -> tuple[list[dict], StrictFormattedMoney, StrictFormattedMoney]:
     result_penalty = StrictFormattedMoney(0)
     result_debt = StrictFormattedMoney(0)
+    
     for period in periods:
         if period['type'] == 'penalty_period':
+            # Преобразуем debt в StrictFormattedMoney
             debt = StrictFormattedMoney(period['debt'])
             _, _, days_count = period['period']
             rate, share = period['penalty_period_info']
 
-            denominator, separator = _get_dec_float(share)
-
-            penalty = debt * Decimal(days_count) * (Decimal(str(denominator)) / Decimal(str(separator))) * Decimal("0.095")
+            # Обрабатываем случай, когда share = '0'
+            if share == '0':
+                penalty = StrictFormattedMoney(0)
+            else:
+                # Разбираем дробь share (например, "1/300")
+                numerator_str, denominator_str = share.split('/')
+                numerator = Decimal(numerator_str)
+                denominator = Decimal(denominator_str)
+                
+                # Вычисляем пеню с использованием Decimal для точности
+                daily_rate = numerator / denominator
+                penalty_decimal = debt.amount * Decimal(days_count) * daily_rate * Decimal("0.095")
+                # Округляем до 2 знаков после запятой с учетом только 3-го знака
+                # Для этого используем quantize с ROUND_HALF_UP
+                print(penalty_decimal, "zalupa")
+                penalty_decimal = penalty_decimal.quantize(Decimal('0.001'), rounding=ROUND_DOWN)
+                print(penalty_decimal, "not zalupa")
+                penalty_rounded = penalty_decimal.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                print(penalty_rounded, 'blyat')
+                # Создаем StrictFormattedMoney с уже округленным значением
+                penalty = StrictFormattedMoney(penalty_rounded)
+                print(penalty, 'chto nahuy')
             period['penalty'] = str(penalty)
-            period['formulae'] = f"{str(debt)} × {str(days_count)} × {share} × 9,5%"
+            
+            # Формируем формулу с отформатированными числами
+            debt_formatted = debt.format(decimal_separator=',', thousands_separator=' ')
+            period['formulae'] = f"{debt_formatted} × {days_count} × {share} × 9,5%"
+            
             result_penalty += penalty
-    result_debt += debt
+            result_debt += debt
+            
     return periods, result_penalty, result_debt
 
 def _split_stage_by_date(stage:dict, split_date: datetime.datetime, split_payments:list[dict]):
