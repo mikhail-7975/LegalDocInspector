@@ -215,6 +215,7 @@ def create_table():
 
         return send_file(path_to_save, as_attachment=True), 200
     except Exception as e:
+        print(e)
         return traceback.format_exc(), 500
 
 
