@@ -99,9 +99,60 @@ class CalculationClaimGenerator:
 
         return converted_contracts
 
+    def _localname(self, elem):
+        """Возвращает локальное имя XML-тега (без namespace)."""
+        tag = elem.tag
+        if '}' in tag:
+            return tag.rsplit('}', 1)[1]
+        return tag
+
+    def delete_table_and_next_paragraph(self, table):
+        """
+        Удаляет таблицу и (если существует) _соседний_ параграф, который идёт
+        сразу после неё в том же родительском контейнере.
+        Не трогает параграфы в других контейнерах и не пытается удалять
+        'далёкие' параграфы (только непосредственный сосед).
+        """
+        tbl_elm = table._element
+        parent = tbl_elm.getparent()
+        if parent is None:
+            return  # нечего удалять
+
+        # Получаем следующий соседний элемент в том же parent
+        next_elm = tbl_elm.getnext()
+
+        # Удаляем таблицу
+        parent.remove(tbl_elm)
+
+        # Если следующий элемент существует и это параграф (w:p), удаляем его.
+        # (Проверяем локальное имя тега — надёжнее, чем endswith)
+        if next_elm is not None and self._localname(next_elm) == 'p':
+            # Убедимся, что у параграфа тот же родитель (на всякий случай)
+            if next_elm.getparent() is parent:
+                parent.remove(next_elm)
+
+    def clear_document_from_index(self, index: int, keep_tail=2):
+        """
+        Удаляет все таблицы, начиная с index, до len(doc.tables) - keep_tail.
+        Работает надёжно, т.к. всегда берет таблицу по индексу (живой список).
+        - doc: Document
+        - index: индекс первой таблицы для удаления (0-based)
+        - keep_tail: количество таблиц, которые нужно оставить в конце (по умолчанию 2)
+        """
+        # Простейшая защита от некорректных значений
+        if index < 0:
+            raise ValueError("index должен быть >= 0")
+        if keep_tail < 0:
+            raise ValueError("keep_tail должен быть >= 0")
+
+        # Удаляем в цикле: после удаления следующая таблица займёт тот же индекс.
+        # Останавливаемся, когда остаётся только keep_tail таблиц справа.
+        while len(self.redactor.doc.tables) > index + keep_tail:
+            tbl = self.redactor.doc.tables[index]
+            self.delete_table_and_next_paragraph(tbl)
 
     def fill_file(self):
-        self.clone_table(len(self.config["contracts"]) - 1)
+        # self.clone_table(len(self.config["contracts"]) - 1)
 
         # self.redactor.print_table(self.redactor.get_table(0))
 
@@ -110,8 +161,12 @@ class CalculationClaimGenerator:
             # self._create_table_from_calculation_info_and_replace(contract_info=contract, table_index=i)
             self.fill_contract(contract=contract, contract_index=i)
 
+        self.clear_document_from_index(len(self.config['contracts']))
+
     def fill_contract(self, contract, contract_index):
         table = self.redactor.get_table(contract_index)
+        self._correct_table_height(table)
+        self._correct_table_width(table, contract_index)
         # print(self._get_dimensions_of_table(table))
         self.fill_common_contract_info(contract, table)
 
@@ -124,13 +179,12 @@ class CalculationClaimGenerator:
             # filled_rows += 3
             # payments += len(period["payments_1"])
         #     payments += len(period["payments_2"])
-            self._correct_table_height(table)
 
     def fill_common_contract_info(self, contract:dict, table: Table):
         to_replace = (
-            (self.borders("номер договора"),            contract["contract_number"]),
-            (self.borders("дата начала просрочки"),     contract["start_date_of_delay"]),
-            (self.borders("дата конца просрочки"),      contract["end_date_of_delay"]),
+            ("CONTRACTNUMBER",            contract["contract_number"]),
+            ("STARTDELAYDATE",     contract["start_date_of_delay"]),
+            ("ENDDELAYDATE",      contract["end_date_of_delay"]),
             (self.borders("сумма долга"),               contract["total_debt"]),
             (self.borders("сумма пеней"),               contract["total_peny"]),
         )
@@ -220,7 +274,7 @@ class CalculationClaimGenerator:
     def fill_common_period_info(self, period, period_index: int, table: Table, filled_rows: int):
         # print(f"месяц: {period['period']}")
         to_replace = (
-            (self.borders("период месяц.год"),              period["period"]),
+            ("MONTHPERIOD",              period["period"]),
             (self.borders("сумма пени за период"),          period["total"]),
         )
 
@@ -471,7 +525,7 @@ class CalculationClaimGenerator:
     def fill_second_table(self):
         self.fill_second_table_common_info()
 
-        table = self.redactor.get_table(1)
+        table = self.redactor.get_table(-2)
         # self.redactor.print_table(table)
         
         # по сути число договоров
@@ -505,7 +559,7 @@ class CalculationClaimGenerator:
 
 
     def fill_second_table_common_info(self):
-        table = self.redactor.get_table(1)
+        table = self.redactor.get_table(-2)
         self.redactor.replace_text_in_paragraph(
             table.row_cells(2)[2].paragraphs[0],
             self.borders("сумма долга"),
@@ -742,7 +796,45 @@ class CalculationClaimGenerator:
         for row in table.rows:
             row.height_rule = WD_ROW_HEIGHT_RULE.EXACTLY
             row.height = Emu(255570)
-    
+
+    def _correct_table_width(self, table:Table, table_number:int): 
+        table.autofit = False
+        if table_number==0:
+            self.set_exact_cell_dimensions(table.rows[0].cells[0], Inches(2.5).twips)
+            self.set_exact_cell_dimensions(table.rows[2].cells[0], Inches(1.48).twips) 
+            self.set_exact_cell_dimensions(table.rows[2].cells[1], Inches(1.4).twips)
+            self.set_exact_cell_dimensions(table.rows[3].cells[3], Inches(1.5).twips)
+            self.set_exact_cell_dimensions(table.rows[3].cells[4], Inches(1.5).twips)
+            self.set_exact_cell_dimensions(table.rows[3].cells[5], Inches(0.8).twips)
+            self.set_exact_cell_dimensions(table.rows[3].cells[6], Inches(0.5).twips)
+            self.set_exact_cell_dimensions(table.rows[3].cells[7], Inches(0.5).twips)
+            self.set_exact_cell_dimensions(table.rows[3].cells[8], Inches(2).twips)
+            self.set_exact_cell_dimensions(table.rows[3].cells[11], Inches(1.8).twips) 
+        else:
+            
+            self.set_exact_cell_dimensions(table.rows[0].cells[0], Inches(4.2).twips) #начало просрочки
+            self.set_exact_cell_dimensions(table.rows[2].cells[0], Inches(2.4).twips) #месяц
+            self.set_exact_cell_dimensions(table.rows[2].cells[1], Inches(0.1).twips) #долг
+            self.set_exact_cell_dimensions(table.rows[3].cells[3], Inches(2.3).twips) # c
+            self.set_exact_cell_dimensions(table.rows[3].cells[4], Inches(2.3).twips) # по
+            self.set_exact_cell_dimensions(table.rows[3].cells[5], Inches(1.2).twips) # дней
+            self.set_exact_cell_dimensions(table.rows[3].cells[6], Inches(0.5).twips) # ставка
+            self.set_exact_cell_dimensions(table.rows[3].cells[8], Inches(2).twips) # доля
+            self.set_exact_cell_dimensions(table.rows[3].cells[11], Inches(3.4).twips)  # пени
+
+    def set_exact_cell_dimensions(self, cell, width=None, height=None):
+        """Устанавливает точные размеры ячейки"""
+        tc = cell._tc
+        tcPr = tc.get_or_add_tcPr()
+        if width:
+            tcW = OxmlElement('w:tcW')
+            tcW.set(qn('w:w'), str(width))
+            tcW.set(qn('w:type'), 'dxa') # в TWIPS (1/20 point) 
+            tcPr.append(tcW) 
+        if height: # Для высоты нужно работать со строкой 
+            pass
+
+
 
     
     def _create_table_from_calculation_info_and_replace(self, contract_info:dict, table_index):
