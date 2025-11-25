@@ -166,7 +166,6 @@ class CalculationClaimGenerator:
     def fill_contract(self, contract, contract_index):
         table = self.redactor.get_table(contract_index)
         self._correct_table_height(table)
-        self._correct_table_width(table, contract_index)
         # print(self._get_dimensions_of_table(table))
         self.fill_common_contract_info(contract, table)
 
@@ -179,6 +178,7 @@ class CalculationClaimGenerator:
             # filled_rows += 3
             # payments += len(period["payments_1"])
         #     payments += len(period["payments_2"])
+        self._correct_table_width(table, contract_index)
 
     def fill_common_contract_info(self, contract:dict, table: Table):
         to_replace = (
@@ -795,32 +795,48 @@ class CalculationClaimGenerator:
     def _correct_table_height(self, table:Table):
         for row in table.rows:
             row.height_rule = WD_ROW_HEIGHT_RULE.EXACTLY
-            row.height = Emu(255570)
+            row.height = Emu(205570)
 
     def _correct_table_width(self, table:Table, table_number:int): 
-        table.autofit = False
-        if table_number==0:
-            self.set_exact_cell_dimensions(table.rows[0].cells[0], Inches(2.5).twips)
-            self.set_exact_cell_dimensions(table.rows[2].cells[0], Inches(1.48).twips) 
-            self.set_exact_cell_dimensions(table.rows[2].cells[1], Inches(1.4).twips)
-            self.set_exact_cell_dimensions(table.rows[3].cells[3], Inches(1.5).twips)
-            self.set_exact_cell_dimensions(table.rows[3].cells[4], Inches(1.5).twips)
-            self.set_exact_cell_dimensions(table.rows[3].cells[5], Inches(0.8).twips)
-            self.set_exact_cell_dimensions(table.rows[3].cells[6], Inches(0.5).twips)
-            self.set_exact_cell_dimensions(table.rows[3].cells[7], Inches(0.5).twips)
-            self.set_exact_cell_dimensions(table.rows[3].cells[8], Inches(2).twips)
-            self.set_exact_cell_dimensions(table.rows[3].cells[11], Inches(1.8).twips) 
-        else:
-            
-            self.set_exact_cell_dimensions(table.rows[0].cells[0], Inches(4.2).twips) #начало просрочки
-            self.set_exact_cell_dimensions(table.rows[2].cells[0], Inches(2.4).twips) #месяц
-            self.set_exact_cell_dimensions(table.rows[2].cells[1], Inches(0.1).twips) #долг
-            self.set_exact_cell_dimensions(table.rows[3].cells[3], Inches(2.3).twips) # c
-            self.set_exact_cell_dimensions(table.rows[3].cells[4], Inches(2.3).twips) # по
-            self.set_exact_cell_dimensions(table.rows[3].cells[5], Inches(1.2).twips) # дней
-            self.set_exact_cell_dimensions(table.rows[3].cells[6], Inches(0.5).twips) # ставка
-            self.set_exact_cell_dimensions(table.rows[3].cells[8], Inches(2).twips) # доля
-            self.set_exact_cell_dimensions(table.rows[3].cells[11], Inches(3.4).twips)  # пени
+        
+        # if table_number==0:
+        #     self.set_exact_cell_dimensions(table.rows[0].cells[0], Inches(2.5).twips)
+        #     self.set_exact_cell_dimensions(table.rows[2].cells[0], Inches(1.48).twips) 
+        #     self.set_exact_cell_dimensions(table.rows[2].cells[1], Inches(1.4).twips)
+        #     self.set_exact_cell_dimensions(table.rows[3].cells[3], Inches(1.5).twips)
+        #     self.set_exact_cell_dimensions(table.rows[3].cells[4], Inches(1.5).twips)
+        #     self.set_exact_cell_dimensions(table.rows[3].cells[5], Inches(0.8).twips)
+        #     self.set_exact_cell_dimensions(table.rows[3].cells[6], Inches(0.5).twips)
+        #     self.set_exact_cell_dimensions(table.rows[3].cells[7], Inches(0.5).twips)
+        #     self.set_exact_cell_dimensions(table.rows[3].cells[8], Inches(2).twips)
+        #     self.set_exact_cell_dimensions(table.rows[3].cells[11], Inches(1.8).twips) 
+        # else:
+
+        # for i, cell in enumerate(table.rows[2].cells):
+        #     print(i, cell.text)
+        # for i, cell in enumerate(table.rows[3].cells):
+        #     print(i, cell.text)
+        
+        self.set_exact_cell_dimensions(table.rows[0].cells[0], Inches(4.2).twips) #начало просрочки
+
+        self.set_exact_cell_dimensions(table.rows[2].cells[0], Inches(2.5).twips) #месяц
+        self.set_exact_cell_dimensions(table.rows[2].cells[1], Inches(2).twips) #долг
+        self.set_exact_cell_dimensions(table.rows[2].cells[1], Inches(2.5).twips) #долг
+
+        self.set_exact_cell_dimensions(table.rows[2].cells[9], Inches(3).twips) #долг
+        self.set_exact_cell_dimensions(table.rows[2].cells[6], Inches(1.4).twips) #долг
+        self.set_exact_cell_dimensions(table.rows[2].cells[8], Inches(1.4).twips) #долг
+        self.set_exact_cell_dimensions(table.rows[2].cells[11], Inches(2.5).twips) #долг
+        self.set_exact_cell_dimensions(table.rows[2].cells[9], Inches(6).twips) #долг
+
+        self.set_exact_cell_dimensions(table.rows[3].cells[3], Inches(2).twips) # c
+        self.set_exact_cell_dimensions(table.rows[3].cells[4], Inches(2).twips) # по
+        self.set_exact_cell_dimensions(table.rows[3].cells[5], Inches(1.2).twips) # дней
+        # self.set_exact_cell_dimensions(table.rows[3].cells[6], Inches(0.5).twips) # ставка
+        # self.set_exact_cell_dimensions(table.rows[3].cells[8], Inches(2).twips) # доля
+        # self.set_exact_cell_dimensions(table.rows[2].cells[11], Inches(3.4).twips)  # пени
+        
+        # print('-----------------')
 
     def set_exact_cell_dimensions(self, cell, width=None, height=None):
         """Устанавливает точные размеры ячейки"""

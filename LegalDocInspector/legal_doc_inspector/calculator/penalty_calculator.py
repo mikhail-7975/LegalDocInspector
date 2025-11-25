@@ -391,14 +391,11 @@ def _calculate_penalty_for_each_period(periods: list[dict]) -> tuple[list[dict],
                 penalty_decimal = debt.amount * Decimal(days_count) * daily_rate * Decimal("0.095")
                 # Округляем до 2 знаков после запятой с учетом только 3-го знака
                 # Для этого используем quantize с ROUND_HALF_UP
-                print(penalty_decimal, "zalupa")
                 penalty_decimal = penalty_decimal.quantize(Decimal('0.001'), rounding=ROUND_DOWN)
-                print(penalty_decimal, "not zalupa")
                 penalty_rounded = penalty_decimal.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-                print(penalty_rounded, 'blyat')
                 # Создаем StrictFormattedMoney с уже округленным значением
                 penalty = StrictFormattedMoney(penalty_rounded)
-                print(penalty, 'chto nahuy')
+                
             period['penalty'] = str(penalty)
             
             # Формируем формулу с отформатированными числами
@@ -567,7 +564,8 @@ def _sort_all_payments(month_parsed_info):
             'payment': str(total_money)  # или total_money.to_string(), в зависимости от API
             # добавьте другие поля при необходимости
         }
-        res.append((combined_payment, i))
+        if total_money != StrictFormattedMoney(0):
+            res.append((combined_payment, i))
 
     return sorted(res, key=lambda x: datetime.datetime.strptime(x[0]['date'], '%d.%m.%Y'))
 
@@ -689,7 +687,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
             real_next_month = real_parsed.month+1 if real_parsed.month != 12 else 1
             real_next_year = real_parsed.year if real_parsed.month != 12 else real_parsed.year+1
 
-            print(real_month, month_name)
+            # print(real_month, month_name)
             start_date = datetime.datetime(real_next_year, real_next_month, int(day_of_penalty))  # дефолтная дата окончания договора без учёта нерабочих дней
             start_date = _get_start_date(start_date) # дата начала периода просрочки
             
@@ -777,7 +775,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
 
             #предварительный расчёт периодов пени без учёта погашений
         
-        print(month_debt)
+        # print(month_debt)
 
         #TODO скорее всего проверку на другую start_date надо добавить сюда
         
@@ -945,7 +943,6 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
 
             del res[month_name]
             continue
-        
         
         
         periods, result_penalty, result_debt = _calculate_penalty_for_each_period(periods)
