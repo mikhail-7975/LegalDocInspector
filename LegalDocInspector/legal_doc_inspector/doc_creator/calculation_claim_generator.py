@@ -1,11 +1,20 @@
 import json
 from copy import deepcopy
-
 from docx import Document
+from docx.shared import Emu, Inches
 from docx.table import Table
-
+from docx.oxml.parser import OxmlElement
+from docx.oxml.ns import qn
 from LegalDocInspector.legal_doc_inspector.doc_creator.docx_editor import DocxRedactor
 from datetime import datetime
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.table import Table, _Cell, _Row, _Column
+from docx import Document
+from docx.shared import Pt, Cm
+from docx.enum.section import WD_ORIENT
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.enum.table import WD_ROW_HEIGHT_RULE
 
 
 class CalculationClaimGenerator:
@@ -38,7 +47,6 @@ class CalculationClaimGenerator:
         self.fill_second_table()
         self.fill_other_parts()
         self.fill_file()
-
         self.redactor.save()
         self.redactor.close()
 
@@ -91,19 +99,74 @@ class CalculationClaimGenerator:
 
         return converted_contracts
 
+    def _localname(self, elem):
+        """Возвращает локальное имя XML-тега (без namespace)."""
+        tag = elem.tag
+        if '}' in tag:
+            return tag.rsplit('}', 1)[1]
+        return tag
+
+    def delete_table_and_next_paragraph(self, table):
+        """
+        Удаляет таблицу и (если существует) _соседний_ параграф, который идёт
+        сразу после неё в том же родительском контейнере.
+        Не трогает параграфы в других контейнерах и не пытается удалять
+        'далёкие' параграфы (только непосредственный сосед).
+        """
+        tbl_elm = table._element
+        parent = tbl_elm.getparent()
+        if parent is None:
+            return  # нечего удалять
+
+        # Получаем следующий соседний элемент в том же parent
+        next_elm = tbl_elm.getnext()
+
+        # Удаляем таблицу
+        parent.remove(tbl_elm)
+
+        # Если следующий элемент существует и это параграф (w:p), удаляем его.
+        # (Проверяем локальное имя тега — надёжнее, чем endswith)
+        if next_elm is not None and self._localname(next_elm) == 'p':
+            # Убедимся, что у параграфа тот же родитель (на всякий случай)
+            if next_elm.getparent() is parent:
+                parent.remove(next_elm)
+
+    def clear_document_from_index(self, index: int, keep_tail=2):
+        """
+        Удаляет все таблицы, начиная с index, до len(doc.tables) - keep_tail.
+        Работает надёжно, т.к. всегда берет таблицу по индексу (живой список).
+        - doc: Document
+        - index: индекс первой таблицы для удаления (0-based)
+        - keep_tail: количество таблиц, которые нужно оставить в конце (по умолчанию 2)
+        """
+        # Простейшая защита от некорректных значений
+        if index < 0:
+            raise ValueError("index должен быть >= 0")
+        if keep_tail < 0:
+            raise ValueError("keep_tail должен быть >= 0")
+
+        # Удаляем в цикле: после удаления следующая таблица займёт тот же индекс.
+        # Останавливаемся, когда остаётся только keep_tail таблиц справа.
+        while len(self.redactor.doc.tables) > index + keep_tail:
+            tbl = self.redactor.doc.tables[index]
+            self.delete_table_and_next_paragraph(tbl)
 
     def fill_file(self):
-        self.clone_table(len(self.config["contracts"]) - 1)
+        # self.clone_table(len(self.config["contracts"]) - 1)
 
         # self.redactor.print_table(self.redactor.get_table(0))
 
         for i, contract in enumerate(self.config["contracts"]):
-            self.fill_contract(contract, i)
+    ### TODO 
+            # self._create_table_from_calculation_info_and_replace(contract_info=contract, table_index=i)
+            self.fill_contract(contract=contract, contract_index=i)
 
+        self.clear_document_from_index(len(self.config['contracts']))
 
     def fill_contract(self, contract, contract_index):
         table = self.redactor.get_table(contract_index)
-
+        self._correct_table_height(table)
+        # print(self._get_dimensions_of_table(table))
         self.fill_common_contract_info(contract, table)
 
         self.clone_block(table, 4, len(contract["periods"]) - 1)
@@ -115,13 +178,13 @@ class CalculationClaimGenerator:
             # filled_rows += 3
             # payments += len(period["payments_1"])
         #     payments += len(period["payments_2"])
+        self._correct_table_width(table, contract_index)
 
-
-    def fill_common_contract_info(self, contract, table: Table):
+    def fill_common_contract_info(self, contract:dict, table: Table):
         to_replace = (
-            (self.borders("номер договора"),            contract["contract_number"]),
-            (self.borders("дата начала просрочки"),     contract["start_date_of_delay"]),
-            (self.borders("дата конца просрочки"),      contract["end_date_of_delay"]),
+            ("CONTRACTNUMBER",            contract["contract_number"]),
+            ("STARTDELAYDATE",     contract["start_date_of_delay"]),
+            ("ENDDELAYDATE",      contract["end_date_of_delay"]),
             (self.borders("сумма долга"),               contract["total_debt"]),
             (self.borders("сумма пеней"),               contract["total_peny"]),
         )
@@ -211,7 +274,7 @@ class CalculationClaimGenerator:
     def fill_common_period_info(self, period, period_index: int, table: Table, filled_rows: int):
         # print(f"месяц: {period['period']}")
         to_replace = (
-            (self.borders("период месяц.год"),              period["period"]),
+            ("MONTHPERIOD",              period["period"]),
             (self.borders("сумма пени за период"),          period["total"]),
         )
 
@@ -317,6 +380,7 @@ class CalculationClaimGenerator:
             (self.borders("формула"),                       row["formulae"]),
             (self.borders("пени"),                          row["penalty"]),
         )
+
         cell = table.row_cells(row_index)[1]
         self.redactor.replace_text_in_paragraph(cell.paragraphs[0], to_replace[0][0], to_replace[0][1])
         cell = table.row_cells(row_index)[3]
@@ -461,7 +525,7 @@ class CalculationClaimGenerator:
     def fill_second_table(self):
         self.fill_second_table_common_info()
 
-        table = self.redactor.get_table(1)
+        table = self.redactor.get_table(-2)
         # self.redactor.print_table(table)
         
         # по сути число договоров
@@ -495,7 +559,7 @@ class CalculationClaimGenerator:
 
 
     def fill_second_table_common_info(self):
-        table = self.redactor.get_table(1)
+        table = self.redactor.get_table(-2)
         self.redactor.replace_text_in_paragraph(
             table.row_cells(2)[2].paragraphs[0],
             self.borders("сумма долга"),
@@ -678,3 +742,220 @@ class CalculationClaimGenerator:
                     if k in run.text:
                         run.text = run.text.replace(k, v)
             # print(f"runs={runs}")
+
+
+    def _get_dimensions_of_table(self, table:Table):
+        """Получает все размеры таблицы"""
+        
+        # Размеры таблицы
+        dimensions = {
+            'rows_count': len(table.rows),
+            'columns_count': len(table.columns),
+            'column_widths': [],
+            'row_heights': [],
+            'cell_dimensions': []
+        }
+        
+        # Получение ширины колонок
+        for col_idx, column in enumerate(table.columns):
+            # Ширина колонки (может быть None если не задана явно)
+            width = column.width
+            dimensions['column_widths'].append({
+                'column_index': col_idx,
+                'width': width,
+                'width_in_inches': width.inches if width else None
+            })
+        
+        # Получение высоты строк
+        for row_idx, row in enumerate(table.rows):
+            height = row.height
+            dimensions['row_heights'].append({
+                'row_index': row_idx,
+                'height': height,
+                'height_in_inches': height.inches if height else None
+            })
+        
+        # Получение размеров каждой ячейки
+        for row_idx, row in enumerate(table.rows):
+            row_cells = []
+            for col_idx, cell in enumerate(row.cells):
+                # Информация о ячейке
+                cell_info = {
+                    'row': row_idx,
+                    'column': col_idx,
+                    'text': cell.text.strip(),
+                    'colspan': 1,  # по умолчанию
+                    'rowspan': 1   # по умолчанию
+                }
+                row_cells.append(cell_info)
+            dimensions['cell_dimensions'].append(row_cells)
+        
+        return dimensions
+    
+    def _correct_table_height(self, table:Table):
+        for row in table.rows:
+            row.height_rule = WD_ROW_HEIGHT_RULE.EXACTLY
+            row.height = Emu(205570)
+
+    def _correct_table_width(self, table:Table, table_number:int): 
+        
+        # if table_number==0:
+        #     self.set_exact_cell_dimensions(table.rows[0].cells[0], Inches(2.5).twips)
+        #     self.set_exact_cell_dimensions(table.rows[2].cells[0], Inches(1.48).twips) 
+        #     self.set_exact_cell_dimensions(table.rows[2].cells[1], Inches(1.4).twips)
+        #     self.set_exact_cell_dimensions(table.rows[3].cells[3], Inches(1.5).twips)
+        #     self.set_exact_cell_dimensions(table.rows[3].cells[4], Inches(1.5).twips)
+        #     self.set_exact_cell_dimensions(table.rows[3].cells[5], Inches(0.8).twips)
+        #     self.set_exact_cell_dimensions(table.rows[3].cells[6], Inches(0.5).twips)
+        #     self.set_exact_cell_dimensions(table.rows[3].cells[7], Inches(0.5).twips)
+        #     self.set_exact_cell_dimensions(table.rows[3].cells[8], Inches(2).twips)
+        #     self.set_exact_cell_dimensions(table.rows[3].cells[11], Inches(1.8).twips) 
+        # else:
+
+        # for i, cell in enumerate(table.rows[2].cells):
+        #     print(i, cell.text)
+        # for i, cell in enumerate(table.rows[3].cells):
+        #     print(i, cell.text)
+        
+        self.set_exact_cell_dimensions(table.rows[0].cells[0], Inches(4.2).twips) #начало просрочки
+
+        self.set_exact_cell_dimensions(table.rows[2].cells[0], Inches(2.5).twips) #месяц
+        self.set_exact_cell_dimensions(table.rows[2].cells[1], Inches(2).twips) #долг
+        self.set_exact_cell_dimensions(table.rows[2].cells[1], Inches(2.5).twips) #долг
+
+        self.set_exact_cell_dimensions(table.rows[2].cells[9], Inches(3).twips) #долг
+        self.set_exact_cell_dimensions(table.rows[2].cells[6], Inches(1.4).twips) #долг
+        self.set_exact_cell_dimensions(table.rows[2].cells[8], Inches(1.4).twips) #долг
+        self.set_exact_cell_dimensions(table.rows[2].cells[11], Inches(2.5).twips) #долг
+        self.set_exact_cell_dimensions(table.rows[2].cells[9], Inches(6).twips) #долг
+
+        self.set_exact_cell_dimensions(table.rows[3].cells[3], Inches(2).twips) # c
+        self.set_exact_cell_dimensions(table.rows[3].cells[4], Inches(2).twips) # по
+        self.set_exact_cell_dimensions(table.rows[3].cells[5], Inches(1.2).twips) # дней
+        # self.set_exact_cell_dimensions(table.rows[3].cells[6], Inches(0.5).twips) # ставка
+        # self.set_exact_cell_dimensions(table.rows[3].cells[8], Inches(2).twips) # доля
+        # self.set_exact_cell_dimensions(table.rows[2].cells[11], Inches(3.4).twips)  # пени
+        
+        # print('-----------------')
+
+    def set_exact_cell_dimensions(self, cell, width=None, height=None):
+        """Устанавливает точные размеры ячейки"""
+        tc = cell._tc
+        tcPr = tc.get_or_add_tcPr()
+        if width:
+            tcW = OxmlElement('w:tcW')
+            tcW.set(qn('w:w'), str(width))
+            tcW.set(qn('w:type'), 'dxa') # в TWIPS (1/20 point) 
+            tcPr.append(tcW) 
+        if height: # Для высоты нужно работать со строкой 
+            pass
+
+
+
+    
+    def _create_table_from_calculation_info_and_replace(self, contract_info:dict, table_index):
+        old_table = self.redactor.get_table(table_index)
+        doc = self.redactor.doc
+        parent = old_table._element.getparent()
+        index = parent.index(old_table._element)
+        new_table = doc.add_table(rows=1, cols=13, style = old_table.style )
+        parent.remove(old_table._element)
+        self._create_table_title(new_table, contract_info)
+        
+        # Вставляем на место
+        parent.insert(index, new_table._element)
+
+        # self._create_table_month_info()
+            
+
+    def _create_table_title(self, table:Table, contract_info:dict):
+        table.rows[0].height_rule = WD_ROW_HEIGHT_RULE.EXACTLY
+        table.rows[0].height = Cm(0.6)
+        row_cells = table.rows[0].cells
+        row_cells[0].merge(row_cells[2])
+        self._put_text_into_table_cell('Информация о расчёте',
+                                        row_cells[0],
+                                        need_gray_bgc=True,
+                                        orient='left')
+        
+    
+
+
+
+
+
+
+    def _put_text_into_table_cell(self, text:str, cell:_Cell, font_size=9, need_bold=False, need_italic=False, orient="center", need_vertical_orient=True, need_gray_bgc=False):
+        paragraph = cell.paragraphs[0]
+        run = paragraph.add_run(text)
+        run.bold = need_bold
+        run.italic = need_italic
+        run.font.name = 'Times New Roman'
+
+        element = run._element
+        rPr = element.get_or_add_rPr()
+        rFonts = rPr.get_or_add_rFonts()
+        rFonts.set(qn('w:ascii'), 'Times New Roman')
+        rFonts.set(qn('w:hAnsi'), 'Times New Roman')
+        rFonts.set(qn('w:eastAsia'), 'Times New Roman')
+        rFonts.set(qn('w:cs'), 'Times New Roman')
+        # run._element.rPr.rFonts.set('w:eastAsia', 'Times New Roman')  # для корректного отображения в Word
+        run.font.size = Pt(font_size)
+
+        match orient:
+            case "center":
+                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            case "left":
+                paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            case "right":
+                paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
+        if need_vertical_orient:
+            self._set_cell_vertical_alignment(cell=cell)
+
+        if need_gray_bgc:
+            self._set_cell_background(cell=cell)
+
+
+        
+
+    def _set_cell_vertical_alignment(self, cell:_Cell, align="center"):
+        tc = cell._tc
+        tc_pr = tc.get_or_add_tcPr()
+        tag = tc_pr.xpath('w:vAlign')
+        if tag:
+            el = tag[0]
+            el.set(qn('w:val'), align)
+        else:
+            valign = OxmlElement('w:vAlign')
+            valign.set(qn('w:val'), align)
+            tc_pr.append(valign)
+
+    
+    def _set_cell_background(self, cell:_Cell, color_hex = "#d5d5d5"):
+        tc_pr = cell._tc.get_or_add_tcPr()
+        shading_elm = OxmlElement('w:shd')
+        shading_elm.set(qn('w:fill'), color_hex)
+        tc_pr.append(shading_elm)
+
+    def _set_row_bottom_border(self, row:_Row, color="000000", size=4):
+        """
+        :param row: объект строки (Row)
+        :param color: цвет в HEX без решётки (#), например "000000" — чёрный
+        :param size: толщина линии (в 1/8 pt, например 4 = 0.5pt, 6 = 0.75pt)
+        """
+        tr = row._tr
+        tc_borders = OxmlElement('w:tblBottomBorders')
+
+        bottom_border = OxmlElement('w:bottom')
+        bottom_border.set(qn('w:val'), 'single')
+        bottom_border.set(qn('w:sz'), str(size))
+        bottom_border.set(qn('w:color'), color)
+
+        tc_borders.append(bottom_border)
+
+        for el in tr.xpath('w:tblBottomBorders'):
+            tr.remove(el)
+
+        tr.append(tc_borders)
+    

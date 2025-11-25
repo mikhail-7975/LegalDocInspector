@@ -112,20 +112,42 @@ class DocxRedactor:
 
 
     def replace_text_in_paragraph(self, paragraph: Paragraph, old_text: str, new_text: str) -> bool:
-        """Находит текст в параграфе и заменяет его на новый
-        Returns:
-            Возвращает True, если заменил текст хотя бы один раз, и False, если нет
-        """
+        """Расширенная замена текста с обработкой пробелов"""
         result = False
-
-        # runs = []
-        for run in paragraph.runs:
-            # runs.append(run.text)
+        
+        # Если текст не найден в отдельных runs, проверяем весь параграф
+        paragraph_text = paragraph.text
+        if old_text not in paragraph_text:
+            return False
+        
+        # Собираем информацию о всех runs
+        runs_text = [run.text for run in paragraph.runs]
+        
+        # Заменяем в каждом run
+        for i, run in enumerate(paragraph.runs):
             if old_text in run.text:
-                run.text = run.text.replace(old_text, new_text)
+                # Сохраняем оригинальное форматирование
+                original_font = run.font
+                is_bold = run.bold
+                is_italic = run.italic
+                font_size = run.font.size
+                
+                # Заменяем текст
+                new_run_text = run.text.replace(old_text, new_text)
+                
+                # Очищаем лишние пробелы для первого run
+                if i == 0:
+                    new_run_text = new_run_text.lstrip()
+                
+                run.text = new_run_text
                 result = True
-        # print(f"runs={runs}")
-
+                
+                # Восстанавливаем форматирование
+                run.bold = is_bold
+                run.italic = is_italic
+                if font_size:
+                    run.font.size = font_size
+        
         return result
 
 

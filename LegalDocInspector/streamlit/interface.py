@@ -86,7 +86,7 @@ def get_contract_form(contract_number:str):
                                                                                       value="5.5")
 
 
-st.title("Загрузка и обработка документов")
+st.title("Загрузка и обработка документов (Нейросети отключены)")
 
 
 # Загрузчик файла
@@ -165,13 +165,14 @@ if st.session_state.complects[st.session_state.form_data['num_complects']]['clai
             files[f'complect_{complect_id}_contract_file'] = (contract_uploaded_file.name, contract_uploaded_file)
             # files[f'complect_{complect_id}_certificate_file'] = (debt_certificate_file.name, debt_certificate_file)
             for i, debt_certificate_file in enumerate(debt_certificate_files):
+                print(debt_certificate_file.name)
                 if debt_certificate_file is not None:
                     debt_certificate_file.seek(0)
                     files[f'complect_{complect_id}_certificate_file_{i}'] = (
                         debt_certificate_file.name, 
                         debt_certificate_file   
                     )
-                    data['certificates_count'] = str(i+1)
+                    data[f'{complect_id}_certificates_count'] = str(i+1)
         data['complects_count'] = str(complect_id)
 
 
