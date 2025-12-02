@@ -194,6 +194,7 @@ class TableParser:
         5 - строка, содержащая платеж
         6 - строка, содержащая задолженность за весь текущий период (обычно стоит предпоследней перед следующим блоком)
         7 - строка, содержащая сумму всех задолженностей и платежей (обычно стоит последней перед следующим блоком)
+        8 - пустая строка (так бывает)
         """
         first = self.reader.cell(row, 0)
         second = self.reader.cell(row, 1)
@@ -223,7 +224,10 @@ class TableParser:
 
             if (not pd.isna(second)) and pd.isna(third) and (not pd.isna(fourth)):
                 return 7
-
+            
+            if sum([pd.isna(x) for x in [first,second,third,fourth,sixth,seventh]])==6:
+                return 8
+        
         print(f"Строка row={row} не соответствует ни одному формату, не ясно как её обрабатывать.")
         raise RuntimeError(f"Invalid row: {row}")
 
@@ -348,11 +352,11 @@ class TableParser:
 
         Если период платежа не совпадает с месяцем, в котором он записан, то это добор.
         """
-        converted_month = convert_month(month.split()[0])
-        converted_period = period.split(".")[0]
-        if converted_month != converted_period:
-            return True
-        return False
+        complained_month, complained_year = convert_month(month.split()[0]), month.split()[1]
+        converted_month , converted_year= period.split(".")
+        if converted_month == complained_month and converted_year==complained_year:
+            return False
+        return True
 
 
     def money_str_to_float(self, money):
