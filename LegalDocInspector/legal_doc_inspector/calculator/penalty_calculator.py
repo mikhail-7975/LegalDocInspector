@@ -783,6 +783,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
         
         
         payments_info = _sort_all_payments(month_parsed_info)
+        
         correcting_done_flag = _check_is_correcting_done(month_correcting, payments_info)
         # print(correcting_done_flag)
         if not is_four_party:
@@ -863,13 +864,13 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
         
         else:
             all_payments = StrictFormattedMoney(0)
-            for i ,payment_info in enumerate([month_parsed_info['accrual']['payments'], month_parsed_info['adjustment']['payments']]):
-                for payment in payment_info:
-                    if i == 0: 
-                        month_accrual -= StrictFormattedMoney(payment['payment'])
-                    else:
-                        month_correcting -= StrictFormattedMoney(payment['payment'])
-                    all_payments += StrictFormattedMoney(payment['payment'])
+            # for i ,payment_info in enumerate([month_parsed_info['accrual']['payments'], month_parsed_info['adjustment']['payments']]):
+            for payment,i in payments_info:
+                if i == 0: 
+                    month_accrual -= StrictFormattedMoney(payment['payment'])
+                else:
+                    month_correcting -= StrictFormattedMoney(payment['payment'])
+                all_payments += StrictFormattedMoney(payment['payment'])
                     # print(payment)
             periods = _get_penalty_periods(start_date, end_date, month_accrual+month_correcting, company_type)
             
@@ -880,7 +881,8 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
                 'type': 'payment_after_penalty',
                 'text': 'Погашение части долга',
             }
-            periods = [payment_1] + periods[0:]
+            if all_payments != StrictFormattedMoney(0):
+                periods = [payment_1] + periods[0:]
         # обработка годовых корректировок
         for accrual_or_adjustment, parsed_info in month_parsed_info.items():
             if accrual_or_adjustment == 'accrual':
