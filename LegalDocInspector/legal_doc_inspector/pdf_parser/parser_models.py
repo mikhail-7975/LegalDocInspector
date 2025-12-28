@@ -31,7 +31,7 @@ from rapidfuzz import fuzz
 
 from bs4 import BeautifulSoup
 import re
-
+import gc
 _log = logging.getLogger(__name__)
 
 KEYWORDS = ['публичное', 'пао', 'акционерное', 'общество']
@@ -114,8 +114,17 @@ class PDFClaimParser:
         data = list(document.export_to_dict().values())
         text_pairs = self._extract_text_with_page(data)
         claims = self._parse_claim_number_and_date(text_pairs)
+        torch.cuda.empty_cache()
+        claims = self._standartize_claims(claims)
         return claims
 
+    def _standartize_claims(self, claims:list[tuple[str | None, str | None]]):
+        response = []
+        for number, date in claims:
+            claim_dict = {"claim_date": str(date), "claim_number": str(number)}
+            response.append(claim_dict)
+        return response
+    
     def _parse_claim_number_and_date(self, texts_with_pages: List[Tuple[int, str]]) -> List[Tuple[Optional[str], Optional[str]]]:
         """
         Принимает список пар [(страница, текст), ...].
@@ -204,6 +213,7 @@ class PDFContractParser:
 
         start_time = time.time()
         self.doc_converter.initialize_pipeline(InputFormat.PDF)
+        
         init_runtime = time.time() - start_time
         self.morph = pymorphy2.MorphAnalyzer(lang='ru')
 
@@ -223,9 +233,11 @@ class PDFContractParser:
     def analyse_contract(self, path_to_file: str | Path):
         conv_result = self._parse_contract_text(path_to_file)
         conv_result_html = conv_result.export_to_html()
-        print(conv_result_html)
-        response = self._find_point_of_overdue_date(conv_result_html)
-        return response
+        # print(conv_result_html)
+        point_of_contract = self._find_point_of_overdue_date(conv_result_html)
+        type_of_service = self._find_point_of_service_type(conv_result_html)
+        torch.cuda.empty_cache()
+        return point_of_contract, type_of_service
 
     def _find_point_of_overdue_date(self, parsed_html_text:str):
         service_type_key_words_list_weighted = {"срок":2, "числа":2, "месяца":2, "производится":1,"оплата":3, "расчётным":2, "период":2 , "следующего":2, "оплачивает":3}
@@ -234,6 +246,12 @@ class PDFContractParser:
         print(finded_text)
         return finded_text[0][0]
     
+    def _find_point_of_service_type(self, parsed_html_text:str):
+        service_type_key_words_list_weighted = {"теплоноситель":3, "вода":3}
+        # exclude_words = ["оформляет", "регулирует", "помещения", "дубликатов", "льгот", "распределяются", "Ресурсоснабжающая", "ОДПУ", "указания"]
+        finded_text = self._find_top5_elements_weighted(parsed_html_text, service_type_key_words_list_weighted, None)
+        print(finded_text)
+        return finded_text[0][0]
 
 
     def _find_top5_elements_weighted(self,

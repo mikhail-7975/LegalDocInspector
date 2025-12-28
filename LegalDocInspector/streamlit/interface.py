@@ -86,7 +86,7 @@ def get_contract_form(contract_number:str):
                                                                                       value="5.5")
 
 
-st.title("Загрузка и обработка документов (Нейросети отключены)")
+st.title("Загрузка и обработка документов (Нейросети включены)")
 
 
 # Загрузчик файла
@@ -177,7 +177,7 @@ if st.session_state.complects[st.session_state.form_data['num_complects']]['clai
 
 
 
-        with st.spinner(text="Ваш запрос обрабатывается, пожалуйста, подождите"):
+        with st.spinner(text="Ваш запрос обрабатывается, пожалуйста, подождите, обработка одного набора занимает в среднем 2 минуты"):
             response = requests.post("http://localhost:5001/parse",
                                     files=files,
                                     data= data
@@ -349,10 +349,11 @@ if st.session_state.form_data['flag2']:
 #     service_type_info = []
     st.session_state.form_data['lawsuit_info']['claims'] = []
 #     applications = {}
-
+    #TODO: может быть несколько претензий в файле
     for contract_info in result['table_parser_result']:
         claim_info = contract_info[4]
-        st.session_state.form_data['lawsuit_info']['claims'].append(f"№ {claim_info['claim_number']} от {claim_info['claim_date']}")
+        for claim_item in claim_info:
+            st.session_state.form_data['lawsuit_info']['claims'].append(f"№ {claim_item['claim_number']} от {claim_item['claim_date']}")
 
 #     st.markdown(f"### Данные об услуге, полученные из договоров")
 #     st.markdown(f"{'___'.join(f' - {elem}' for elem in service_type_info)}")
