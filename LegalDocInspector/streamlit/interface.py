@@ -65,8 +65,10 @@ def get_documents_complect_form(form_id:int, day_of_penalty: int | None = None, 
 
 def get_contract_form(contract_number:str):
 
-    st.markdown(f"#### информация из договора {contract_number}")
+    st.markdown(f"### информация из договора {contract_number}")
+    st.markdown(f"#### Информация по дню начала просрочки")
     st.text(f"{st.session_state.contracts[contract_number]['overdue_date']}")
+    st.markdown(f"#### Информация о предмете договора")
     st.text(f"{st.session_state.contracts[contract_number]['service_type']}")
     col1, col2 = st.columns(2)
     # st.json(st.session_state.contracts[contract_number])
