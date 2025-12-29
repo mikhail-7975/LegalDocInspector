@@ -255,7 +255,7 @@ if st.session_state.form_data['flag']:
         try:
             plaintiff_full_name, plaintiff_short_name, plaintiff_address, plaintiff_kpp, plaintiff_ogrn = parse_html(plaintiff_info['inn'])
 
-            plaintiff_info['full_name'] = st.text_input(label="Название Истца", value=f"{plaintiff_full_name}", key="full_name_1", on_change= on_change_handler)
+            plaintiff_info['full_name'] = st.text_input(label="Название Истца", value=f"{plaintiff_full_name.upper()}", key="full_name_1", on_change= on_change_handler)
             plaintiff_info['short_name'] = st.text_input(label="Название Истца(аббревиатура)", value=f"{plaintiff_short_name}", key="short_name_1", on_change= on_change_handler)
             plaintiff_info['addres'] = st.text_input(label="Адрес Истца", value=f"{plaintiff_address}", key="addres_1", on_change= on_change_handler)
             plaintiff_info['correspondency_addres'] = st.text_input(label='Адрес для направления корреспонденции', value="121596, г. Москва, ул. Горбунова, д. 2, стр. 3, офис В613", key="cor_addr1", on_change= on_change_handler)
@@ -270,7 +270,7 @@ if st.session_state.form_data['flag']:
         try:
             plaintiff_full_name, plaintiff_short_name, plaintiff_address, plaintiff_kpp, plaintiff_ogrn = parse_html(plaintiff_info['inn'])
 
-            plaintiff_info['full_name'] = st.text_input(label="Название Истца", value=f"{plaintiff_full_name}", key="full_name_2", on_change= on_change_handler)
+            plaintiff_info['full_name'] = st.text_input(label="Название Истца", value=f"{plaintiff_full_name.upper()}", key="full_name_2", on_change= on_change_handler)
             plaintiff_info['short_name'] = st.text_input(label="Название Истца(аббревиатура)", value=f"{plaintiff_short_name}", key="short_name_2", on_change= on_change_handler)
             plaintiff_info['addres'] = st.text_input(label="Адрес Истца", value=f"{plaintiff_address}", key="addr_2", on_change= on_change_handler)
             plaintiff_info['correspondency_addres'] = st.text_input(label='Адрес для направления корреспонденции', value="121596, г. Москва, ул. Горбунова, д. 2, стр. 3, офис В613", key="coraddr_2", on_change= on_change_handler)
