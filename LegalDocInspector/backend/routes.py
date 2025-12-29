@@ -126,7 +126,7 @@ def parse():
 
         # Получение данных ответчика по его инн
         full_name, short_name, address, kpp, ogrn = parse_html(int(defendant_inn))
-        result_json['results_of_name_parser']['defendant_info']['full_name'] = full_name
+        result_json['results_of_name_parser']['defendant_info']['full_name'] = full_name.upper()
         result_json['results_of_name_parser']['defendant_info']['short_name'] = short_name
         result_json['results_of_name_parser']['defendant_info']['address'] = address
         result_json['results_of_name_parser']['defendant_info']['kpp'] = kpp

@@ -80,14 +80,14 @@ class ClaimGenerator:
             (self.borders("истец адрес"),           self.config["plaintiff_info"]["addres"]),
 
             # Строка 6
-            (self.borders("ответчик полное имя"),   self.config["defendant_info"]["full_name"]),
+            (self.borders("ответчик полное имя"),   self.config["defendant_info"]["full_name"].upper()),
             (self.borders("ответчик огрн"),         self.config["defendant_info"]["ogrn"]),
             (self.borders("ответчик инн"),          self.config["defendant_info"]["inn"]),
 
             # Строка 7
             (self.borders("ответчик адрес"),        self.config["defendant_info"]["addres"]),
         )
-
+        print(self.config["defendant_info"]["full_name"])
         table = self.redactor.get_table(0)
 
         cell = table.row_cells(2)[1]
@@ -844,7 +844,7 @@ class ClaimGenerator:
             "/*госпошлина*/": self.config["lawsuit_info"]["tax"],
             "/*истец полное имя*/": self.config["plaintiff_info"]["full_name"],
             "/*истец сокращенное имя*/": self.config["plaintiff_info"]["short_name"],
-            "/*ответчик полное имя*/": self.config["defendant_info"]["full_name"],
+            "/*ответчик полное имя*/": self.config["defendant_info"]["full_name"].upper(),
             "/*ответчик сокращенное имя*/": self.config["defendant_info"]["short_name"],
             "/*тип договора*/": self.config["contract_types_templates"]["contract_type"],
             # "/*тип договора2*/": self.config["contract_types_templates"]["contract_type2"],
