@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LegalDocInspector - Загрузка и обработка документов</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Заголовок -->
+        <header class="page-header">
+            <div class="header-content">
+                <h1>Загрузка и обработка документов (Нейросети включены)</h1>
+                <button class="btn btn-warning reset-btn" onclick="resetApplication()" title="Сбросить состояние и начать заново">
+                    🔄 Сбросить состояние
+                </button>
+            </div>
+        </header>
+
+        <!-- Этап 1: Загрузка документов -->
+        <div id="step1" class="step-container">
+            <!-- Общие параметры -->
+            <div class="form-section">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="end-date">Выберите дату конца просрочки</label>
+                        <input type="date" id="end-date" class="form-control" 
+                               onchange="handleDateChange(event)">
+                    </div>
+                    <div class="form-group">
+                        <label for="company-type">Выберите тип компании</label>
+                        <select id="company-type" class="form-control" 
+                                onchange="handleCompanyTypeChange(event)">
+                            <option value="Прочие" selected>Прочие</option>
+                            <option value="УК">УК</option>
+                            <option value="ТСЖ">ТСЖ</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Наборы документов -->
+            <div id="complects-container" class="complects-section">
+                <!-- Динамически генерируемые наборы -->
+            </div>
+
+            <!-- Управление наборами -->
+            <div class="complect-controls">
+                <button class="btn btn-primary" onclick="addComplect()">
+                    ➕ Добавить набор документов
+                </button>
+                <button class="btn btn-danger" onclick="removeComplect()">
+                    ➖ Убрать набор документов
+                </button>
+            </div>
+
+            <!-- Кнопка отправки -->
+            <div class="submit-section">
+                <button id="submit-btn" 
+                        class="btn btn-success" 
+                        onclick="submitDocuments()"
+                        disabled>
+                    Отправить на сервер
+                </button>
+            </div>
+        </div>
+
+        <!-- Этап 2: Обработка результатов -->
+        <div id="step2" class="step-container" style="display: none;">
+            <div class="success-message">
+                <h2>✅ Файл успешно обработан!</h2>
+                <p>Результат обработки документов</p>
+            </div>
+            
+            <div class="info-section">
+                <h3>Заполнение информации для генерации иска</h3>
+                <p class="warning">Пожалуйста, внимательно проверьте все пункты!</p>
+            </div>
+
+            <!-- Данные о суде -->
+            <div class="form-section">
+                <h3>Данные о месте проведения</h3>
+                <div class="form-group">
+                    <label for="court-name">Название Органа</label>
+                    <input type="text" 
+                           id="court-name" 
+                           class="form-control"
+                           value="Арбитражный суд города Москвы"
+                           onchange="onFormChange()">
+                </div>
+                <div class="form-group">
+                    <label for="court-address">Адрес Органа</label>
+                    <input type="text" 
+                           id="court-address" 
+                           class="form-control"
+                           value="115225, г. Москва, ул. Большая Тульская, д. 17"
+                           onchange="onFormChange()">
+                </div>
+            </div>
+
+            <!-- Данные об истце -->
+            <div class="form-section">
+                <h3>Данные об Истце</h3>
+                <div class="form-group">
+                    <label for="plaintiff-inn">ИНН Истца</label>
+                    <input type="text" 
+                           id="plaintiff-inn" 
+                           class="form-control"
+                           value="7720518494"
+                           onchange="handlePlaintiffINNChange(event)">
+                </div>
+                
+                <div id="plaintiff-fields">
+                    <div class="form-group">
+                        <label for="plaintiff-full-name">Название Истца</label>
+                        <input type="text" 
+                               id="plaintiff-full-name" 
+                               class="form-control"
+                               onchange="onFormChange()">
+                    </div>
+                    <div class="form-group">
+                        <label for="plaintiff-short-name">Название Истца (аббревиатура)</label>
+                        <input type="text" 
+                               id="plaintiff-short-name" 
+                               class="form-control"
+                               onchange="onFormChange()">
+                    </div>
+                    <div class="form-group">
+                        <label for="plaintiff-address">Адрес Истца</label>
+                        <input type="text" 
+                               id="plaintiff-address" 
+                               class="form-control"
+                               onchange="onFormChange()">
+                    </div>
+                    <div class="form-group">
+                        <label for="plaintiff-correspondency-address">Адрес для направления корреспонденции</label>
+                        <input type="text" 
+                               id="plaintiff-correspondency-address" 
+                               class="form-control"
+                               value="121596, г. Москва, ул. Горбунова, д. 2, стр. 3, офис В613"
+                               onchange="onFormChange()">
+                    </div>
+                    <div class="form-group">
+                        <label for="plaintiff-ogrn">ОГРН Истца</label>
+                        <input type="text" 
+                               id="plaintiff-ogrn" 
+                               class="form-control"
+                               onchange="onFormChange()">
+                    </div>
+                </div>
+                
+                <button class="btn btn-secondary" onclick="updatePlaintiffData()">
+                    Обновить данные об истце
+                </button>
+            </div>
+
+            <!-- Данные об ответчике -->
+            <div class="form-section">
+                <h3>Данные об ответчике</h3>
+                <div class="form-group">
+                    <label for="defendant-full-name">Название ответчика</label>
+                    <input type="text" 
+                           id="defendant-full-name" 
+                           class="form-control"
+                           onchange="onFormChange()">
+                </div>
+                <div class="form-group">
+                    <label for="defendant-short-name">Название ответчика (аббревиатура)</label>
+                    <input type="text" 
+                           id="defendant-short-name" 
+                           class="form-control"
+                           onchange="onFormChange()">
+                </div>
+                <div class="form-group">
+                    <label for="defendant-address">Адрес ответчика</label>
+                    <input type="text" 
+                           id="defendant-address" 
+                           class="form-control"
+                           onchange="onFormChange()">
+                </div>
+                <div class="form-group">
+                    <label for="defendant-inn">ИНН ответчика</label>
+                    <input type="text" 
+                           id="defendant-inn" 
+                           class="form-control"
+                           onchange="onFormChange()">
+                </div>
+                <div class="form-group">
+                    <label for="defendant-ogrn">ОГРН ответчика</label>
+                    <input type="text" 
+                           id="defendant-ogrn" 
+                           class="form-control"
+                           onchange="onFormChange()">
+                </div>
+            </div>
+
+            <!-- Данные о договорах -->
+            <div class="form-section">
+                <h3>Данные о договорах</h3>
+                <div id="contracts-container">
+                    <!-- Динамически генерируемые формы для каждого договора -->
+                </div>
+            </div>
+
+            <!-- Данные о претензиях -->
+            <div class="form-section">
+                <h3>Данные о претензиях</h3>
+                <div id="claims-info-container">
+                    <!-- Динамически генерируемые блоки для каждой претензии -->
+                </div>
+            </div>
+
+            <!-- Кнопка расчёта пени -->
+            <div class="submit-section">
+                <button class="btn btn-primary" onclick="calculatePenalty()">
+                    Произвести расчёты по загруженным наборам документов
+                </button>
+            </div>
+        </div>
+
+        <!-- Этап 3: Проверка данных иска -->
+        <div id="step3" class="step-container" style="display: none;">
+            <div class="success-message">
+                <h2>✅ Расчёты успешно произведены!</h2>
+            </div>
+            
+            <div class="form-section">
+                <h3>Проверьте данные об иске</h3>
+                <div class="form-group">
+                    <label for="lawsuit-cost">Цена иска</label>
+                    <input type="text" 
+                           id="lawsuit-cost" 
+                           class="form-control"
+                           onchange="handleLawsuitCostChange(event)">
+                </div>
+                <div class="form-group">
+                    <label for="lawsuit-tax">Госпошлина</label>
+                    <input type="text" 
+                           id="lawsuit-tax" 
+                           class="form-control"
+                           onchange="onFormChange()">
+                </div>
+                <div class="form-group">
+                    <label for="lawsuit-service-type">Выберите вид услуги</label>
+                    <select id="lawsuit-service-type" class="form-control" onchange="onFormChange()">
+                        <option value="ГВС + ТЭ">ГВС + ТЭ</option>
+                        <option value="ТЭ">ТЭ</option>
+                        <option value="ГВС">ГВС</option>
+                    </select>
+                </div>
+                
+                <div id="claims-container">
+                    <!-- Динамически генерируемые поля для претензий -->
+                </div>
+            </div>
+            
+            <div class="submit-section">
+                <button class="btn btn-success" onclick="generateDocuments()">
+                    Нажмите, чтобы подтвердить правильность данных
+                </button>
+            </div>
+        </div>
+
+        <!-- Этап 4: Скачивание документов -->
+        <div id="step4" class="step-container" style="display: none;">
+            <div class="download-section">
+                <h3>Документы готовы к скачиванию</h3>
+                <div class="download-buttons">
+                    <a id="download-lawsuit" 
+                       class="btn btn-primary" 
+                       download="Иск.docx"
+                       href="#">
+                        Скачать иск
+                    </a>
+                    <a id="download-calculation" 
+                       class="btn btn-primary" 
+                       download="Расчёт к иску.docx"
+                       href="#">
+                        Скачать расчёт к иску
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Спиннер загрузки -->
+        <div id="spinner-overlay" class="spinner-overlay" style="display: none;">
+            <div class="spinner-content">
+                <div class="spinner"></div>
+                <p id="spinner-message">Загрузка...</p>
+            </div>
+        </div>
+
+        <!-- Сообщения об ошибках -->
+        <div id="error-container" class="error-container"></div>
+    </div>
+
+    <!-- JavaScript модули -->
+    <script src="{{ url_for('static', filename='js/state.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
+

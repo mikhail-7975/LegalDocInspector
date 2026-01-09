@@ -1,13 +1,13 @@
 import requests
-from datetime import datetime
+# from datetime import datetime
 from io import BytesIO
-from pathlib import Path
-from urllib.parse import quote
-from collections import defaultdict
-from uuid import uuid4
+# from pathlib import Path
+# from urllib.parse import quote
+# from collections import defaultdict
+# from uuid import uuid4
 import streamlit as st
-import pandas as pd
-from docx import Document
+# import pandas as pd
+#   from docx import Document
 
 from LegalDocInspector.legal_doc_inspector.utils.parse_info_by_inn import parse_html
 from LegalDocInspector.legal_doc_inspector.utils.calculate_tax import calculate_state_duty
