@@ -121,6 +121,169 @@ export FLASK_ENV=development
 python app.py
 ```
 
+## Структура JSON данных, отправляемых на бэкенд
+
+Фронтенд отправляет JSON данные в нескольких форматах в зависимости от типа запроса:
+
+### 1. Запрос на парсинг документов (`POST /api/proxy/parse`)
+
+Отправляется как `FormData` (не JSON), содержит:
+- `date` - дата конца просрочки в формате `YYYY-MM-DD`
+- `complects_count` - количество наборов документов
+- Для каждого набора (`complect_id`):
+  - `complect_{complect_id}_contract_file` - файл договора
+  - `complect_{complect_id}_claim_file` - файл претензии
+  - `complect_{complect_id}_certificate_file_{index}` - файлы справок о задолженности (может быть несколько)
+  - `{complect_id}_certificates_count` - количество файлов справок
+  - `complect_{complect_id}_egrul_certificate_file` - файл выписки из ЕГРЮЛ (опционально)
+
+### 2. Запрос на расчёт пени (`POST /api/proxy/calculate-penalty`)
+
+```json
+{
+  "company_type": "Прочие" | "УК" | "ТСЖ",
+  "end_date": "DD.MM.YYYY",
+  "parsing_results": [
+    {
+      "parsed_info": { /* данные из парсинга справки о задолженности */ },
+      "contract_point": "5.5",
+      "day_of_penalty": 18,
+      "contract_number": "04.303360-ТЭ"
+    }
+  ]
+}
+```
+
+**Поля:**
+- `company_type` (string) - тип компании: "Прочие", "УК" или "ТСЖ"
+- `end_date` (string) - дата конца просрочки в формате `DD.MM.YYYY`
+- `parsing_results` (array) - массив результатов парсинга для каждого договора
+  - `parsed_info` (object) - данные, полученные при парсинге справки о задолженности
+  - `contract_point` (string) - номер пункта договора о дне начала просрочки (например, "5.5")
+  - `day_of_penalty` (number) - число месяца, которое является последним днём оплаты счёта (1-31)
+  - `contract_number` (string) - номер договора
+
+### 3. Запрос на создание иска (`POST /api/proxy/create-doc`)
+
+```json
+{
+  "claim_data": {
+    "plaintiff_info": {
+      "inn": "7720518494",
+      "full_name": "ПОЛНОЕ НАЗВАНИЕ ИСТЦА",
+      "short_name": "Краткое название",
+      "addres": "Адрес истца",
+      "correspondency_addres": "Адрес для корреспонденции",
+      "ogrn": "ОГРН истца"
+    },
+    "defendant_info": {
+      "full_name": "ПОЛНОЕ НАЗВАНИЕ ОТВЕТЧИКА",
+      "short_name": "Краткое название",
+      "addres": "Адрес ответчика",
+      "inn": "ИНН ответчика",
+      "ogrn": "ОГРН ответчика"
+    },
+    "lawsuit_info": {
+      "cost": "Цена иска",
+      "tax": "Госпошлина",
+      "service_type": "ГВС + ТЭ" | "ТЭ" | "ГВС",
+      "claims": [
+        "№ 123456 от 01.01.2024",
+        "№ 123457 от 02.01.2024"
+      ]
+    },
+    "table_info": { /* данные таблицы из расчёта пени */ },
+    /* другие поля из result2.claim_data */
+  },
+  "calculator_list": [ /* список калькуляторов из расчёта пени */ ],
+  "path_to_save": "/path/to/save/documents"
+}
+```
+
+**Поля:**
+- `claim_data` (object) - данные для создания иска
+  - `plaintiff_info` (object) - информация об истце
+    - `inn` (string) - ИНН истца
+    - `full_name` (string) - полное название истца
+    - `short_name` (string) - краткое название (аббревиатура)
+    - `addres` (string) - адрес истца
+    - `correspondency_addres` (string) - адрес для направления корреспонденции
+    - `ogrn` (string) - ОГРН истца
+  - `defendant_info` (object) - информация об ответчике
+    - `full_name` (string) - полное название ответчика
+    - `short_name` (string) - краткое название (аббревиатура)
+    - `addres` (string) - адрес ответчика
+    - `inn` (string) - ИНН ответчика
+    - `ogrn` (string) - ОГРН ответчика
+  - `lawsuit_info` (object) - информация об иске
+    - `cost` (string) - цена иска
+    - `tax` (string) - госпошлина
+    - `service_type` (string) - вид услуги: "ГВС + ТЭ", "ТЭ" или "ГВС"
+    - `claims` (array) - массив строк с претензиями в формате "№ {номер} от {дата}"
+  - `table_info` (object) - данные таблицы из расчёта пени (генерируется бэкендом)
+- `calculator_list` (array) - список калькуляторов из расчёта пени (генерируется бэкендом)
+- `path_to_save` (string) - путь для сохранения документов (возвращается при парсинге)
+
+### 4. Запрос на создание расчёта к иску (`POST /api/proxy/create-calculating-table`)
+
+Структура идентична запросу на создание иска (см. раздел 3).
+
+### Примеры запросов
+
+#### Пример запроса на расчёт пени:
+```json
+{
+  "company_type": "ТСЖ",
+  "end_date": "31.12.2024",
+  "parsing_results": [
+    {
+      "parsed_info": {
+        "periods": [...],
+        "debt": 100000
+      },
+      "contract_point": "5.5",
+      "day_of_penalty": 18,
+      "contract_number": "04.303360-ТЭ"
+    }
+  ]
+}
+```
+
+#### Пример запроса на создание иска:
+```json
+{
+  "claim_data": {
+    "plaintiff_info": {
+      "inn": "7720518494",
+      "full_name": "ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"КОМПАНИЯ\"",
+      "short_name": "ООО \"КОМПАНИЯ\"",
+      "addres": "121596, г. Москва, ул. Примерная, д. 1",
+      "correspondency_addres": "121596, г. Москва, ул. Горбунова, д. 2, стр. 3, офис В613",
+      "ogrn": "1234567890123"
+    },
+    "defendant_info": {
+      "full_name": "ТОВАРИЩЕСТВО СОБСТВЕННИКОВ ЖИЛЬЯ \"ВОСТОК-3\"",
+      "short_name": "ТСЖ \"ВОСТОК-3\"",
+      "addres": "123456, г. Москва, ул. Другая, д. 2",
+      "inn": "1234567890",
+      "ogrn": "9876543210987"
+    },
+    "lawsuit_info": {
+      "cost": "150000",
+      "tax": "4500",
+      "service_type": "ГВС + ТЭ",
+      "claims": [
+        "№ 560045 от 17.10.2024",
+        "№ 557649 от 15.10.2024"
+      ]
+    },
+    "table_info": { /* ... */ }
+  },
+  "calculator_list": [ /* ... */ ],
+  "path_to_save": "/tmp/doc_inspector_data/documents_from_request_2024-12-10_12-00-00"
+}
+```
+
 ## Лицензия
 
 См. основной README проекта.

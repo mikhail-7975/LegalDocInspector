@@ -70,6 +70,9 @@ def parse():
 
             complect_claim_file = request.files[f"complect_{complect_id}_claim_file"]
             complect_contract_file = request.files[f'complect_{complect_id}_contract_file']
+            print("try to get egrul certificate file")
+            print(request.files.keys())
+            complect_egrul_certificate_file = request.files[f'complect_{complect_id}_egrul_certificate_file']
             # complect_certificate_file = request.files[f'complect_{complect_id}_certificate_file']
 
             # договор
@@ -83,6 +86,12 @@ def parse():
             complect_claim_file.save(claim_file_path)
             uploaded_files['claim_file'].append(str(claim_file_path))
             table_parser_results = []
+            
+            # выписка из ЕГРЮЛ
+            egrul_certificate_file_path = Path(complect_folder, secure_filename(complect_egrul_certificate_file.filename))
+            complect_egrul_certificate_file.save(egrul_certificate_file_path)
+            uploaded_files['egrul_certificate_file'].append(str(egrul_certificate_file_path))
+            
             # справки
             for claim_id in range(certificates_count):
                 print(complect_id, claim_id)

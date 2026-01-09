@@ -67,8 +67,10 @@ def proxy_parse():
     data = {}
     
     # Обработка файлов из FormData
+    print(f"DEBUG: Received files keys: {list(request.files.keys())}")  # Отладка
     for key, file in request.files.items():
         files[key] = (file.filename, file.stream, file.content_type)
+        print(f"DEBUG: Added file {key}: {file.filename}")  # Отладка
     
     # Обработка данных
     for key, value in request.form.items():

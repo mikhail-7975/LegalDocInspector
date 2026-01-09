@@ -32,7 +32,8 @@ function initializeApp() {
         appState.complects[1] = {
             contract: null,
             claim: null,
-            debtCertificates: []
+            debtCertificates: [],
+            egrulCertificate: null
         };
         appState.formData.numComplects = 1;
     }
@@ -160,7 +161,8 @@ function resetApplication() {
     appState.complects[1] = {
         contract: null,
         claim: null,
-        debtCertificates: []
+        debtCertificates: [],
+        egrulCertificate: null
     };
     appState.formData.numComplects = 1;
     
@@ -209,6 +211,8 @@ function handleFileUpload(event, complectId, fileType) {
         complect.claim = input.files[0] || null;
     } else if (fileType === 'debt-certificate') {
         complect.debtCertificates = Array.from(input.files);
+    } else if (fileType === 'egrul-certificate') {
+        complect.egrulCertificate = input.files[0] || null;
     }
     
     // Обновить отображение
@@ -230,7 +234,8 @@ function addComplect() {
     appState.complects[newId] = {
         contract: null,
         claim: null,
-        debtCertificates: []
+        debtCertificates: [],
+        egrulCertificate: null
     };
     appState.formData.flags.step1Complete = false;
     onFormChange();
@@ -282,6 +287,7 @@ function renderComplects() {
             const contractInput = complectElement.querySelector('[data-file-type="contract"]');
             const claimInput = complectElement.querySelector('[data-file-type="claim"]');
             const debtInput = complectElement.querySelector('[data-file-type="debt-certificate"]');
+            const egrulInput = complectElement.querySelector('[data-file-type="egrul-certificate"]');
             
             if (contractInput && appState.complects[i].contract) {
                 updateFileDisplay(contractInput, contractInput.parentElement.querySelector('.file-name-display'));
@@ -291,6 +297,9 @@ function renderComplects() {
             }
             if (debtInput && appState.complects[i].debtCertificates.length > 0) {
                 updateFileDisplay(debtInput, debtInput.parentElement.querySelector('.file-name-display'));
+            }
+            if (egrulInput && appState.complects[i].egrulCertificate) {
+                updateFileDisplay(egrulInput, egrulInput.parentElement.querySelector('.file-name-display'));
             }
         }
     }
@@ -335,6 +344,17 @@ function createComplectHTML(complectId) {
                        accept=".xls,.xlsx,.xlsm"
                        multiple
                        onchange="handleFileUpload(event, ${complectId}, 'debt-certificate')">
+                <div class="file-name-display"></div>
+            </div>
+            
+            <div class="file-upload-group">
+                <label>Поле для выписки из ЕГРЮЛ</label>
+                <input type="file" 
+                       class="file-input" 
+                       data-file-type="egrul-certificate"
+                       data-complect-id="${complectId}"
+                       accept=".pdf,.doc,.docx"
+                       onchange="handleFileUpload(event, ${complectId}, 'egrul-certificate')">
                 <div class="file-name-display"></div>
             </div>
         </div>
@@ -395,7 +415,15 @@ async function submitDocuments() {
     formData.append('date', endDate);
     
     // Добавление файлов для каждого набора
+    console.log('DEBUG: Отправка файлов, наборы:', Object.keys(appState.complects));
     for (const [complectId, complect] of Object.entries(appState.complects)) {
+        console.log(`DEBUG: Набор ${complectId}:`, {
+            contract: complect.contract ? complect.contract.name : null,
+            claim: complect.claim ? complect.claim.name : null,
+            debtCertificates: complect.debtCertificates ? complect.debtCertificates.length : 0,
+            egrulCertificate: complect.egrulCertificate ? complect.egrulCertificate.name : null
+        });
+        
         if (complect.contract) {
             formData.append(`complect_${complectId}_contract_file`, complect.contract, complect.contract.name);
         }
@@ -407,6 +435,22 @@ async function submitDocuments() {
                 formData.append(`complect_${complectId}_certificate_file_${index}`, file, file.name);
             });
             formData.append(`${complectId}_certificates_count`, complect.debtCertificates.length.toString());
+        }
+        if (complect.egrulCertificate) {
+            console.log(`DEBUG: Добавляю файл ЕГРЮЛ для набора ${complectId}:`, complect.egrulCertificate.name);
+            formData.append(`complect_${complectId}_egrul_certificate_file`, complect.egrulCertificate, complect.egrulCertificate.name);
+        } else {
+            console.log(`DEBUG: Файл ЕГРЮЛ для набора ${complectId} отсутствует`);
+        }
+    }
+    
+    // Отладка: вывести все ключи FormData
+    console.log('DEBUG: Ключи FormData перед отправкой:');
+    for (const [key, value] of formData.entries()) {
+        if (value instanceof File) {
+            console.log(`  ${key}: File(${value.name}, ${value.size} bytes)`);
+        } else {
+            console.log(`  ${key}: ${value}`);
         }
     }
     
