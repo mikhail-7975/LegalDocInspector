@@ -27,6 +27,9 @@ function initializeApp() {
         companyTypeSelect.value = appState.formData.companyType;
     }
     
+    // Инициализация полей истца значениями по умолчанию
+    initializePlaintiffFields();
+    
     // Инициализация наборов документов
     if (Object.keys(appState.complects).length === 0) {
         appState.complects[1] = {
@@ -59,6 +62,63 @@ function initializeApp() {
 }
 
 /**
+ * Инициализация полей истца значениями по умолчанию
+ */
+function initializePlaintiffFields() {
+    // Значения по умолчанию
+    const defaultValues = {
+        'plaintiff-inn': '7720518494',
+        'plaintiff-full-name': 'ПУБЛИЧНОЕ АКЦИОНЕРНОЕ ОБЩЕСТВО «МОСКОВСКАЯ ОБЪЕДИНЕННАЯ ЭНЕРГЕТИЧЕСКАЯ КОМПАНИЯ»',
+        'plaintiff-short-name': 'ПАО «МОЭК»',
+        'plaintiff-address': '119526, Москва, пр-кт Вернадского, д. 101 к. 3 эт/каб 20/2017',
+        'plaintiff-correspondency-address': '121596, г. Москва, ул. Горбунова, д. 2, стр. 3, офис В613',
+        'plaintiff-ogrn': '1047796974092'
+    };
+    
+    // Маппинг ID полей на ключи в состоянии
+    const fieldMapping = {
+        'plaintiff-inn': 'inn',
+        'plaintiff-full-name': 'full_name',
+        'plaintiff-short-name': 'short_name',
+        'plaintiff-address': 'addres',
+        'plaintiff-correspondency-address': 'correspondency_addres',
+        'plaintiff-ogrn': 'ogrn'
+    };
+    
+    // Если есть сохраненные данные об истце, используем их
+    if (appState.formData.plaintiffInfo && Object.keys(appState.formData.plaintiffInfo).length > 0) {
+        Object.keys(fieldMapping).forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            const stateKey = fieldMapping[fieldId];
+            if (field && appState.formData.plaintiffInfo[stateKey]) {
+                field.value = appState.formData.plaintiffInfo[stateKey];
+            } else if (field && defaultValues[fieldId]) {
+                // Если в состоянии нет значения, используем значение по умолчанию
+                field.value = defaultValues[fieldId];
+            }
+        });
+    } else {
+        // Если нет сохраненных данных, устанавливаем значения по умолчанию
+        Object.keys(defaultValues).forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.value = defaultValues[fieldId];
+            }
+        });
+        
+        // Сохраняем значения по умолчанию в состояние
+        appState.formData.plaintiffInfo = {
+            inn: defaultValues['plaintiff-inn'],
+            full_name: defaultValues['plaintiff-full-name'],
+            short_name: defaultValues['plaintiff-short-name'],
+            addres: defaultValues['plaintiff-address'],
+            correspondency_addres: defaultValues['plaintiff-correspondency-address'],
+            ogrn: defaultValues['plaintiff-ogrn']
+        };
+    }
+}
+
+/**
  * Сброс состояния приложения и возврат к этапу 1
  */
 function resetApplication() {
@@ -81,19 +141,20 @@ function resetApplication() {
         companyTypeSelect.value = 'Прочие';
     }
     
-    // Очистка полей истца
-    const plaintiffFields = ['plaintiff-inn', 'plaintiff-full-name', 'plaintiff-short-name', 
-                             'plaintiff-address', 'plaintiff-correspondency-address', 'plaintiff-ogrn'];
-    plaintiffFields.forEach(fieldId => {
+    // Очистка полей истца и установка значений по умолчанию
+    const defaultPlaintiffValues = {
+        'plaintiff-inn': '7720518494',
+        'plaintiff-full-name': 'ПУБЛИЧНОЕ АКЦИОНЕРНОЕ ОБЩЕСТВО «МОСКОВСКАЯ ОБЪЕДИНЕННАЯ ЭНЕРГЕТИЧЕСКАЯ КОМПАНИЯ»',
+        'plaintiff-short-name': 'ПАО «МОЭК»',
+        'plaintiff-address': '119526, Москва, пр-кт Вернадского, д. 101 к. 3 эт/каб 20/2017',
+        'plaintiff-correspondency-address': '121596, г. Москва, ул. Горбунова, д. 2, стр. 3, офис В613',
+        'plaintiff-ogrn': '1047796974092'
+    };
+    
+    Object.keys(defaultPlaintiffValues).forEach(fieldId => {
         const field = document.getElementById(fieldId);
         if (field) {
-            if (fieldId === 'plaintiff-inn') {
-                field.value = '7720518494';
-            } else if (fieldId === 'plaintiff-correspondency-address') {
-                field.value = '121596, г. Москва, ул. Горбунова, д. 2, стр. 3, офис В613';
-            } else {
-                field.value = '';
-            }
+            field.value = defaultPlaintiffValues[fieldId];
         }
     });
     
