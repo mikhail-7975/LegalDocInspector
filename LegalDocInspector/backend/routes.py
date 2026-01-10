@@ -25,7 +25,7 @@ from flask import session
 from werkzeug.utils import secure_filename
 
 from LegalDocInspector.legal_doc_inspector.utils.parse_info_by_inn import parse_html # класс
-
+from LegalDocInspector.legal_doc_inspector.utils.parse_egrul_sertificate import parse_egrul_certificate
 from LegalDocInspector.legal_doc_inspector.doc_creator.calculation_claim_generator import CalculationClaimGenerator
 from LegalDocInspector.legal_doc_inspector.doc_creator.claim_generator import ClaimGenerator
 
@@ -134,7 +134,16 @@ def parse():
         result_json['results_of_name_parser']['defendant_info']['inn'] = f'{defendant_inn}'
 
         # Получение данных ответчика по его инн
-        full_name, short_name, address, kpp, ogrn = parse_html(int(defendant_inn))
+        try:
+        # full_name, short_name, address, kpp, ogrn = parse_html(int(defendant_inn))
+            full_name, short_name, address, kpp, ogrn, text_content = parse_egrul_certificate(str(egrul_certificate_file_path))
+            print("EGRUL certificate parsed successfully")
+        except Exception as e:
+            print(e)
+            print("EGRUL certificate parsing failed")
+            return traceback.format_exc(), 500
+            # full_name, short_name, address, kpp, ogrn = parse_html(int(defendant_inn))
+        
         result_json['results_of_name_parser']['defendant_info']['full_name'] = full_name.upper()
         result_json['results_of_name_parser']['defendant_info']['short_name'] = short_name
         result_json['results_of_name_parser']['defendant_info']['address'] = address
@@ -151,6 +160,8 @@ def parse():
         return jsonify(result_json), 200
     except Exception as e:
         return traceback.format_exc(), 500
+
+
 @app.route("/calculate_penalty", methods=["POST"])
 def calc_penalty():
     try:
