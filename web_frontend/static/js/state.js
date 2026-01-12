@@ -20,7 +20,8 @@ const appState = {
         },
         numComplects: 1,
         companyType: 'Прочие',
-        endDate: null
+        endDate: null,
+        egrulCertificate: null
     },
     complects: {},
     contracts: {},
@@ -96,7 +97,8 @@ function clearState() {
         },
         numComplects: 1,
         companyType: 'Прочие',
-        endDate: null
+        endDate: null,
+        egrulCertificate: null
     };
     appState.complects = {};
     appState.contracts = {};

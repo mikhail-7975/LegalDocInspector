@@ -24,9 +24,15 @@
             <div class="form-section">
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="end-date">Выберите дату конца просрочки</label>
-                        <input type="date" id="end-date" class="form-control" 
+                        <label for="end-date">Выберите дату конца просрочки (DD/MM/YYYY)</label>
+                        <input type="text" 
+                               id="end-date" 
+                               class="form-control date-input" 
+                               placeholder="DD/MM/YYYY"
+                               maxlength="10"
+                               oninput="handleDateInput(event)"
                                onchange="handleDateChange(event)">
+                        <small class="date-hint">Формат: DD/MM/YYYY (например, 31/12/2024)</small>
                     </div>
                     <div class="form-group">
                         <label for="company-type">Выберите тип компании</label>
@@ -37,6 +43,20 @@
                             <option value="ТСЖ">ТСЖ</option>
                         </select>
                     </div>
+                </div>
+            </div>
+
+            <!-- Загрузка выписки из ЕГРЮЛ -->
+            <div class="form-section">
+                <h3>Выписка из ЕГРЮЛ</h3>
+                <div class="form-group">
+                    <label for="egrul-certificate">Поле для выписки из ЕГРЮЛ</label>
+                    <input type="file" 
+                           id="egrul-certificate" 
+                           class="form-control file-input" 
+                           accept=".pdf"
+                           onchange="handleEgrulUpload(event)">
+                    <div id="egrul-file-display" class="file-name-display"></div>
                 </div>
             </div>
 

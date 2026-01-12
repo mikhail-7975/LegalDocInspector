@@ -4,8 +4,74 @@
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
+    // Установка формата даты DD/MM/YY для всех date inputs
+    setupDateFormat();
     initializeApp();
 });
+
+/**
+ * Настройка формата даты DD/MM/YY для date inputs
+ */
+function setupDateFormat() {
+    const dateInputs = document.querySelectorAll('.date-input');
+    dateInputs.forEach(input => {
+        // Добавляем обработчик для форматирования ввода
+        input.addEventListener('keypress', function(e) {
+            // Разрешаем только цифры и слэш
+            const char = String.fromCharCode(e.which);
+            if (!/[0-9/]/.test(char)) {
+                e.preventDefault();
+            }
+        });
+    });
+}
+
+/**
+ * Обработка ввода даты в формате DD/MM/YYYY
+ */
+function handleDateInput(event) {
+    const input = event.target;
+    let value = input.value.replace(/\D/g, ''); // Убираем все нецифровые символы
+    
+    // Автоматически добавляем слэши
+    if (value.length >= 2 && value.length < 4) {
+        value = value.substring(0, 2) + '/' + value.substring(2);
+    } else if (value.length >= 4 && value.length < 6) {
+        value = value.substring(0, 2) + '/' + value.substring(2, 4) + '/' + value.substring(4);
+    } else if (value.length >= 6 && value.length <= 10) {
+        value = value.substring(0, 2) + '/' + value.substring(2, 4) + '/' + value.substring(4);
+    }
+    
+    input.value = value;
+    
+    // Валидация и конвертация в формат YYYY-MM-DD для сохранения
+    if (value.length === 10) { // DD/MM/YYYY
+        const parts = value.split('/');
+        if (parts.length === 3) {
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10);
+            const year = parseInt(parts[2], 10);
+            
+            // Валидация даты
+            if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1900 && year <= 2099) {
+                const date = new Date(year, month - 1, day);
+                if (date.getDate() === day && date.getMonth() === month - 1 && date.getFullYear() === year) {
+                    // Сохраняем в формате YYYY-MM-DD для совместимости
+                    const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    appState.formData.endDate = isoDate;
+                    input.setAttribute('data-iso-date', isoDate);
+                    input.classList.remove('date-error');
+                } else {
+                    input.classList.add('date-error');
+                }
+            } else {
+                input.classList.add('date-error');
+            }
+        }
+    } else if (value.length < 10) {
+        input.classList.remove('date-error');
+    }
+}
 
 /**
  * Инициализация приложения
@@ -13,11 +79,19 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeApp() {
     loadState();
     
-    // Восстановление даты
+    // Восстановление даты в формате DD/MM/YY
     if (appState.formData.endDate) {
         const dateInput = document.getElementById('end-date');
         if (dateInput) {
-            dateInput.value = appState.formData.endDate;
+            // Конвертируем YYYY-MM-DD в DD/MM/YYYY
+            const date = new Date(appState.formData.endDate);
+            if (!isNaN(date.getTime())) {
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = String(date.getFullYear());
+                dateInput.value = `${day}/${month}/${year}`;
+                dateInput.setAttribute('data-iso-date', appState.formData.endDate);
+            }
         }
     }
     
@@ -30,13 +104,20 @@ function initializeApp() {
     // Инициализация полей истца значениями по умолчанию
     initializePlaintiffFields();
     
+    // Восстановление файла ЕГРЮЛ (если был загружен ранее)
+    // Примечание: файлы не сохраняются в localStorage, поэтому показываем только сообщение
+    const egrulInput = document.getElementById('egrul-certificate');
+    const egrulDisplay = document.getElementById('egrul-file-display');
+    if (egrulInput && egrulDisplay && appState.formData.egrulCertificate) {
+        egrulDisplay.textContent = 'Файл был загружен ранее (необходимо загрузить заново)';
+    }
+    
     // Инициализация наборов документов
     if (Object.keys(appState.complects).length === 0) {
         appState.complects[1] = {
             contract: null,
             claim: null,
-            debtCertificates: [],
-            egrulCertificate: null
+            debtCertificates: []
         };
         appState.formData.numComplects = 1;
     }
@@ -134,7 +215,20 @@ function resetApplication() {
     const dateInput = document.getElementById('end-date');
     if (dateInput) {
         dateInput.value = '';
+        dateInput.removeAttribute('data-iso-date');
+        dateInput.classList.remove('date-error');
     }
+    
+    // Очистка поля ЕГРЮЛ
+    const egrulInput = document.getElementById('egrul-certificate');
+    const egrulDisplay = document.getElementById('egrul-file-display');
+    if (egrulInput) {
+        egrulInput.value = '';
+    }
+    if (egrulDisplay) {
+        egrulDisplay.textContent = '';
+    }
+    appState.formData.egrulCertificate = null;
     
     const companyTypeSelect = document.getElementById('company-type');
     if (companyTypeSelect) {
@@ -222,8 +316,7 @@ function resetApplication() {
     appState.complects[1] = {
         contract: null,
         claim: null,
-        debtCertificates: [],
-        egrulCertificate: null
+        debtCertificates: []
     };
     appState.formData.numComplects = 1;
     
@@ -242,7 +335,22 @@ function resetApplication() {
  * Обработка изменения даты
  */
 function handleDateChange(event) {
-    appState.formData.endDate = event.target.value;
+    const input = event.target;
+    // Используем сохраненное ISO значение или конвертируем из DD/MM/YYYY
+    if (input.hasAttribute('data-iso-date')) {
+        appState.formData.endDate = input.getAttribute('data-iso-date');
+    } else if (input.value) {
+        // Конвертируем DD/MM/YYYY в YYYY-MM-DD
+        const parts = input.value.split('/');
+        if (parts.length === 3) {
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10);
+            const year = parseInt(parts[2], 10);
+            
+            const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            appState.formData.endDate = isoDate;
+        }
+    }
     onFormChange();
 }
 
@@ -251,6 +359,22 @@ function handleDateChange(event) {
  */
 function handleCompanyTypeChange(event) {
     appState.formData.companyType = event.target.value;
+    onFormChange();
+}
+
+/**
+ * Обработка загрузки выписки из ЕГРЮЛ
+ */
+function handleEgrulUpload(event) {
+    const input = event.target;
+    appState.formData.egrulCertificate = input.files[0] || null;
+    
+    // Обновить отображение
+    const displayElement = document.getElementById('egrul-file-display');
+    if (displayElement) {
+        updateFileDisplay(input, displayElement);
+    }
+    
     onFormChange();
 }
 
@@ -272,8 +396,6 @@ function handleFileUpload(event, complectId, fileType) {
         complect.claim = input.files[0] || null;
     } else if (fileType === 'debt-certificate') {
         complect.debtCertificates = Array.from(input.files);
-    } else if (fileType === 'egrul-certificate') {
-        complect.egrulCertificate = input.files[0] || null;
     }
     
     // Обновить отображение
@@ -295,8 +417,7 @@ function addComplect() {
     appState.complects[newId] = {
         contract: null,
         claim: null,
-        debtCertificates: [],
-        egrulCertificate: null
+        debtCertificates: []
     };
     appState.formData.flags.step1Complete = false;
     onFormChange();
@@ -348,7 +469,6 @@ function renderComplects() {
             const contractInput = complectElement.querySelector('[data-file-type="contract"]');
             const claimInput = complectElement.querySelector('[data-file-type="claim"]');
             const debtInput = complectElement.querySelector('[data-file-type="debt-certificate"]');
-            const egrulInput = complectElement.querySelector('[data-file-type="egrul-certificate"]');
             
             if (contractInput && appState.complects[i].contract) {
                 updateFileDisplay(contractInput, contractInput.parentElement.querySelector('.file-name-display'));
@@ -358,9 +478,6 @@ function renderComplects() {
             }
             if (debtInput && appState.complects[i].debtCertificates.length > 0) {
                 updateFileDisplay(debtInput, debtInput.parentElement.querySelector('.file-name-display'));
-            }
-            if (egrulInput && appState.complects[i].egrulCertificate) {
-                updateFileDisplay(egrulInput, egrulInput.parentElement.querySelector('.file-name-display'));
             }
         }
     }
@@ -408,16 +525,6 @@ function createComplectHTML(complectId) {
                 <div class="file-name-display"></div>
             </div>
             
-            <div class="file-upload-group">
-                <label>Поле для выписки из ЕГРЮЛ</label>
-                <input type="file" 
-                       class="file-input" 
-                       data-file-type="egrul-certificate"
-                       data-complect-id="${complectId}"
-                       accept=".pdf,.doc,.docx"
-                       onchange="handleFileUpload(event, ${complectId}, 'egrul-certificate')">
-                <div class="file-name-display"></div>
-            </div>
         </div>
     `;
 }
@@ -468,9 +575,26 @@ async function submitDocuments() {
     const formData = new FormData();
     
     // Добавление даты
-    const endDate = document.getElementById('end-date').value;
+    const endDateInput = document.getElementById('end-date');
+    let endDate = '';
+    
+    if (endDateInput.hasAttribute('data-iso-date')) {
+        // Используем сохраненное ISO значение
+        endDate = endDateInput.getAttribute('data-iso-date');
+    } else if (endDateInput.value) {
+        // Конвертируем DD/MM/YYYY в YYYY-MM-DD
+        const parts = endDateInput.value.split('/');
+        if (parts.length === 3) {
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10);
+            const year = parseInt(parts[2], 10);
+            
+            endDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
+    }
+    
     if (!endDate) {
-        showError('Ошибка', 'Пожалуйста, выберите дату конца просрочки');
+        showError('Ошибка', 'Пожалуйста, выберите дату конца просрочки в формате DD/MM/YYYY');
         return;
     }
     formData.append('date', endDate);
@@ -481,8 +605,7 @@ async function submitDocuments() {
         console.log(`DEBUG: Набор ${complectId}:`, {
             contract: complect.contract ? complect.contract.name : null,
             claim: complect.claim ? complect.claim.name : null,
-            debtCertificates: complect.debtCertificates ? complect.debtCertificates.length : 0,
-            egrulCertificate: complect.egrulCertificate ? complect.egrulCertificate.name : null
+            debtCertificates: complect.debtCertificates ? complect.debtCertificates.length : 0
         });
         
         if (complect.contract) {
@@ -497,12 +620,14 @@ async function submitDocuments() {
             });
             formData.append(`${complectId}_certificates_count`, complect.debtCertificates.length.toString());
         }
-        if (complect.egrulCertificate) {
-            console.log(`DEBUG: Добавляю файл ЕГРЮЛ для набора ${complectId}:`, complect.egrulCertificate.name);
-            formData.append(`complect_${complectId}_egrul_certificate_file`, complect.egrulCertificate, complect.egrulCertificate.name);
-        } else {
-            console.log(`DEBUG: Файл ЕГРЮЛ для набора ${complectId} отсутствует`);
-        }
+    }
+    
+    // Добавление файла ЕГРЮЛ (отдельно от наборов)
+    if (appState.formData.egrulCertificate) {
+        console.log(`DEBUG: Добавляю файл ЕГРЮЛ:`, appState.formData.egrulCertificate.name);
+        formData.append('egrul_certificate_file', appState.formData.egrulCertificate, appState.formData.egrulCertificate.name);
+    } else {
+        console.log(`DEBUG: Файл ЕГРЮЛ отсутствует`);
     }
     
     // Отладка: вывести все ключи FormData

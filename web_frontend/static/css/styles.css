@@ -110,6 +110,35 @@ body {
     transition: border-color 0.3s;
 }
 
+/* Стили для кастомного date input с форматом DD/MM/YY */
+.date-input {
+    font-family: monospace;
+    letter-spacing: 1px;
+}
+
+.date-input::placeholder {
+    color: #999;
+    font-style: italic;
+}
+
+.date-input.date-error {
+    border-color: #dc2626;
+    background-color: #fef2f2;
+}
+
+.date-input.date-error:focus {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.date-hint {
+    display: block;
+    margin-top: 5px;
+    font-size: 0.875rem;
+    color: #666;
+    font-style: italic;
+}
+
 .form-control:focus {
     outline: none;
     border-color: #667eea;
