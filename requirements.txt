@@ -1,7 +1,7 @@
 flask==3.1.0
 pytest==8.3.5
 xlrd==2.0.1
-pandas==2.2.3
+pandas==2.3.3
 workalendar==17.0.0
 streamlit==1.45.0
 pyyaml==6.0.2
@@ -21,3 +21,4 @@ beautifulsoup4 == 4.13.4
 easyocr
 docling
 rapidfuzz
+pymorphy2
