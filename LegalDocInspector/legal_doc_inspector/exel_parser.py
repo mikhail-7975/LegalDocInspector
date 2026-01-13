@@ -66,7 +66,7 @@ class TableParser:
         self.pattern_date = r"\d{4}"
         self.pattern_adjustment = "доля от размера годовой корректировки платы за тепловую энергию"
         self.pattern_adjustment_2 = r"(январе|феврале|марте|апреле|мае|июне|июле|августе|сентябре|октябре|ноябре|декабре)\s+\d{4}"
-        self.pattern_end = "итого по договору"
+        self.pattern_end = ["итого по договору", 'итого по периоду']
         self.pattern_period = r"(0?[1-9]|1[0-9])\.\d{4}"
 
 
@@ -200,9 +200,15 @@ class TableParser:
         second = self.reader.cell(row, 1)
         third = self.reader.cell(row, 2)
         fourth = self.reader.cell(row, 3)
-        sixth = self.reader.cell(row, 5)
-        seventh = self.reader.cell(row, 6)
 
+        try:
+            sixth = self.reader.cell(row, 5)
+            seventh = self.reader.cell(row, 6)
+        except IndexError:
+            sixth = None
+            seventh = self.reader.cell(row,4)
+
+        print(first, second, third, fourth, sixth, seventh)
         if not pd.isna(first):
             if self.find_pattern(self.pattern_month, first):
                 return 1
@@ -210,7 +216,7 @@ class TableParser:
             if self.pattern_adjustment.lower() in first.lower():
                 return 2
 
-            if self.pattern_end.lower() in first.lower():
+            if first.lower() in self.pattern_end :
                 return 3
 
             if self.find_pattern(self.pattern_period, first) and (not pd.isna(second)):
@@ -334,12 +340,18 @@ class TableParser:
 
 
     def parse_debt(self, row):
-        debt = self.reader.cell(row, 6)
+        try:
+            debt = self.reader.cell(row, 6)
+        except IndexError:
+            debt = self.reader.cell(row, 4)
         return None if pd.isna(debt) else debt
 
 
     def parse_payment_contract_type(self, row):
-        contract_type = self.reader.cell(row, 5)
+        try:
+            contract_type = self.reader.cell(row, 5)
+        except IndexError:
+            contract_type = None
         return None if pd.isna(contract_type) else contract_type
 
 
@@ -381,10 +393,14 @@ class TableParser:
 
 
     def check_if_is_correcting(self, row):
-        eighth = self.reader.cell(row, 7)
+        try:
+            eighth = self.reader.cell(row, 7)
+        except IndexError:
+            eighth = None
         checking_pattern = "Годовая корректировка обязательств по оплате до факта начислений"
         if (not pd.isna(eighth)) and (checking_pattern.lower() in eighth.lower()):
             return True
+        
         return False
 
 
