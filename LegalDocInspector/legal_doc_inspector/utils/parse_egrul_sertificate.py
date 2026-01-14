@@ -4,12 +4,15 @@
 import logging
 import re
 from pathlib import Path
-from typing import Dict
+from io import StringIO
+from typing import Dict, List, Optional
+
+import pandas as pd
 
 _log = logging.getLogger(__name__)
 
 
-def extract_text_from_pdf(pdf_path: str | Path) -> str:
+def extract_text_from_pdf(pdf_path: str | Path) -> tuple[str,str]:
     """
     Извлекает текст из текстового PDF документа без использования OCR.
     
@@ -26,46 +29,6 @@ def extract_text_from_pdf(pdf_path: str | Path) -> str:
         raise FileNotFoundError(f"Файл не найден: {pdf_path}")
     
     text_content = ""
-    
-    # Пробуем использовать PyPDF2 (легковесная библиотека для текстовых PDF)
-    try:
-        import PyPDF2
-        
-        with open(pdf_path, 'rb') as file:
-            pdf_reader = PyPDF2.PdfReader(file)
-            for page_num, page in enumerate(pdf_reader.pages):
-                page_text = page.extract_text()
-                if page_text:
-                    text_content += page_text + "\n\n"
-        
-        _log.info(f"Текст успешно извлечен из PDF с помощью PyPDF2 ({len(pdf_reader.pages)} страниц)")
-        return text_content.strip()
-    
-    except ImportError:
-        _log.warning("PyPDF2 не установлена, пробуем альтернативный метод")
-    except Exception as e:
-        _log.warning(f"Ошибка при извлечении текста через PyPDF2: {e}, пробуем альтернативный метод")
-    
-    # Альтернативный метод: используем pymupdf (fitz)
-    try:
-        import fitz  # PyMuPDF
-        
-        doc = fitz.open(pdf_path)
-        for page_num in range(len(doc)):
-            page = doc[page_num]
-            page_text = page.get_text()
-            if page_text:
-                text_content += page_text + "\n\n"
-        doc.close()
-        
-        _log.info(f"Текст успешно извлечен из PDF с помощью PyMuPDF ({len(doc)} страниц)")
-        return text_content.strip()
-    
-    except ImportError:
-        _log.warning("PyMuPDF не установлена, пробуем docling без OCR")
-    except Exception as e:
-        _log.warning(f"Ошибка при извлечении текста через PyMuPDF: {e}, пробуем docling без OCR")
-    
     # Резервный метод: используем docling без OCR (для текстовых PDF)
     try:
         import torch
@@ -84,7 +47,7 @@ def extract_text_from_pdf(pdf_path: str | Path) -> str:
             layout_batch_size=16,
             table_batch_size=4,
             do_ocr=False,  # Отключаем OCR для текстовых PDF
-            do_table_structure=False
+            do_table_structure=True
         )
         
         doc_converter = DocumentConverter(
@@ -104,7 +67,6 @@ def extract_text_from_pdf(pdf_path: str | Path) -> str:
         
         document = conv_result.document
         data = list(document.export_to_dict().values())
-        
         if len(data) >= 8:
             text_blocks = data[7]
             for block in text_blocks:
@@ -114,7 +76,7 @@ def extract_text_from_pdf(pdf_path: str | Path) -> str:
                         text_content += text + "\n\n"
         
         _log.info("Текст успешно извлечен из PDF с помощью docling (без OCR)")
-        return text_content.strip()
+        return text_content.strip(), document.export_to_markdown()
     
     except ImportError:
         raise ImportError(
@@ -155,7 +117,7 @@ def parse_egrul_certificate(pdf_path: str | Path) -> tuple[Dict[str, str], str]:
     _log.info(f"Начало обработки документа: {pdf_path}")
     
     # Извлечение текста из PDF без OCR
-    text_content = extract_text_from_pdf(pdf_path)
+    text_content, text_md = extract_text_from_pdf(pdf_path)
     
     # Проверка, что текст был извлечен
     if not text_content or not text_content.strip():
@@ -165,13 +127,13 @@ def parse_egrul_certificate(pdf_path: str | Path) -> tuple[Dict[str, str], str]:
     
     # Форматирование текста как markdown
     # Простое форматирование: каждая строка текста становится параграфом
-    
+    res_list = extract_all_tables_to_dataframes(text_md)
     # Извлечение данных из текста
-    address = get_address_info(text_content)
-    full_name = get_full_name_info(text_content)
-    short_name = get_short_name_info(text_content)
-    kpp = get_kpp_info(text_content)
-    ogrn = get_ogrn_info(text_content)
+    address = get_table_info(res_list, "Адрес юридического лица")
+    full_name = get_table_info(res_list, "Полное наименование на русском языке")
+    short_name = get_table_info(res_list, "Сокращенное наименование на русском языке")
+    kpp = get_table_info(res_list, "КПП юридического лица")
+    ogrn = get_table_info(res_list, "ОГРН")
     
     result = {
         'full_name': full_name,      # Полное наименование организации
@@ -183,7 +145,25 @@ def parse_egrul_certificate(pdf_path: str | Path) -> tuple[Dict[str, str], str]:
     
     return replace_quotes(full_name), replace_quotes(short_name), clean_address(address), kpp, ogrn, text_content
 
-def get_address_info(text_content: str) -> str:
+
+def get_table_info(res_list:str, pattern) -> str:
+
+    # res_list = extract_all_tables_to_dataframes(document_md)
+    # df1 = res_list
+    # Тот же DataFrame
+
+    for df in res_list:
+    # Ищем строки, где второй столбец содержит паттерн
+        matches = df[df.iloc[:, 1].astype(str).str.contains(pattern)]
+
+        if not matches.empty and len(df) > 2:
+            # Возвращаем 3-ю строку DataFrame
+            third_row = str(matches.iloc[:,2].item())
+            # print("3-я строка DataFrame:")
+            return third_row
+
+
+def get_address_info_legacy(text_content: str) -> str:
     """
     Извлекает адрес юридического лица из текста выписки из ЕГРЮЛ.
     
@@ -520,3 +500,137 @@ def clean_address(text: str) -> str:
     text = re.sub(r',(?=[^ \w])', '', text)    
     text = re.sub(r'\s+', ' ', text).strip() 
     return text
+
+def find_all_md_tables(md_text: str) -> List[str]:
+    """
+    Находит все markdown таблицы в тексте
+    Возвращает список строк с таблицами
+    """
+    tables = []
+    
+    # Более точное регулярное выражение для поиска таблиц
+    # Ищет блоки, где есть хотя бы одна строка-разделитель
+    pattern = r'((?:^\|.*\|\s*$\n)+)'
+    
+    lines = md_text.split('\n')
+    current_block = []
+    in_table = False
+    
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        
+        # Проверяем, начинается ли строка с | и не является ли кодом
+        if stripped.startswith('|') and not stripped.startswith('|```') and '```|' not in stripped:
+            # Проверяем, является ли это строкой-разделителем таблицы
+            is_separator = bool(re.match(r'^\|[-:\s|]+\|$', stripped.replace(' ', '')))
+            
+            if not in_table:
+                # Начало новой таблицы
+                in_table = True
+                current_block = [stripped]
+            else:
+                # Продолжение таблицы
+                current_block.append(stripped)
+                
+                # Если это разделитель и мы уже собрали заголовок
+                if is_separator and len(current_block) >= 2:
+                    # Проверяем следующие строки
+                    j = i + 1
+                    while j < len(lines) and lines[j].strip().startswith('|'):
+                        current_block.append(lines[j].strip())
+                        j += 1
+                    
+                    tables.append('\n'.join(current_block))
+                    current_block = []
+                    in_table = False
+                    continue
+        elif in_table and not stripped:
+            # Пустая строка внутри таблицы - допустимо
+            continue
+        elif in_table:
+            # Конец таблицы
+            if len(current_block) > 1:
+                # Проверяем, что в блоке есть разделитель
+                has_separator = any(
+                    re.match(r'^\|[-:\s|]+\|$', line.replace(' ', '')) 
+                    for line in current_block
+                )
+                if has_separator:
+                    tables.append('\n'.join(current_block))
+            current_block = []
+            in_table = False
+    
+    return tables
+
+def parse_md_table(table_text: str) -> Optional[pd.DataFrame]:
+    """
+    Парсит отдельную markdown таблицу в DataFrame
+    """
+    try:
+        lines = [line.strip() for line in table_text.split('\n') if line.strip()]
+        
+        # Убедимся, что это таблица (есть строка-разделитель)
+        has_separator = False
+        clean_lines = []
+        
+        for line in lines:
+            # Пропускаем строки-разделители для pandas
+            if re.match(r'^\|[-:\s|]+\|$', line.replace(' ', '')):
+                has_separator = True
+                continue
+            clean_lines.append(line)
+        
+        if not has_separator or len(clean_lines) < 2:
+            return None
+        
+        # Парсим с помощью pandas
+        df = pd.read_csv(StringIO('\n'.join(clean_lines)), sep='|')
+        
+        # Очистка и валидация
+        if df.empty:
+            return None
+        
+        # Удаляем пробелы
+        df = df.map(lambda x: x.strip() if isinstance(x, str) else x)
+        
+        # Удаляем полностью пустые колонки
+        df = df.dropna(axis=1, how='all')
+        
+        # Удаляем пустые колонки по краям
+        if df.columns[0] == '':
+            df = df.iloc[:, 1:]
+        if not df.empty and df.columns[-1] == '':
+            df = df.iloc[:, :-1]
+        
+        # Проверяем, что остались данные
+        if df.empty or len(df.columns) == 0:
+            return None
+        
+        return df
+        
+    except Exception as e:
+        print(f"Ошибка при парсинге таблицы: {e}")
+        return None
+
+def extract_all_tables_to_dataframes(md_text: str) -> List[pd.DataFrame]:
+    """
+    Основная функция: извлекает все таблицы и конвертирует в DataFrames
+    """
+    tables_text = find_all_md_tables(md_text)
+    dataframes = []
+    
+    # print(f"Найдено таблиц в тексте: {len(tables_text)}")
+    
+    for i, table_text in enumerate(tables_text, 1):
+        # print(f"\n{'='*50}")
+        # print(f"Обработка таблицы {i}:")
+        # print(table_text[:200] + "..." if len(table_text) > 200 else table_text)
+        
+        df = parse_md_table(table_text)
+        if df is not None:
+            dataframes.append(df)
+            # print(f"Успешно создан DataFrame с формой: {df.shape}")
+        else:
+            print("Не удалось создать DataFrame")
+    
+    return dataframes
