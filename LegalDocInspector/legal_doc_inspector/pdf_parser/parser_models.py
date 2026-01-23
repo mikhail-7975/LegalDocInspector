@@ -12,7 +12,7 @@ from docling.datamodel.base_models import ConversionStatus, InputFormat
 from docling.datamodel.pipeline_options import (
     ThreadedPdfPipelineOptions,
 )
-import pymorphy2
+import pymorphy3
 import html as html_parser
 from docling_core.types.doc.document import DoclingDocument
 from docling.document_converter import DocumentConverter, PdfFormatOption
@@ -186,12 +186,11 @@ class PDFClaimParser:
 
 class PDFContractParser:
 
-    def __init__(self) -> None:
+    def __init__(self, device='cuda') -> None:
         pipeline_options = ThreadedPdfPipelineOptions(
             accelerator_options=AcceleratorOptions(
-                device=AcceleratorDevice.CUDA if torch.cuda.is_available() else AcceleratorDevice.CPU,
+                device=AcceleratorDevice.CUDA if (torch.cuda.is_available() and device=='cuda') else AcceleratorDevice.CPU,
                 num_threads=64
-
             ),
             ocr_batch_size=4,
             layout_batch_size=16,
@@ -215,7 +214,7 @@ class PDFContractParser:
         self.doc_converter.initialize_pipeline(InputFormat.PDF)
         
         init_runtime = time.time() - start_time
-        self.morph = pymorphy2.MorphAnalyzer(lang='ru')
+        self.morph = pymorphy3.MorphAnalyzer(lang='ru')
 
         _log.info(f"Pipeline initialized in {init_runtime:.2f} seconds.")
 
