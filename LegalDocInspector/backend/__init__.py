@@ -17,6 +17,7 @@ def create_app():
         def add_configs():
             if "config" not in g:
                 g.config = load_yaml_config('configs/debug_config.yaml')
+
         @app.before_request
         def add_doc_processors():
             if "table_parser" not in g:

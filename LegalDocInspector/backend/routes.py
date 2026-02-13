@@ -124,12 +124,12 @@ def parse():
             # print("claim parser done!")
 
             # overdue_date_info  = "(заглушка) В следующем фрагменте указан срок, в течение которого Исполнитель должен произвести оплату:\n\n\"5. 5. Исполнитель в срок до 18-го числа месяца, следующего за расчетным, производит оплату стоимости тепловой энергии, теплоносителя, указанной в счете. Датой оплаты считается дата поступления денежных средств на расчетный счет Теплоснабжающей организации.\""
-            overdue_date_info, service_type_info = contract_parser.analyse_contract(contract_file_path)
+            contract_type, contract_point, overdue_date, contract_text = contract_parser.analyse_contract(contract_file_path, current_config)
             # service_type_info = "(заглушка) тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))"
             # claim_info = {"claim_date": '01.01.2000', "claim_number": '123456'}
             claim_info = claim_parser.analyse_claim(claim_file_path)
 
-            parsing_table_results.append((merged_table_result, contract_number, overdue_date_info, service_type_info, claim_info))
+            parsing_table_results.append((merged_table_result, contract_number, contract_type, contract_point, overdue_date, contract_text, claim_info))
 
         result_json['table_parser_result'] = parsing_table_results
 
