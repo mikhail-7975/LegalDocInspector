@@ -32,6 +32,9 @@ from rapidfuzz import fuzz
 from bs4 import BeautifulSoup
 import re
 import gc
+
+from configs.config import AppConfig
+
 _log = logging.getLogger(__name__)
 
 KEYWORDS = ['публичное', 'пао', 'акционерное', 'общество']
@@ -218,6 +221,74 @@ class PDFContractParser:
 
         _log.info(f"Pipeline initialized in {init_runtime:.2f} seconds.")
 
+    def analyse_contract(self, path_to_file: str | Path, config:AppConfig):
+        """
+        Docstring для analyse_contract
+        
+        :param self: Описание
+        :param path_to_file: Описание
+        :type path_to_file: str | Path
+        :param config: Описание
+        :type config: AppConfig
+
+        returns
+        tuple (тип договора, пункт договора, день, текст)
+        
+        """
+        conv_result = self._parse_contract_text(path_to_file)
+        conv_result_html = conv_result.export_to_html()
+        # print(conv_result_html)
+        type_of_service = self._find_type_of_contract(conv_result_html)
+        if type_of_service not in ['ФОТЭ', 'не удалось определить тип договора']:
+            point_of_contract, overdue_day, result_text = self._find_point_of_overdue_date(conv_result_html,
+                                                                keywords=config.point_overdue_keywords,
+                                                                excluded_words=config.point_overdue_excluded)
+        elif type_of_service == 'ФОТЭ':
+            return type_of_service, '-', '15', 'Данный тип договора является актом ФОТЭ, согласно закону базовый день начала просрочки - 15-е число месяца'
+        
+
+        else:
+            return type_of_service, '-', '18', type_of_service
+        # type_of_service = self._find_point_of_service_type(conv_result_html,
+        #                                                    keywords=config.service_type_keywords,
+        #                                                    excluded_words=config.service_type_excluded)
+        torch.cuda.empty_cache()
+        return type_of_service, point_of_contract, overdue_day, result_text
+    
+    def _find_type_of_contract(self, parsed_html):
+        soup = BeautifulSoup(parsed_html, 'lxml')
+        candidates = soup.find_all(['h1','h2','p'])
+        valid_values_keywords = ['акт','договор', 'контракт', 'гвс', 'тэ', 'фотэ', 'сои']
+        
+        valid_values_keywords_lemmatized = {self._lemmatize_word(elem) for elem in valid_values_keywords}
+        valid_values = []
+
+        for text_elem in [elem.get_text() for elem in candidates]:
+            if len(text_elem)>2:
+                text_elem_lemmatized = self._lemmatize_words(text_elem)
+                if valid_values_keywords_lemmatized & text_elem_lemmatized:
+                    valid_values.append(text_elem.lower())
+        
+        soi_keywords = ['целей содержания общего имущества', 'сои', 'cои']
+        te_keywords = ['договор теплоснабжения', 'на снабжение тепловой']
+        gvs_keywords = ['договор поставки горячей воды', 'горячей воды', 'гвс', 'горячего водоснабжения']
+        fote_keywords = ['акт проверки', 'фотэ']
+        for valid_elem in valid_values[:20]:
+            for keyword in soi_keywords:
+                if keyword in valid_elem:
+                    return 'СОИ'
+            for keyword in te_keywords:
+                if keyword in valid_elem:
+                    return 'ТЭ'
+            for keyword in gvs_keywords:
+                if keyword in valid_elem:
+                    return 'ГВС'
+            for keyword in fote_keywords:
+                if keyword in valid_elem:
+                    return 'ФОТЭ'
+            
+        return "не удалось определить тип договора"
+    
     def _parse_contract_text(self, path_to_file: str| Path) -> DoclingDocument:
         if isinstance(path_to_file, str):
             path_to_file = Path(path_to_file)
@@ -229,29 +300,94 @@ class PDFContractParser:
         _log.info(f"Document converted in {time.time() - start_time:.2f} seconds.")
         return conv_result.document
     
-    def analyse_contract(self, path_to_file: str | Path):
-        conv_result = self._parse_contract_text(path_to_file)
-        conv_result_html = conv_result.export_to_html()
-        # print(conv_result_html)
-        point_of_contract = self._find_point_of_overdue_date(conv_result_html)
-        type_of_service = self._find_point_of_service_type(conv_result_html)
-        torch.cuda.empty_cache()
-        return point_of_contract, type_of_service
 
-    def _find_point_of_overdue_date(self, parsed_html_text:str):
-        service_type_key_words_list_weighted = {"срок":2, "числа":2, "месяца":2, "производится":1,"оплата":3, "расчётным":2, "период":2 , "следующего":2, "оплачивает":3}
-        exclude_words = ["оформляет", "регулирует", "помещения", "дубликатов", "льгот", "распределяются", "Ресурсоснабжающая", "ОДПУ", "указания"]
-        finded_text = self._find_top5_elements_weighted(parsed_html_text, service_type_key_words_list_weighted, exclude_words)
-        print(finded_text)
-        return finded_text[0][0]
+    def _find_point_of_overdue_date(self, parsed_html_text:str, keywords:dict, excluded_words:list):
+        point_overdue_key_words_list_weighted = keywords
+        exclude_words = excluded_words
+        finded_text, candidates = self._find_top5_elements_weighted(parsed_html_text, point_overdue_key_words_list_weighted, exclude_words)
+        # print(finded_text)
+        if len(finded_text) > 0:
+            contract_point, result_text = self._find_point_overdue_suggestions(finded_text, candidates)
+            overdue_day = self._find_day_overdue_suggestions(result_text)
+            return contract_point, overdue_day, result_text
+        else:
+            return "К сожалению, не удалось распознать часть текста", None, None
+    #FIXME нужно брать информацию из шапки договора
+    def _find_point_of_service_type(self, parsed_html_text:str, keywords:dict, excluded_words:list):
+        service_type_key_words_list_weighted = keywords
+        finded_text, candidates = self._find_top5_elements_weighted(parsed_html_text, service_type_key_words_list_weighted, excluded_words)
+        
+        # print(finded_text)
+        if len(finded_text) > 0:
+            return finded_text[0][0]
+        else:
+            return "К сожалению, не удалось распознать часть текста"
+
+    def _find_point_overdue_suggestions(self, perspective_elems:list[tuple[str, int, int]], candidates):
+        pattern = r'^\d+(?:[.,]\d+)*'
+        for perspective_elem in perspective_elems:
+            elem_text, _ , current_index = perspective_elem
+            # print(elem_text)
+            
+            matches = re.match(pattern, elem_text)
+            if matches is not None:
+                return matches.group(0), elem_text
+            zone_of_interest = [elem.get_text() for elem in candidates[current_index-5:current_index]]
+            # print(zone_of_interest)
+            for elem in zone_of_interest[::-1]:
+                matches = re.match(pattern, elem)
+                # print(matches)
+                if matches is not None:
+                    flag = self._check_contract_point(elem)
+                    if flag:
+                        return matches.group(0), elem + '\n' + elem_text
+                    else :
+                        continue
+            if not flag:
+                continue
+
+    def _find_day_overdue_suggestions(self, result_text: str):
+    # Удаляем число из начала
+        cleaned = re.sub(r'^\d+(?:[.,]\d+)*', '', result_text).lstrip()
+        
+        # Находим все элементы
+        matches = re.findall(r'\d+|\n|числа', cleaned, flags=re.IGNORECASE)
+        
+        if '\n' in matches:
+            # Ищем число между \n и "числа"
+            for i in range(len(matches)):
+                if matches[i] == '\n':
+                    # Ищем число после \n
+                    for j in range(i + 1, len(matches)):
+                        if matches[j].isdigit():
+                            # Проверяем, есть ли "числа" после этого числа
+                            if 'числа' in [m.lower() for m in matches[j+1:]]:
+                                return matches[j]
+        else:
+            # Ищем число перед "числа"
+            for i in range(len(matches) - 1):
+                if matches[i].isdigit() and matches[i+1].lower() == 'числа':
+                    return matches[i]
+        
+        # Если не нашли по правилам, возвращаем первое число
+        for elem in matches:
+            if elem.isdigit():
+                return elem
+        
+        return None
     
-    def _find_point_of_service_type(self, parsed_html_text:str):
-        service_type_key_words_list_weighted = {"теплоноситель":3, "вода":3}
-        # exclude_words = ["оформляет", "регулирует", "помещения", "дубликатов", "льгот", "распределяются", "Ресурсоснабжающая", "ОДПУ", "указания"]
-        finded_text = self._find_top5_elements_weighted(parsed_html_text, service_type_key_words_list_weighted, None)
-        print(finded_text)
-        return finded_text[0][0]
+    def _check_contract_point(self, elem:str) -> bool:
+        keywords = ["производит", "оплату", "сроки"]
+        excl_word = ["энергоснабжающая", "передает", "выставляет"]
+        keywords_lemmatized = {self._lemmatize_word(w) for w in keywords}
+        excl_word_lemmatized = {self._lemmatize_word(w) for w in excl_word}
+        elem_lemmatized = self._lemmatize_words(elem)
 
+        if excl_word_lemmatized & elem_lemmatized:
+            return False
+        
+        if keywords_lemmatized & elem_lemmatized:
+            return True
 
     def _find_top5_elements_weighted(self,
         html: str,
@@ -276,7 +412,7 @@ class PDFContractParser:
 
         scored = []
 
-        for elem in candidates:
+        for i, elem in enumerate(candidates):
             text = elem.get_text()
             if not text.strip():
                 continue
@@ -295,11 +431,10 @@ class PDFContractParser:
             )
 
             if total_weight > 0:
-                scored.append((self._strip_html(str(elem)), total_weight))
+                scored.append((self._strip_html(str(elem)), total_weight, i))
 
-        # Топ-5 по весу
         top5 = sorted(scored, key=lambda x: x[1], reverse=True)[:5]
-        return top5
+        return top5, candidates
     
 
     def _lemmatize_words(self, text: str) -> set[str]:

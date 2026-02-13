@@ -148,20 +148,15 @@ def parse_egrul_certificate(pdf_path: str | Path) -> tuple[Dict[str, str], str]:
 
 def get_table_info(res_list:str, pattern) -> str:
 
-    # res_list = extract_all_tables_to_dataframes(document_md)
-    # df1 = res_list
-    # Тот же DataFrame
-
     for df in res_list:
-    # Ищем строки, где второй столбец содержит паттерн
-        matches = df[df.iloc[:, 1].astype(str).str.contains(pattern)]
-
+        # Строгое совпадение с учетом регистра
+        matches = df[df.iloc[:, 1].astype(str) == pattern]
+        
         if not matches.empty and len(df) > 2:
-            # Возвращаем 3-ю строку DataFrame
-            third_row = str(matches.iloc[:,2].item())
-            # print("3-я строка DataFrame:")
-            return third_row
-
+            first_match = str(matches.iloc[0, 2])
+            return first_match
+    
+    return ""
 
 def get_address_info_legacy(text_content: str) -> str:
     """
