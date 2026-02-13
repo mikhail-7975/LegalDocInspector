@@ -37,6 +37,8 @@ if 'complects' not in st.session_state:
         'claim_uploaded_file':None,
         'debt_certificate_file':None
     }
+if "egrul_certificate" not in st.session_state:
+    st.session_state.egrul = None
 
 def on_change_handler():
     st.session_state.form_data['forms_changed'] = True
@@ -65,16 +67,18 @@ def get_documents_complect_form(form_id:int, day_of_penalty: int | None = None, 
 
 def get_contract_form(contract_number:str):
 
+    
     st.markdown(f"### информация из договора {contract_number}")
-    st.markdown(f"#### Информация по дню начала просрочки")
-    st.text(f"{st.session_state.contracts[contract_number]['overdue_date']}")
-    st.markdown(f"#### Информация о предмете договора")
-    st.text(f"{st.session_state.contracts[contract_number]['service_type']}")
+    st.text(f"Тип договора - {st.session_state.contracts[contract_number]['contract_type_parsed']}")
+
+    st.text(f"{st.session_state.contracts[contract_number]['contract_text_parsed']}")
+    
+    
     col1, col2 = st.columns(2)
     # st.json(st.session_state.contracts[contract_number])
     with col1:
         st.session_state.contracts[contract_number]['day_of_penalty'] = st.number_input(label="Выберите число месяца, которое является последним днём оплаты счёта",
-                                        value=18 ,
+                                        value=int(st.session_state.contracts[contract_number]['overdue_date_parsed']) ,
                                         min_value=1,
                                         max_value=31,
                                         key='day_of_penalty'+str(contract_number),
@@ -85,7 +89,7 @@ def get_contract_form(contract_number:str):
         st.session_state.contracts[contract_number]['contract_point']  = st.text_input(label="напишите номер пункта договора, в котором говорится о дне начала просрочки ",
                                                                                       key="c_p"+str(contract_number),
                                                                                       on_change=on_change_handler,
-                                                                                      value="5.5")
+                                                                                      value=st.session_state.contracts[contract_number]['contract_point_parsed'])
 
 
 st.title("Загрузка и обработка документов (Нейросети включены)")
@@ -104,6 +108,11 @@ with col1:
 with col2:
     st.session_state.form_data['company_type'] = st.selectbox("Выберите тип компании", ["Прочие", "УК", "ТСЖ"],
                                                               on_change=on_change_handler)
+
+st.markdown("### Выписка из ЕГРЮЛ")
+st.session_state.egrul = st.file_uploader("Выберите Документ с выпиской из ЕГРЮЛ",
+                                            accept_multiple_files=False,
+                                            key='egrul_certificate')
 
 for form_num, form_info in st.session_state.complects.items():
     get_documents_complect_form(
@@ -145,7 +154,7 @@ with col2:
 
 # st.json(st.session_state.complects)
 
-if st.session_state.complects[st.session_state.form_data['num_complects']]['claim_uploaded_file'] is not None and st.session_state.complects[st.session_state.form_data['num_complects']]['contract_uploaded_file'] is not None and st.session_state.complects[st.session_state.form_data['num_complects']]['debt_certificate_file'] is not None:
+if st.session_state.complects[st.session_state.form_data['num_complects']]['claim_uploaded_file'] is not None and st.session_state.complects[st.session_state.form_data['num_complects']]['contract_uploaded_file'] is not None and st.session_state.complects[st.session_state.form_data['num_complects']]['debt_certificate_file'] is not None and st.session_state.egrul is not None:
 
 
     # Кнопка отправки
@@ -155,6 +164,9 @@ if st.session_state.complects[st.session_state.form_data['num_complects']]['clai
         data = {
             "date": date_selected.strftime("%Y-%m-%d"),  # форматируем дату
         }
+        egrul_certificate_file = st.session_state.egrul
+        egrul_certificate_file.seek(0)
+        files['egrul_certificate_file'] = (egrul_certificate_file.name, egrul_certificate_file)
         for complect_id, complect_info in st.session_state.complects.items():
             claim_uploaded_file = complect_info['claim_uploaded_file']
             contract_uploaded_file = complect_info['contract_uploaded_file']
@@ -204,9 +216,10 @@ if st.session_state.form_data['flag']:
         st.session_state.contracts = {}
         for contract_info in result['table_parser_result']:
             contract_number = contract_info[1]
-            overdue_date_info = contract_info[2]
-            service_type_info = contract_info[3]
-            claim_info = contract_info[4]
+            contract_type = contract_info[2]
+            contract_point = contract_info[3]
+            overdue_date = contract_info[4]
+            contract_text = contract_info[5]
             # result['result_of_llm_parsers'] = {}
             # result['result_of_llm_parsers'][f"contract_{contract_number}"] = {
             #     "service_type":"тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))",
@@ -217,8 +230,10 @@ if st.session_state.form_data['flag']:
 
             # json_info = result['result_of_llm_parsers'][f"contract_{contract_number}"]
             st.session_state.contracts[contract_number] = {
-                'service_type': service_type_info,
-                'overdue_date': overdue_date_info
+                'contract_type_parsed': contract_type,
+                'contract_point_parsed': contract_point,
+                'overdue_date_parsed': overdue_date,
+                'contract_text_parsed' : contract_text
             }
     # st.json(st.session_state.contracts)
 
@@ -353,7 +368,7 @@ if st.session_state.form_data['flag2']:
 #     applications = {}
     #TODO: может быть несколько претензий в файле
     for contract_info in result['table_parser_result']:
-        claim_info = contract_info[4]
+        claim_info = contract_info[6]
         for claim_item in claim_info:
             st.session_state.form_data['lawsuit_info']['claims'].append(f"№ {claim_item['claim_number']} от {claim_item['claim_date']}")
 

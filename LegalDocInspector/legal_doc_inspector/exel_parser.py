@@ -208,7 +208,7 @@ class TableParser:
             sixth = None
             seventh = self.reader.cell(row,4)
 
-        print(first, second, third, fourth, sixth, seventh)
+        
         if not pd.isna(first):
             if self.find_pattern(self.pattern_month, first):
                 return 1
