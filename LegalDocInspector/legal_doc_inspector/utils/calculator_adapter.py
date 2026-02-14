@@ -89,7 +89,7 @@ def convert_data(calculated_data_list: list[dict], last_days_of_penalty: list[in
                 debt = StrictFormattedMoney(str_info['money'])
             elif month_or_type == 'end_of_table2':
                 penalty = StrictFormattedMoney(str_info['money'])
-            elif month_or_type == "contract_number":
+            elif month_or_type == "contract_number" or month_or_type == 'contract_type':
                 continue
             elif month_or_type == 'debt_info':
                 contract_dict['accrual_debt'] = str_info['accrual_debt']
@@ -120,6 +120,7 @@ def convert_data(calculated_data_list: list[dict], last_days_of_penalty: list[in
         contract_dict['debt_penalty'] = str(debt_penalty)
 
         list_unit.append(contract_dict)
+        list_unit.append(contract_info['contract_type'])
         converted_data['contracts_info'].append(list_unit)
 
         converted_data['table_info'][contract_info['contract_number']] = {

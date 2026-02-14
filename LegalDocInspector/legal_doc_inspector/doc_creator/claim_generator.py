@@ -557,38 +557,39 @@ class ClaimGenerator:
             point = self.config["contracts_info"][i][2]["contract_point"]
             chapter = point.split(".")[0]
             contract_number = self.config["contracts_info"][i][1]
-
-            if chapter not in parsed_chapters:
-                info["chapters"].append({
-                    "number_of_chapter": chapter,
-                    "number_of_contracts": 1,
-                    "points": [{
-                        "number_of_point": point,
-                        "contracts": [contract_number]
-                    }],
-                })
-                parsed_chapters.append(chapter)
-                parsed_points.append(point)
-
-            elif point not in parsed_points:
-                for chapter_dict in info["chapters"]:
-                    if chapter_dict["number_of_chapter"] == chapter:
-                        chapter_dict["points"].append({
+            contract_type = self.config["contracts_info"][i][-1]
+            if contract_type != 'ФОТЭ':
+                if chapter not in parsed_chapters:
+                    info["chapters"].append({
+                        "number_of_chapter": chapter,
+                        "number_of_contracts": 1,
+                        "points": [{
                             "number_of_point": point,
                             "contracts": [contract_number]
-                        })
-                        chapter_dict["number_of_contracts"] += 1
-                        parsed_points.append(point)
-                        break
+                        }],
+                    })
+                    parsed_chapters.append(chapter)
+                    parsed_points.append(point)
 
-            else:
-                for chapter_dict in info["chapters"]:
-                    if chapter_dict["number_of_chapter"] == chapter:
-                        for point_dict in chapter_dict["points"]:
-                            if point_dict["number_of_point"] == point:
-                                point_dict["contracts"].append(contract_number)
-                                chapter_dict["number_of_contracts"] += 1
-                                break
+                elif point not in parsed_points:
+                    for chapter_dict in info["chapters"]:
+                        if chapter_dict["number_of_chapter"] == chapter:
+                            chapter_dict["points"].append({
+                                "number_of_point": point,
+                                "contracts": [contract_number]
+                            })
+                            chapter_dict["number_of_contracts"] += 1
+                            parsed_points.append(point)
+                            break
+
+                else:
+                    for chapter_dict in info["chapters"]:
+                        if chapter_dict["number_of_chapter"] == chapter:
+                            for point_dict in chapter_dict["points"]:
+                                if point_dict["number_of_point"] == point:
+                                    point_dict["contracts"].append(contract_number)
+                                    chapter_dict["number_of_contracts"] += 1
+                                    break
 
         return info
 
@@ -717,13 +718,22 @@ class ClaimGenerator:
 
             # contract_number = list(self.config["table_info"].keys())[i]
             contract_number = self.config["contracts_info"][i][1]
-
+            contract_type = self.config["contracts_info"][i][-1]
             self.redactor.replace_text_in_paragraph(
                 self.redactor.get_paragraph(start + i * stride),
                 "05.403297-ТЭ от 01.08.2017",
                 # self.config["contracts_info"][i][1]
                 contract_number
             )
+
+            if contract_type == 'ФОТЭ':
+                self.redactor.replace_text_in_paragraph(
+                self.redactor.get_paragraph(start + i * stride),
+                "Договору",
+                # self.config["contracts_info"][i][1]
+                "Акту"
+            )
+
             
             if self.config["table_info"][contract_number]["accrual_debt"] is not None:
                 if self.config["table_info"][contract_number]["accrual_debt"] != "0,00":
@@ -827,6 +837,33 @@ class ClaimGenerator:
         )
         print(self.redactor.get_table(-1).columns[2].cells[0].text)
 
+        if "ФОТЭ" in self.config["lawsuit_info"]["service_type"]:
+            core_paragraph = self.redactor.get_paragraph(self.redactor.find_paragraph_contains_text(
+                "Факт поставки"
+            ))
+            new_paragraph = self.redactor.insert_paragraph_before_paragraph(core_paragraph)
+            self.redactor.clone_paragraph(core_paragraph, new_paragraph)
+            for run in new_paragraph.runs:
+                if "Факт поставки" in run.text:
+                    run.text = run.text.replace(run.text, "В силу п. 25 Постановления Правительства РФ от 14 февраля 2012 г. № 124 «О правилах, обязательных при заключении договоров снабжения коммунальными ресурсами» обязательство Ответчика должно быть исполнено до 15-го числа месяца, следующего за истекшим расчетным периодом (расчетным месяцем). Таким образом, порядок и сроки взаиморасчетов за потребленные ресурсы по Актам ФОТЭ также существенно нарушены Ответчиком.")
+
+            core_paragraph = self.redactor.get_paragraph(self.redactor.find_paragraph_contains_text(
+                "Таким образом, Истец свои обязательства"
+            ))
+
+            new_paragraph = self.redactor.insert_paragraph_after_paragraph(core_paragraph)
+            self.redactor.clone_paragraph(core_paragraph, new_paragraph)
+            for run in new_paragraph.runs:
+                if "Таким образом, Истец свои обязательства" in run.text:
+                    run.text = run.text.replace(run.text, "Как следует из содержания п. 2 ст. 421, ст. 426, п. 4 ст. 445 Гражданского кодекса Российской Федерации (далее - ГК РФ) принуждать потребителя к заключению договора энергоснабжения теплоснабжающая организация не вправе. В тех случаях, когда потребитель пользуется услугами энергоснабжения, однако от заключения договора уклоняется, фактическое пользование абонентом тепловой энергией расценивается в соответствии с п. 3 ст. 438 ГК РФ как акцепт абонентом оферты.")
+
+            new_paragraph = self.redactor.insert_paragraph_after_paragraph(core_paragraph)
+            self.redactor.clone_paragraph(core_paragraph, new_paragraph)
+            for run in new_paragraph.runs:
+                if "Таким образом, Истец свои обязательства" in run.text:
+                    run.text = run.text.replace(run.text, "Согласно п. 3 Информационного письма Президиума ВАС РФ от 17.02.1998 г. № 30 «Обзор практики разрешения споров, связанных с договором энергоснабжения» отсутствие договорных отношений с организацией, чьи теплопотребляющие установки присоединены к сетям энергоснабжающей организации не освобождает потребителя обязанности возместить стоимость отпущенной ему тепловой энергии.")
+
+
         if len(self.config["contract_types_templates"]["types_of_significant_paragraph"]) > 0:
 
             if len(self.config["contract_types_templates"]["types_of_significant_paragraph"]) == 2:
@@ -885,12 +922,24 @@ class ClaimGenerator:
             "/*её число*/": self.config["contract_types_templates"]["her_ending"],
             "/*копия окончание*/": self.config["contract_types_templates"]["copy_ending"],
         }
+        if "ФОТЭ" in self.config["lawsuit_info"]["service_type"]:
+            ov_iter = 0
+            am_iter = 0
+
         for paragraph in self.doc.paragraphs:
             # runs = []
             for run in paragraph.runs:
                 # runs.append(run.text)
                 for k, v in to_replace.items():
                     if k in run.text:
+                        if "ФОТЭ" in self.config["lawsuit_info"]["service_type"] and v=='Договорам, Актам ФОТЭ' and am_iter<1:
+                            v = "Договорам"
+                            am_iter+=1
+                        if "ФОТЭ" in self.config["lawsuit_info"]["service_type"] and v=='Договоров, Актов ФОТЭ' and ov_iter==0:
+                            ov_iter+=1  
+                        if "ФОТЭ" in self.config["lawsuit_info"]["service_type"] and v=='Договоров, Актов ФОТЭ' and ov_iter>0:
+                            v = "Договоров"
+                            ov_iter+=1
                         run.text = run.text.replace(k, v)
             # print(runs)
 
@@ -1024,34 +1073,54 @@ class ClaimGenerator:
         service_type = self.config["lawsuit_info"]["service_type"]
 
         contruct_types = []
-        if "ГВС" in service_type:
+        if "ГВС" in service_type or "СОИ" in service_type:
             contruct_types.append("ГВС")
         if "ТЭ" in service_type:
             contruct_types.append("ТЭ")
+        if "ФОТЭ" in service_type:
+            contruct_types.append("ФОТЭ")
 
-        if len(contracts) == 1:
-            templates["supplied_resources4"] = "ТЭ"
-            templates["plural_template_1"] = "Договором"
-            templates["plural_template_2"] = "Договору"
-            templates["plural_template_3"] = "названном Договоре"
-            templates["plural_template_4"] = "Договора"
-            templates["plural_template_5"] = "указанного Договора"
-            templates["plural_template_6"] = "названному Договору"
-            templates["plural_template_7"] = "был заключен следующий договор (далее именуемый – Договор), предметом которого"
+        if len(contracts) == 1 :
+            if not "ФОТЭ" in contruct_types :
+                templates["supplied_resources4"] = "ТЭ"
+                templates["plural_template_1"] = "Договором"
+                templates["plural_template_2"] = "Договору"
+                templates["plural_template_3"] = "названном Договоре"
+                templates["plural_template_4"] = "Договора"
+                templates["plural_template_5"] = "указанного Договора"
+                templates["plural_template_6"] = "названному Договору"
+                templates["plural_template_7"] = "был заключен следующий договор (далее именуемый – Договор), предметом которого"
+            else:
+                templates["plural_template_1"] = "Актом ФОТЭ"
+                templates["plural_template_2"] = "Акту ФОТЭ"
+                templates["plural_template_3"] = "названном Акте ФОТЭ"
+                templates["plural_template_4"] = "Акта ФОТЭ"
+                templates["plural_template_5"] = "указанного Акта ФОТЭ"
+                templates["plural_template_6"] = "названному Акту ФОТЭ"
+                templates["plural_template_7"] = "был заключен следующий Акт о фактическом потреблении тепловой энергии, теплоносителя, горячей воды (далее именуемый – Акт ФОТЭ), предметом которого"
 
-        elif len(contracts) > 1:
-            templates["plural_template_1"] = "Договорами"
-            templates["plural_template_2"] = "Договорам"
-            templates["plural_template_3"] = "названных Договорах"
-            templates["plural_template_4"] = "Договоров"
-            templates["plural_template_5"] = "указанных Договоров"
-            templates["plural_template_6"] = "названным Договорам"
-            templates["plural_template_7"] = "были заключены следующие договоры (далее именуемые – Договоры), предметом которых"
 
+        elif len(contracts)>1 :
+            if not "ФОТЭ" in contruct_types:
+                templates["plural_template_1"] = "Договорами"
+                templates["plural_template_2"] = "Договорам"
+                templates["plural_template_3"] = "названных Договорах"
+                templates["plural_template_4"] = "Договоров"
+                templates["plural_template_5"] = "указанных Договоров"
+                templates["plural_template_6"] = "названным Договорам"
+                templates["plural_template_7"] = "были заключены следующие договоры (далее именуемые – Договоры), предметом которых"
+            else:
+                templates["plural_template_1"] = "Договорами"
+                templates["plural_template_2"] = "Договорам, Актам ФОТЭ"
+                templates["plural_template_3"] = "названных Договорах, Актах ФОТЭ"
+                templates["plural_template_4"] = "Договоров, Актов ФОТЭ"
+                templates["plural_template_5"] = "указанных Договоров, Актов ФОТЭ"
+                templates["plural_template_6"] = "названным Договорам, Актам ФОТЭ"
+                templates["plural_template_7"] = "были заключены следующие договоры (далее именуемые – Договоры), Акты о фактическом потреблении тепловой энергии, теплоносителя, горячей воды (далее – Акты ФОТЭ), предметом которых"
 
         templates["types_of_significant_paragraph"] = []
         # Выбираем нужные шаблоны
-        if ("ГВС" in contruct_types) and ("ТЭ" in contruct_types):
+        if ("ГВС" in contruct_types) or ('ФОТЭ' in contruct_types) or ('СОИ' in contruct_types) and ("ТЭ" in contruct_types):
             templates["supplied_resources"] = "тепловой энергии и/или теплоносителя (далее – ТЭ), горячей воды через присоединенные сети горячего водоснабжения (далее – ГВС)"
             templates["contract_type"] = "тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС)"
             # templates["contract_type2"] = "тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС)"
@@ -1075,7 +1144,7 @@ class ClaimGenerator:
             templates["types_of_significant_paragraph"].append(company_type + "ТЭ")
             templates["service_article"] = "ст. 15 Федерального закона от 27.07.2010 № 190-ФЗ «О теплоснабжении»"
 
-        elif "ГВС" in contruct_types:
+        elif "ГВС" in contruct_types or 'СОИ' in contruct_types:
             templates["supplied_resources"] = "горячей воды через присоединенные сети горячего водоснабжения (далее – ГВС)"
             templates["contract_type"] = "горячую воду (ГВС)"
             # templates["contract_type2"] = "горячую воду (ГВС)"

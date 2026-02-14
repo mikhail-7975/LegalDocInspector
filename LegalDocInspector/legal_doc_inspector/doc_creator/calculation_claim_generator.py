@@ -74,7 +74,7 @@ class CalculationClaimGenerator:
             }
 
             for period in contract.keys():
-                if period not in ["contract_number", "start_of_table", "end_of_table1", "end_of_table2", "debt_info"]:
+                if period not in ["contract_number", 'contract_type', "start_of_table", "end_of_table1", "end_of_table2", "debt_info"]:
                     new_period = {}
                     new_period["period"] = period
 
