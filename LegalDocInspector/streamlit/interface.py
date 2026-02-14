@@ -65,14 +65,39 @@ def get_documents_complect_form(form_id:int, day_of_penalty: int | None = None, 
     st.session_state.complects[form_id]['debt_certificate_file'] = st.file_uploader("Выберите Excel справку о задолженности",
                                             accept_multiple_files=True,
                                             key='debt_certificate_file'+str(form_id))
+def get_service_type():
+    res = []
+    ans = ''
+    for contract_num, value in st.session_state.contracts.items():
+        res.append(value['contract_type'])
     
+    res = set(res)
+    for i in res:
+        ans += str(i)
+
+    return ans
     
 def get_contract_form(contract_number:str):
 
     
     st.markdown(f"### информация из договора {contract_number}")
-    st.text(f"Тип договора - {st.session_state.contracts[contract_number]['contract_type_parsed']}")
+    st.text(f"Тип договора (ответ нейросети) - {st.session_state.contracts[contract_number]['contract_type_parsed']}")
 
+    if st.session_state.contracts[contract_number]['contract_type'] is None:
+        try:
+            index = ['ТЭ', 'ГВС', 'СОИ', 'ФОТЭ'].index(st.session_state.contracts[contract_number]['contract_type_parsed'])
+        except ValueError:
+            index = 0
+    else:
+        index = ['ТЭ', 'ГВС', 'СОИ', 'ФОТЭ'].index(st.session_state.contracts[contract_number]['contract_type'])
+
+    st.session_state.contracts[contract_number]['contract_type'] = st.selectbox(label="Выберите тип договора",
+                                                                                options=['ТЭ', 'ГВС', 'СОИ', 'ФОТЭ'],
+                                                                                index=index,
+                                                                                on_change=on_change_handler,
+                                                                                key="c_t"+str(contract_number)
+                                                                            )
+    
     st.text(f"{st.session_state.contracts[contract_number]['contract_text_parsed']}")
     
     
@@ -237,7 +262,8 @@ if st.session_state.form_data['flag']:
                 'overdue_date_parsed': overdue_date,
                 'contract_text_parsed' : contract_text,
                 'contract_point' : None,
-                'day_of_penalty' : None
+                'day_of_penalty' : None,
+                'contract_type': None
             }
     # st.json(st.session_state.contracts)
 
@@ -314,8 +340,6 @@ if st.session_state.form_data['flag']:
     defendant_info['ogrn'] = st.text_input(label="ОГРН ответчика", value=f"{result['results_of_name_parser']['defendant_info']['ogrn']}", on_change= on_change_handler)
 
 
-
-    # я хз ваще что теперь тут нейронка выдает
     st.markdown("### Данные о договорах")
     for contract_num, value in st.session_state.contracts.items():
         get_contract_form(contract_number=contract_num)
@@ -335,6 +359,7 @@ if st.session_state.form_data['flag']:
             parsing_result['parsed_info'] = parsed_info
             parsing_result['contract_point'] = st.session_state.contracts[contract_number]['contract_point']
             parsing_result['day_of_penalty'] = st.session_state.contracts[contract_number]['day_of_penalty']
+            parsing_result['contract_type'] = st.session_state.contracts[contract_number]['contract_type']
             parsing_result['contract_number'] = contract_number
             request_json['parsing_results'].append(parsing_result)
 
@@ -365,8 +390,8 @@ if st.session_state.form_data['flag2']:
     st.session_state.form_data['lawsuit_info']['cost'] = st.text_input(label="Цена иска", value=f"{st.session_state.form_data['result2']['claim_data']['table_info']['cost_of_lawsuit']}", on_change= on_change_handler)
 
     st.session_state.form_data['lawsuit_info']['tax'] = st.text_input(label="Госпошлина", value=f"{calculate_state_duty(st.session_state.form_data['result2']['claim_data']['table_info']['cost_of_lawsuit'])}" , on_change= on_change_handler)
-    # FIXME добавить 4 разных [ТЭ ГВС ФОТЭ СОИ]
-    st.session_state.form_data['lawsuit_info']['service_type'] = st.selectbox("Выберите вид услугии", ["ГВС + ТЭ", "ТЭ", "ГВС"])
+    # FIXME добавить 4 разных [ТЭ ГВС ФОТЭ СОИ] - вроде done
+    st.session_state.form_data['lawsuit_info']['service_type'] = get_service_type()
 
 #     service_type_info = []
     st.session_state.form_data['lawsuit_info']['claims'] = []
