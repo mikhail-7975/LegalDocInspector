@@ -183,6 +183,7 @@ def calc_penalty():
                 end_date=data['end_date'],
             )
             calculated_data['contract_number'] = parsing_result['contract_number']
+            calculated_data['contract_type'] = parsing_result['contract_type']
             last_days_of_penalty.append(parsing_result['day_of_penalty'])
             contract_points.append(parsing_result['contract_point'])
             calculated_results.append(sort_data_structure(calculated_data))
@@ -245,8 +246,8 @@ def create_table():
 
         return send_file(path_to_save, as_attachment=True), 200
     except Exception as e:
-        print(e)
-        return traceback.format_exc(), 500
+        print(traceback.format_exc())
+        return 500
 
 
 def get_request_files(
@@ -355,6 +356,7 @@ def sort_data_structure(data:dict) -> dict:
     4. end_of_table2
     5. debt_info
     6. contract_number
+    7. contract_type
     """
 
     # Создаем новый упорядоченный словарь
@@ -396,7 +398,7 @@ def sort_data_structure(data:dict) -> dict:
         sorted_data[month_key] = data[month_key]
 
     # 3-6. Добавляем остальные элементы в нужном порядке
-    elements_order = ['end_of_table1', 'end_of_table2', 'debt_info', 'contract_number']
+    elements_order = ['end_of_table1', 'end_of_table2', 'debt_info', 'contract_number', 'contract_type']
 
     for element in elements_order:
         if element in data:
