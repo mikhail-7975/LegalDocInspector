@@ -696,7 +696,7 @@ class ClaimGenerator:
         rows_n = len(self.config["contracts_info"]) # Кол-во элементов в списке договоров
         template_text = "по Договору 05.403297-ТЭ от 01.08.2017:"
         start = self.redactor.find_paragraph_consists_of_text(template_text)   # Индекс первого абзаца списка
-
+       
         # Список индексов тех параграфов, которые нужно удалить после цикла. Почему их нужно удалять?
         # Эти параграфы - это корректировка обязательств, которая есть не у всех договоров. Поэтому 
         # там где ее нет, параграфы удаляются
@@ -788,6 +788,7 @@ class ClaimGenerator:
                 # self.config["contracts_info"][i][2]["debt_penalty"]
                 self.config["table_info"][contract_number]["penalty_period"].split(" по ")[1]
             )
+        
 
             date_string = self.config["table_info"][contract_number]["penalty_period"].split(" по ")[1]
             format_string = "%d.%m.%Y"
@@ -816,6 +817,15 @@ class ClaimGenerator:
             self.redactor.find_paragraph_contains_text(significant_paragraph_template)
         )
         paragraphs_need_to_be_inserted = [significant_paragraph]
+        
+        # self.redactor.get_table(-1).columns[2].cells[0].text = self.config['responsitive_name']   
+        
+        self.redactor.replace_text_in_table_cell(
+            self.redactor.get_table(-1).columns[2].cells[0],
+            'Самошкина А.Е.',
+            self.config['responsitive_name']
+        )
+        print(self.redactor.get_table(-1).columns[2].cells[0].text)
 
         if len(self.config["contract_types_templates"]["types_of_significant_paragraph"]) > 0:
 

@@ -27,7 +27,8 @@ if 'form_data' not in st.session_state:
         'plaintiff_correct':True,
         'plaintiff_uncorrect':False,
         'forms_changed': False,
-        'num_complects': 1
+        'num_complects': 1,
+        'responsitive_name': None
     }
 
 if 'complects' not in st.session_state:
@@ -64,7 +65,8 @@ def get_documents_complect_form(form_id:int, day_of_penalty: int | None = None, 
     st.session_state.complects[form_id]['debt_certificate_file'] = st.file_uploader("Выберите Excel справку о задолженности",
                                             accept_multiple_files=True,
                                             key='debt_certificate_file'+str(form_id))
-
+    
+    
 def get_contract_form(contract_number:str):
 
     
@@ -78,7 +80,7 @@ def get_contract_form(contract_number:str):
     # st.json(st.session_state.contracts[contract_number])
     with col1:
         st.session_state.contracts[contract_number]['day_of_penalty'] = st.number_input(label="Выберите число месяца, которое является последним днём оплаты счёта",
-                                        value=int(st.session_state.contracts[contract_number]['overdue_date_parsed']) ,
+                                        value=int(st.session_state.contracts[contract_number]['overdue_date_parsed']) if st.session_state.contracts[contract_number]['day_of_penalty'] is None else st.session_state.contracts[contract_number]['day_of_penalty'] ,
                                         min_value=1,
                                         max_value=31,
                                         key='day_of_penalty'+str(contract_number),
@@ -89,7 +91,7 @@ def get_contract_form(contract_number:str):
         st.session_state.contracts[contract_number]['contract_point']  = st.text_input(label="напишите номер пункта договора, в котором говорится о дне начала просрочки ",
                                                                                       key="c_p"+str(contract_number),
                                                                                       on_change=on_change_handler,
-                                                                                      value=st.session_state.contracts[contract_number]['contract_point_parsed'])
+                                                                                      value=st.session_state.contracts[contract_number]['contract_point_parsed'] if st.session_state.contracts[contract_number]['contract_point'] is None else st.session_state.contracts[contract_number]['contract_point']   )
 
 
 st.title("Загрузка и обработка документов (Нейросети включены)")
@@ -233,7 +235,9 @@ if st.session_state.form_data['flag']:
                 'contract_type_parsed': contract_type,
                 'contract_point_parsed': contract_point,
                 'overdue_date_parsed': overdue_date,
-                'contract_text_parsed' : contract_text
+                'contract_text_parsed' : contract_text,
+                'contract_point' : None,
+                'day_of_penalty' : None
             }
     # st.json(st.session_state.contracts)
 
@@ -361,6 +365,7 @@ if st.session_state.form_data['flag2']:
     st.session_state.form_data['lawsuit_info']['cost'] = st.text_input(label="Цена иска", value=f"{st.session_state.form_data['result2']['claim_data']['table_info']['cost_of_lawsuit']}", on_change= on_change_handler)
 
     st.session_state.form_data['lawsuit_info']['tax'] = st.text_input(label="Госпошлина", value=f"{calculate_state_duty(st.session_state.form_data['result2']['claim_data']['table_info']['cost_of_lawsuit'])}" , on_change= on_change_handler)
+    # FIXME добавить 4 разных [ТЭ ГВС ФОТЭ СОИ]
     st.session_state.form_data['lawsuit_info']['service_type'] = st.selectbox("Выберите вид услугии", ["ГВС + ТЭ", "ТЭ", "ГВС"])
 
 #     service_type_info = []
@@ -393,16 +398,18 @@ if st.session_state.form_data['flag2']:
     st.session_state.form_data['defendant_info'] = defendant_info
 #     lawsuit_info['claims'] = st.session_state.form_data['claims']
 
+    st.markdown(f"### ФИО ответственного лица, подписывающего иск")
+    st.session_state.form_data['responsitive_name'] = st.text_input("Введите имя ответственного лица", value="Самошкина А.Е." if st.session_state.form_data['responsitive_name'] is None else st.session_state.form_data['responsitive_name'] )
 
     request_json = st.session_state.form_data['result2']['claim_data']
     request_json['plaintiff_info'] = st.session_state.form_data['plaintiff_info']
     request_json['defendant_info'] = st.session_state.form_data['defendant_info']
     request_json['lawsuit_info'] = st.session_state.form_data['lawsuit_info']
+    request_json['responsitive_name'] = st.session_state.form_data['responsitive_name']
 
     doc_creator_json = {}
     doc_creator_json['claim_data'] = request_json
     doc_creator_json['calculator_list'] = st.session_state.form_data['result2']['calculator_list']
-
     doc_creator_json['path_to_save'] = st.session_state.form_data['path_to_save']
 
     # st.json(doc_creator_json)
