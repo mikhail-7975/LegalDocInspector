@@ -866,11 +866,14 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
             all_payments = StrictFormattedMoney(0)
             # for i ,payment_info in enumerate([month_parsed_info['accrual']['payments'], month_parsed_info['adjustment']['payments']]):
             for payment,i in payments_info:
-                if i == 0: 
-                    month_accrual -= StrictFormattedMoney(payment['payment'])
+                if i == 0:
+                    if not only_correcting_flag:
+                        month_accrual -= StrictFormattedMoney(payment['payment'])
+                        all_payments += StrictFormattedMoney(payment['payment'])
+
                 else:
                     month_correcting -= StrictFormattedMoney(payment['payment'])
-                all_payments += StrictFormattedMoney(payment['payment'])
+                    all_payments += StrictFormattedMoney(payment['payment'])
                     # print(payment)
             periods = _get_penalty_periods(start_date, end_date, month_accrual+month_correcting, company_type)
             
