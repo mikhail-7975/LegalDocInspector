@@ -606,7 +606,7 @@ class CalculationClaimGenerator:
         )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[4].paragraphs[0],
-            self.borders("неустойка+задолженность"),
+            "PENALTYPLUS",
             # "#неустойка+задолженность#".upper()
             self.config2["contracts_info"][contract_index][2]["debt_penalty"]
         )
@@ -672,7 +672,7 @@ class CalculationClaimGenerator:
         )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[4].paragraphs[0],
-            self.borders("неустойка+задолженность"),
+            "PENALTYPLUS",
             # "#неустойка+задолженность#".upper()
             self.config2["contracts_info"][contract_index][2]["debt_penalty"]
         )
@@ -714,7 +714,7 @@ class CalculationClaimGenerator:
         )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[4].paragraphs[0],
-            self.borders("неустойка+задолженность"),
+            "PENALTYPLUS",
             # "#неустойка+задолженность#".upper()
             self.config2["contracts_info"][contract_index][2]["debt_penalty"]
         )
@@ -733,6 +733,12 @@ class CalculationClaimGenerator:
             "/*госпошлина*/": self.config2["lawsuit_info"]["tax"],
             "/*текущая дата*/": datetime.strptime(self.config2["current_date"], "%Y-%m-%d").strftime("%d.%m.%Y")
         }
+
+        self.redactor.replace_text_in_table_cell(
+            self.redactor.get_table(-1).columns[2].cells[0],
+            'Самошкина А.Е.',
+            self.config2['responsitive_name']
+        )
 
         for paragraph in self.doc.paragraphs:
             # runs = []
