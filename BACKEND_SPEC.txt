@@ -1,0 +1,273 @@
+================================================================================
+СПЕЦИФИКАЦИЯ BACKEND — LegalDocInspector
+================================================================================
+Документ позволяет воссоздать backend-часть приложения: структура, конфиг,
+маршруты, форматы запросов/ответов и зависимости.
+
+================================================================================
+1. ОБЩАЯ СТРУКТУРА
+================================================================================
+
+Backend состоит из:
+  - Точка входа: run.py (создаёт Flask-приложение, запуск на порту 5001).
+  - Пакет: LegalDocInspector/backend/
+    - __init__.py  — фабрика приложения create_app(), регистрация маршрутов и g-объектов.
+    - routes.py     — все HTTP-маршруты и вспомогательные функции.
+    - llm_functions.py — опционально: парсинг договора/претензии через LLM (в routes не используется).
+  - Конфигурация: configs/config.py, configs/debug_config.yaml.
+
+Зависимости (вне backend):
+  - legal_doc_inspector.exel_parser.TableParser
+  - legal_doc_inspector.pdf_parser.parser_models.PDFContractParser, PDFClaimParser
+  - legal_doc_inspector.calculator.penalty_calculator.calculate_penalty
+  - legal_doc_inspector.utils.calculator_adapter.convert_data
+  - legal_doc_inspector.doc_creator.claim_generator.ClaimGenerator
+  - legal_doc_inspector.doc_creator.calculation_claim_generator.CalculationClaimGenerator
+  - legal_doc_inspector.utils.parse_egrul_sertificate.parse_egrul_certificate
+  - configs.config.load_yaml_config, AppConfig
+
+================================================================================
+2. КОНФИГУРАЦИЯ
+================================================================================
+
+2.1. Файл YAML (например configs/debug_config.yaml)
+----------------------------------------------------
+  save_data_folder: str              # Папка для сохранения файлов запроса (например "data")
+  debug: bool                        # Режим отладки
+  claim_template_path: str          # Путь к шаблону искового заявления (DOCX)
+  calculation_claim_template_path: str  # Путь к шаблону расчёта к иску (DOCX)
+  point_overdue_key_words_list_weighted: dict  # Ключевые слова для поиска срока оплаты (слово -> вес)
+  point_overdue_key_words_excluded: list       # Слова, исключаемые из поиска срока оплаты
+  service_type_key_words_list_weighted: dict   # Ключевые слова для типа услуги (опционально)
+
+Пример полей point_overdue_key_words_list_weighted:
+  срок, числа, месяца, производится, оплата, расчётным, период, следующего, оплачивает (целые числа — веса).
+
+2.2. Модуль configs/config.py
+-----------------------------
+  - Dataclass AppConfig с полями:
+      claim_template_path: str
+      calculation_claim_template_path: str
+      save_data_folder: str
+      point_overdue_keywords: dict
+      point_overdue_excluded: list
+      service_type_keywords: dict
+      service_type_excluded: list | None
+      debug_mode: bool
+
+  - load_yaml_config(filename: str) -> AppConfig
+    Читает YAML, маппит ключи в поля AppConfig (в т.ч. point_overdue_key_words_list_weighted -> point_overdue_keywords).
+
+  - save_yaml_config(filename: str, config: dict) — сохранение конфига в YAML.
+
+================================================================================
+3. СОЗДАНИЕ ПРИЛОЖЕНИЯ (backend/__init__.py)
+================================================================================
+
+  create_app() -> Flask:
+    1. app = Flask(__name__)
+    2. Создать один раз: contract_parser = PDFContractParser(), claim_parser = PDFClaimParser()
+    3. with app.app_context():
+         - from . import routes  # регистрирует маршруты
+         - @app.before_request add_configs:
+             if "config" not in g: g.config = load_yaml_config('configs/debug_config.yaml')
+         - @app.before_request add_doc_processors:
+             if "table_parser" not in g: g.table_parser = TableParser()
+             if "claim_generator" not in g: g.claim_generator = ClaimGenerator()
+             if "calc_claim_generator" not in g: g.calc_claim_generator = CalculationClaimGenerator()
+             if "contract_parser" not in g: g.contract_parser = contract_parser
+             if "claim_parser" not in g: g.claim_parser = claim_parser
+    4. return app
+
+  Точка входа (run.py): app = create_app(); app.run(debug=False, port=5001)
+
+================================================================================
+4. МАРШРУТЫ И ФОРМАТЫ ДАННЫХ
+================================================================================
+
+4.1. GET /
+----------
+  Ответ: строка "server is working" (проверка живости сервера).
+
+
+4.2. POST /parse
+----------------
+  Назначение: принять комплект документов (выписка ЕГРЮЛ, по каждому комплекту — договор, претензия, несколько Excel-справок), распарсить их и вернуть JSON с результатами и данными ответчика.
+
+  Форма (multipart/form-data):
+    - date: строка даты в ISO (YYYY-MM-DD)
+    - complects_count: целое число — количество комплектов
+    - egrul_certificate_file: файл (PDF выписки из ЕГРЮЛ)
+    Для каждого complect_id от 1 до complects_count:
+      - complect_{id}_claim_file: файл PDF (претензия)
+      - complect_{id}_contract_file: файл PDF (договор)
+      - {id}_certificates_count: целое — количество Excel-справок в этом комплекте
+      - complect_{id}_certificate_file_{j}: файл Excel (j = 0 .. certificates_count-1)
+
+  Логика:
+    1. Преобразовать date в формат DD.MM.YYYY.
+    2. Создать папку: save_data_folder / "documents_from_request_{datetime.now()}".
+    3. Сохранить egrul_certificate_file в эту папку.
+    4. Для каждого комплекта (complect_id = 1..complects_count):
+       a. Создать подпапку complect_{id}.
+       b. Сохранить договор и претензию в неё.
+       c. Для каждой справки (j): сохранить Excel, открыть TableParser, parse(), взять defendant_inn, contract_number, закрыть парсер; объединить результаты parse() в один merged_table_result (объединение словарей по ключам).
+       d. Вызвать contract_parser.analyse_contract(contract_file_path, current_config) -> (contract_type, contract_point, overdue_date, contract_text).
+       e. Вызвать claim_parser.analyse_claim(claim_file_path) -> claim_info (список словарей с claim_date, claim_number).
+       f. Добавить в parsing_table_results кортеж: (merged_table_result, contract_number, contract_type, contract_point, overdue_date, contract_text, claim_info).
+    5. Из последнего defendant_inn заполнить result_json['results_of_name_parser']['defendant_info']['inn'].
+    6. Распарсить выписку ЕГРЮЛ: parse_egrul_certificate(egrul_certificate_file_path) -> (full_name, short_name, address, kpp, ogrn, text_content). При ошибке вернуть 500 и traceback.
+    7. Записать в result_json['results_of_name_parser']['defendant_info']: full_name (в верхнем регистре), short_name, address, kpp, ogrn.
+    8. result_json['path_to_save'] = абсолютный путь к папке запроса.
+    9. result_json['table_parser_result'] = parsing_table_results (список кортежей из п. 4d).
+    10. Сохранить result_json в файл result_parser.json в папке запроса.
+    11. Вернуть jsonify(result_json), 200. При любой ошибке — traceback в теле ответа, код 500.
+
+  Структура ответа (JSON):
+    - table_parser_result: list of tuples (по одному на комплект). Каждый кортеж из 7 элементов:
+        [0] merged_table_result — словарь { "Месяц ГГГГ": { accrual: {...}, adjustment: {...} }, ... }
+        [1] contract_number — строка (номер договора из Excel)
+        [2] contract_type — строка (ТЭ, ГВС, СОИ, ФОТЭ и т.д.)
+        [3] contract_point — строка (пункт договора о сроке оплаты)
+        [4] overdue_date — строка (день начала просрочки, например "18")
+        [5] contract_text — строка (фрагмент текста договора)
+        [6] claim_info — список dict с ключами claim_date, claim_number
+    - results_of_name_parser.defendant_info: inn, full_name, short_name, address, kpp, ogrn
+    - path_to_save: str (путь к папке)
+
+
+4.3. POST /calculate_penalty
+----------------------------
+  Назначение: по результатам парсинга рассчитать пени и сформировать claim_data для генерации документов.
+
+  Тело запроса (JSON):
+    - parsing_results: список объектов. Каждый объект:
+        parsed_info: dict  — один из merged_table_result из ответа /parse (структура периодов из TableParser)
+        contract_number: str
+        contract_type: str  — тип договора (ТЭ, ГВС, СОИ, ФОТЭ и т.д.)
+        contract_point: str — пункт договора о сроке оплаты
+        day_of_penalty: int или str — число месяца, последний день оплаты по договору (например 18)
+    - company_type: str — тип организации для расчёта пеней ("УК" | "ТСЖ" | "Прочие")
+    - end_date: str — конечная дата периода просрочки в формате "DD.MM.YYYY"
+
+  Логика:
+    1. Для каждого элемента parsing_results:
+       calculated_data = calculate_penalty(parsed_data=parsing_result['parsed_info'], day_of_penalty=parsing_result['day_of_penalty'], company_type=data['company_type'], end_date=data['end_date'])
+       calculated_data['contract_number'] = parsing_result['contract_number']
+       calculated_data['contract_type'] = parsing_result['contract_type']
+       Добавить в списки: last_days_of_penalty.append(parsing_result['day_of_penalty']), contract_points.append(parsing_result['contract_point'])
+       calculated_results.append(sort_data_structure(calculated_data))
+    2. converted_data = convert_data(calculated_data_list=calculated_results, last_days_of_penalty=..., contract_points=..., company_type=data['company_type'], current_date=data['end_date'])
+    3. Ответ: JSON { "claim_data": converted_data, "calculator_list": calculated_results }, 200. При ошибке — traceback, 500.
+
+
+4.4. POST /create_doc
+---------------------
+  Назначение: сгенерировать исковое заявление (DOCX) по шаблону и отдать файлом.
+
+  Тело запроса (JSON):
+    - calculator_list: список структур расчёта (как в ответе /calculate_penalty)
+    - claim_data: структура из convert_data (как в ответе /calculate_penalty)
+    - path_to_save: путь к папке, куда сохранить файл (из ответа /parse)
+
+  Логика:
+    1. path_to_save = Path(path_to_save) / "ИСК.docx"
+    2. claim_generator.make_instance(config=claim_data, template_filename=config.claim_template_path, output_filename=path_to_save)
+    3. Вернуть send_file(path_to_save, as_attachment=True), 200. При ошибке — traceback, 500.
+
+
+4.5. POST /create_calculating_table
+-----------------------------------
+  Назначение: сгенерировать расчёт к иску (DOCX) и отдать файлом.
+
+  Тело запроса (JSON):
+    - calculator_list, claim_data, path_to_save (аналогично /create_doc)
+
+  Логика:
+    1. path_to_save = Path(path_to_save) / "расчёт к иску.docx"
+    2. calculator_list_sorted = [sort_data_structure(calculator_list[i]) for i in range(len(calculator_list))]
+    3. calc_claim_generator.make_instance(config=calculator_list_sorted, config2=claim_data, template_filename=config.calculation_claim_template_path, output_filename=path_to_save)
+    4. Вернуть send_file(path_to_save, as_attachment=True), 200. При ошибке — traceback и код 500.
+
+
+================================================================================
+5. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ В routes.py
+================================================================================
+
+5.1. sort_data_structure(data: dict) -> dict
+--------------------------------------------
+  Упорядочивает ключи словаря:
+    1. start_of_table
+    2. Ключи вида "Месяц ГГГГ" (Январь 2024, Февраль 2024, ...) — сортировка по году и порядку месяца (словарь month_order: Январь=1 .. Декабрь=12).
+    3. end_of_table1, end_of_table2, debt_info, contract_number, contract_type
+  Остальные ключи не включаются. Возвращается новый словарь с этим порядком.
+
+5.2. get_request_files(allowed_keys: dict, path_to_folder: Path, uploaded_files: defaultdict)
+-------------------------------------------------------------------------------------------
+  Перебирает request.files; для каждого ключа файла проверяет соответствие паттернам из allowed_keys (dict: dest_key -> regex). Если dest_key != "zip_file", сохраняет файл в path_to_folder и добавляет путь в uploaded_files[dest_key]. Если dest_key == "zip_file", распаковывает архив во вложенную папку "archive" с декодированием имён через safe_decode_filename. Используется для альтернативной загрузки (в текущем /parse не вызывается).
+
+5.3. find_parent_dir_with_name(start_path: Path, target_name: str) -> Path | None
+---------------------------------------------------------------------------------
+  Поднимается по start_path и родителям; возвращает первый каталог, в имени которого встречается target_name, иначе None.
+
+5.4. safe_decode_filename(filename_bytes: str) / safe_decode_filename_linux(filename_bytes: str)
+----------------------------------------------------------------------------------------------
+  Декодирование имени файла из архивов: перебор кодировок (cp437, cp866, cp1251, utf-8 и т.д.) для корректного отображения кириллицы на Windows/Linux. Возвращает строку.
+
+================================================================================
+6. ЗАВИСИМОСТИ ВНЕШНИХ МОДУЛЕЙ (контракты для воссоздания)
+================================================================================
+
+  - TableParser (exel_parser):
+      open(filename), parse() -> dict (периоды и структура accrual/adjustment), parse_defendant_inn() -> str, parse_contract_number() -> str, close().
+
+  - PDFContractParser (parser_models):
+      analyse_contract(path_to_file, config: AppConfig) -> (contract_type: str, contract_point: str, overdue_date: str, contract_text: str).
+      Для типа ФОТЭ может вернуть специальные значения (тип, '-', '15', поясняющий текст).
+
+  - PDFClaimParser (parser_models):
+      analyse_claim(path_to_file) -> список dict с ключами claim_date, claim_number.
+
+  - calculate_penalty(parsed_data, day_of_penalty, company_type, end_date) -> dict:
+      Словарь с ключами в т.ч.: start_of_table, ключи "Месяц ГГГГ", end_of_table1, end_of_table2, debt_info, contract_number (добавляется в routes), contract_type (добавляется в routes).
+
+  - convert_data(calculated_data_list, last_days_of_penalty, contract_points, company_type, current_date) -> dict:
+      Структура для генераторов: company_type, current_date, contracts_info (списки [id, contract_number, contract_dict, contract_type]), table_info (по contract_number и общие all_debt, all_penalty, cost_of_lawsuit). contract_dict содержит contract_point, last_day, penalty_period, accrual_debt, correcting_debt, contract_periods, contract_periods_correcting, debt, penalty, debt_penalty, correcting_year.
+
+  - parse_egrul_certificate(pdf_path) -> (full_name, short_name, address, kpp, ogrn, text_content).
+
+  - ClaimGenerator.make_instance(config=claim_data, template_filename=..., output_filename=...).
+  - CalculationClaimGenerator.make_instance(config=calculator_list_sorted, config2=claim_data, template_filename=..., output_filename=...).
+
+================================================================================
+7. ОБРАБОТКА ОШИБОК
+================================================================================
+
+  - /parse: при исключении в parse_egrul_certificate возвращается 500 и traceback.format_exc() в теле. При любом другом исключении — вывод traceback в консоль и возврат 500 с traceback в теле.
+  - /calculate_penalty, /create_doc: при исключении — traceback.format_exc() в теле ответа, код 500.
+  - /create_calculating_table: при исключении — вывод traceback в консоль и возврат кода 500 (тело ответа в коде может быть пустым или traceback — по текущей реализации).
+
+================================================================================
+8. ИМПОРТЫ В routes.py (для воссоздания)
+================================================================================
+
+  io, json, os, re, tempfile, zipfile
+  collections.defaultdict
+  datetime.date, datetime.datetime
+  pathlib.Path
+  traceback
+  configs.config.AppConfig, (load_yaml_config не импортируется в routes, используется в __init__)
+  flask: g, jsonify, request, send_file
+  werkzeug.utils.secure_filename
+  LegalDocInspector.legal_doc_inspector.utils.calculator_adapter.convert_data
+  LegalDocInspector.legal_doc_inspector.calculator.penalty_calculator.calculate_penalty
+  LegalDocInspector.legal_doc_inspector.utils.parse_egrul_sertificate.parse_egrul_certificate
+  LegalDocInspector.legal_doc_inspector.doc_creator.calculation_claim_generator.CalculationClaimGenerator
+  LegalDocInspector.legal_doc_inspector.doc_creator.claim_generator.ClaimGenerator
+  LegalDocInspector.legal_doc_inspector.pdf_parser.parser_models.PDFClaimParser, PDFContractParser
+
+  Декоратор маршрутов: @app.route — но маршруты регистрируются при импорте .routes в контексте app, поэтому используется глобальный app из того же пакета (фактически текущее приложение).
+
+================================================================================
+КОНЕЦ СПЕЦИФИКАЦИИ
+================================================================================

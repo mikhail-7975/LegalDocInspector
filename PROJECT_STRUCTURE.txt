@@ -1,0 +1,257 @@
+================================================================================
+СТРУКТУРА ПРОЕКТА ДЛЯ РЕАЛИЗАЦИИ СПЕЦИФИКАЦИИ BACKEND (BACKEND_SPEC.txt)
+================================================================================
+Документ задаёт дерево каталогов, модули и их назначение для реализации
+описанной в спецификации backend-части приложения.
+
+================================================================================
+1. ДЕРЕВО КАТАЛОГОВ И ФАЙЛОВ
+================================================================================
+
+LegalDocInspector/                    # Корень проекта (рабочая директория для run.py)
+│
+├── run.py                            # Точка входа: create_app(), app.run(port=5001)
+│
+├── configs/
+│   ├── config.py                     # AppConfig, load_yaml_config(), save_yaml_config()
+│   └── debug_config.yaml             # Конфиг по умолчанию (пути, ключевые слова, debug)
+│
+├── LegalDocInspector/                # Пакет приложения
+│   │
+│   ├── __init__.py                   # (пустой или с метаданными пакета)
+│   │
+│   ├── backend/
+│   │   ├── __init__.py               # create_app()
+│   │   ├── routes.py                 # Маршруты и вспомогательные функции
+│   │   └── llm_functions.py         # [ОПЦИОНАЛЬНО] LLM-парсинг договора/претензии
+│   │
+│   └── legal_doc_inspector/          # Ядро логики (зависимости backend)
+│       ├── __init__.py
+│       │
+│       ├── exel_parser.py            # TableParser, ExcelReader
+│       │
+│       ├── pdf_parser/
+│       │   ├── __init__.py
+│       │   ├── parser_models.py      # PDFContractParser, PDFClaimParser
+│       │   ├── contract_parser.py    # [ОПЦИОНАЛЬНО] для LLM
+│       │   ├── claim_parser.py       # [ОПЦИОНАЛЬНО] для LLM
+│       │   └── utils.py              # Вспомогательные для парсеров (при необходимости)
+│       │
+│       ├── calculator/
+│       │   ├── __init__.py
+│       │   └── penalty_calculator.py # calculate_penalty(), StrictFormattedMoney, sort_dict_by_months, _add_last_day_of_month, ...
+│       │
+│       ├── doc_creator/
+│       │   ├── __init__.py
+│       │   ├── claim_generator.py    # ClaimGenerator
+│       │   ├── calculation_claim_generator.py  # CalculationClaimGenerator
+│       │   └── docx_editor.py        # DocxRedactor (низкоуровневая работа с DOCX)
+│       │
+│       └── utils/
+│           ├── __init__.py
+│           ├── calculator_adapter.py # convert_data(), group_consecutive_months()
+│           ├── parse_egrul_sertificate.py  # parse_egrul_certificate()
+│           ├── strict_formatted_money.py   # StrictFormattedMoney (или импорт из calculator)
+│           ├── convert_month.py       # convert_month(), last_day_of_month() (при необходимости)
+│           ├── calculate_tax.py      # calculate_state_duty() (для фронта/отчётов)
+│           └── parse_info_by_inn.py  # [ОПЦИОНАЛЬНО] parse_html(inn) — альтернатива ЕГРЮЛ по ИНН
+│
+├── data/                             # Папка по умолчанию из save_data_folder
+│   ├── templates/                    # Шаблоны DOCX
+│   │   ├── claim.docx                # Шаблон искового заявления
+│   │   └── calculation_claim_*.docx  # Шаблон расчёта к иску
+│   └── (подпапки создаются в рантайме: documents_from_request_*)
+│
+├── requirements.txt                 # Зависимости Python (Flask, docling, pandas, python-docx, PyYAML, ...)
+├── pyproject.toml                   # [ОПЦИОНАЛЬНО] pythonpath для тестов
+└── BACKEND_SPEC.txt                 # Спецификация (исходный документ)
+
+
+================================================================================
+2. НАЗНАЧЕНИЕ И ОБЯЗАТЕЛЬНЫЕ ИНТЕРФЕЙСЫ МОДУЛЕЙ
+================================================================================
+
+2.1. Точка входа
+----------------
+  run.py
+    - Импорт: from LegalDocInspector.backend import create_app
+    - Вызов: app = create_app(); при __name__ == "__main__": app.run(debug=False, port=5001)
+
+
+2.2. Конфигурация
+-----------------
+  configs/config.py
+    - AppConfig (dataclass): claim_template_path, calculation_claim_template_path,
+      save_data_folder, point_overdue_keywords, point_overdue_excluded,
+      service_type_keywords, service_type_excluded, debug_mode
+    - load_yaml_config(filename) -> AppConfig
+    - save_yaml_config(filename, config: dict) -> None
+
+  configs/debug_config.yaml
+    - Ключи: save_data_folder, debug, claim_template_path,
+      calculation_claim_template_path, point_overdue_key_words_list_weighted,
+      point_overdue_key_words_excluded, service_type_key_words_list_weighted
+    - При реализации load_yaml_config маппить длинные имена ключей YAML в короткие имена полей AppConfig.
+
+
+2.3. Backend
+------------
+  LegalDocInspector/backend/__init__.py
+    - create_app() -> Flask
+    - Внутри: создание PDFContractParser(), PDFClaimParser(), регистрация routes,
+      before_request для g.config, g.table_parser, g.claim_generator,
+      g.calc_claim_generator, g.contract_parser, g.claim_parser
+
+  LegalDocInspector/backend/routes.py
+    - Маршруты: GET /, POST /parse, POST /calculate_penalty, POST /create_doc, POST /create_calculating_table
+    - Вспомогательные: sort_data_structure(data) -> dict, get_request_files(...),
+      find_parent_dir_with_name(...), safe_decode_filename(...), safe_decode_filename_linux(...)
+    - Импорты согласно разделу 8 спецификации; использование g.table_parser, g.claim_generator и т.д.
+
+
+2.4. Парсинг Excel (exel_parser)
+---------------------------------
+  LegalDocInspector/legal_doc_inspector/exel_parser.py
+    - ExcelReader: open(filename), close(), cell(row, col), last_valid_cell_index(column)
+    - TableParser: open(filename), close(), parse() -> dict (периоды "Месяц ГГГГ" -> accrual/adjustment, debt, payments, ...),
+      parse_defendant_inn() -> str, parse_contract_number() -> str
+    - Структура, возвращаемая parse(): словарь, объединяемый с другими такими же через update() (merged_table_result).
+
+
+2.5. Парсинг PDF (pdf_parser)
+-----------------------------
+  LegalDocInspector/legal_doc_inspector/pdf_parser/parser_models.py
+    - PDFContractParser
+      - analyse_contract(path_to_file, config: AppConfig) -> (contract_type, contract_point, overdue_date, contract_text)
+      - Поддержка типов: ТЭ, ГВС, СОИ, ФОТЭ; для ФОТЭ — особый возврат (тип, '-', '15', текст).
+    - PDFClaimParser
+      - analyse_claim(path_to_file) -> list[dict] с ключами claim_date, claim_number
+    - Использование config: point_overdue_keywords, point_overdue_excluded (и при необходимости service_type_*).
+
+
+2.6. Калькулятор пеней (calculator)
+-----------------------------------
+  LegalDocInspector/legal_doc_inspector/calculator/penalty_calculator.py
+    - calculate_penalty(parsed_data, day_of_penalty, company_type, end_date) -> dict
+      Выход: start_of_table, ключи "Месяц ГГГГ" (списки периодов/пени/долгов), end_of_table1, end_of_table2, debt_info.
+    - StrictFormattedMoney (класс для сумм и форматирования)
+    - sort_dict_by_months(data_dict) — при необходимости внутри calculate_penalty или снаружи.
+    - В routes к результату добавляются contract_number и contract_type (не возвращаются калькулятором).
+
+
+2.7. Адаптер данных для генераторов (utils/calculator_adapter)
+--------------------------------------------------------------
+  LegalDocInspector/legal_doc_inspector/utils/calculator_adapter.py
+    - convert_data(calculated_data_list, last_days_of_penalty, contract_points, company_type, current_date) -> dict
+      Выход: company_type, current_date, contracts_info (списки [id, contract_number, contract_dict, contract_type]),
+      table_info (по contract_number + all_debt, all_penalty, cost_of_lawsuit).
+    - group_consecutive_months(dates_list) — группировка дат ММ.ГГГГ в диапазоны (для contract_periods и т.п.).
+
+
+2.8. Генерация документов (doc_creator)
+----------------------------------------
+  LegalDocInspector/legal_doc_inspector/doc_creator/claim_generator.py
+    - ClaimGenerator.make_instance(config=claim_data, template_filename=..., output_filename=...)
+    - config — результат convert_data (claim_data); подстановка в шаблон DOCX, сохранение в output_filename.
+
+  LegalDocInspector/legal_doc_inspector/doc_creator/calculation_claim_generator.py
+    - CalculationClaimGenerator.make_instance(config=calculator_list_sorted, config2=claim_data, template_filename=..., output_filename=...)
+    - config — отсортированные структуры расчёта; config2 — claim_data.
+
+  LegalDocInspector/legal_doc_inspector/doc_creator/docx_editor.py
+    - DocxRedactor: open(), close(), save(), clone_file(), replace_text_in_paragraph(), get_table(), insert_row_in_table(), clone_table_row(), merge_table_cells(), copy_paragraph_styles(), copy_run_styles(), copy_cell_properties(), delete_row_in_table(), find_paragraph_contains_text(), insert_paragraph(), clone_paragraph() и др. — всё, что используют ClaimGenerator и CalculationClaimGenerator.
+
+
+2.9. Парсинг выписки ЕГРЮЛ (utils/parse_egrul_sertificate)
+----------------------------------------------------------
+  LegalDocInspector/legal_doc_inspector/utils/parse_egrul_sertificate.py
+    - parse_egrul_certificate(pdf_path: str | Path) -> (full_name, short_name, address, kpp, ogrn, text_content)
+    - Извлечение данных из PDF выписки (текстовый или с OCR при необходимости); при ошибке — исключение.
+
+
+================================================================================
+3. ПОРЯДОК РЕАЛИЗАЦИИ (РЕКОМЕНДУЕМЫЙ)
+================================================================================
+
+  Этап 1 — Конфигурация и каркас backend
+    - configs/config.py, configs/debug_config.yaml
+    - LegalDocInspector/backend/__init__.py (create_app без реальных зависимостей или с заглушками)
+    - run.py
+    - LegalDocInspector/backend/routes.py: заглушки маршрутов (GET /, остальные возвращают 501 или пустой JSON)
+
+  Этап 2 — Контракты данных и утилиты
+    - calculator/penalty_calculator.py: StrictFormattedMoney, sort_dict_by_months, _add_last_day_of_month; затем calculate_penalty
+    - utils/convert_month.py (если нужен для exel_parser/calculator)
+    - utils/calculator_adapter.py: group_consecutive_months, convert_data
+    - utils/strict_formatted_money.py или единый импорт StrictFormattedMoney из penalty_calculator
+
+  Этап 3 — Парсинг
+    - exel_parser.py: ExcelReader, TableParser (open, parse, parse_defendant_inn, parse_contract_number, close)
+    - pdf_parser/parser_models.py: PDFContractParser, PDFClaimParser (analyse_contract с config, analyse_claim)
+    - utils/parse_egrul_sertificate.py: parse_egrul_certificate
+
+  Этап 4 — Генерация документов
+    - doc_creator/docx_editor.py: DocxRedactor (все методы, используемые генераторами)
+    - doc_creator/claim_generator.py: ClaimGenerator.make_instance и заполнение шаблона по claim_data
+    - doc_creator/calculation_claim_generator.py: CalculationClaimGenerator.make_instance и заполнение по calculator_list + claim_data
+
+  Этап 5 — Сборка маршрутов
+    - Подключить в __init__.py реальные TableParser, PDFContractParser, PDFClaimParser, ClaimGenerator, CalculationClaimGenerator
+    - Реализовать в routes.py полную логику /parse, /calculate_penalty, /create_doc, /create_calculating_table и вспомогательные функции (sort_data_structure, safe_decode_filename и т.д.)
+    - Добавить обработку ошибок (try/except, traceback, 500)
+
+  Этап 6 — Данные и тесты
+    - Создать data/templates/ и положить шаблоны claim.docx и calculation_claim_*.docx
+    - Настроить save_data_folder в YAML
+    - При необходимости: тесты для calculate_penalty, convert_data, парсеров, маршрутов
+
+
+================================================================================
+4. ЗАВИСИМОСТИ МЕЖДУ МОДУЛЯМИ (ДЛЯ ИМПОРТОВ)
+================================================================================
+
+  run.py
+    -> backend.create_app
+
+  backend/__init__.py
+    -> configs.config.load_yaml_config
+    -> legal_doc_inspector.exel_parser.TableParser
+    -> legal_doc_inspector.pdf_parser.parser_models.PDFContractParser, PDFClaimParser
+    -> legal_doc_inspector.doc_creator.claim_generator.ClaimGenerator
+    -> legal_doc_inspector.doc_creator.calculation_claim_generator.CalculationClaimGenerator
+    -> .routes (импорт после создания app)
+
+  backend/routes.py
+    -> configs.config.AppConfig
+    -> legal_doc_inspector.utils.calculator_adapter.convert_data
+    -> legal_doc_inspector.calculator.penalty_calculator.calculate_penalty
+    -> legal_doc_inspector.utils.parse_egrul_sertificate.parse_egrul_certificate
+    -> legal_doc_inspector.doc_creator.claim_generator.ClaimGenerator
+    -> legal_doc_inspector.doc_creator.calculation_claim_generator.CalculationClaimGenerator
+    -> legal_doc_inspector.pdf_parser.parser_models.PDFClaimParser, PDFContractParser
+    -> flask, werkzeug.utils.secure_filename, pathlib, datetime, traceback, collections.defaultdict, re, tempfile, zipfile
+
+  calculator_adapter
+    -> penalty_calculator.StrictFormattedMoney (или utils.strict_formatted_money)
+    -> utils.convert_month.convert_month
+
+  claim_generator / calculation_claim_generator
+    -> doc_creator.docx_editor.DocxRedactor
+
+  parser_models (PDFContractParser)
+    -> configs.config.AppConfig (тип для параметра config)
+
+
+================================================================================
+5. ОПЦИОНАЛЬНЫЕ И ДОПОЛНИТЕЛЬНЫЕ КОМПОНЕНТЫ
+================================================================================
+
+  - backend/llm_functions.py: не используется в текущей спецификации; можно не реализовывать или оставить заглушкой.
+  - pdf_parser/contract_parser.py, claim_parser.py: для LLM-варианта парсинга; для реализации только по BACKEND_SPEC не требуются.
+  - utils/parse_info_by_inn.py: альтернатива получению реквизитов по ИНН через веб; в спецификации используется только parse_egrul_certificate.
+  - data/input_examples/: примеры файлов для ручного тестирования (не обязательны для работы backend).
+
+
+================================================================================
+КОНЕЦ ОПИСАНИЯ СТРУКТУРЫ
+================================================================================

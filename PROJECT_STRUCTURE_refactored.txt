@@ -1,0 +1,406 @@
+================================================================================
+УЛУЧШЕННАЯ СТРУКТУРА ПРОЕКТА (REFACTORED)
+================================================================================
+Основано на PROJECT_STRUCTURE.txt и лучших практиках разработки backend.
+Сохраняет совместимость со спецификацией BACKEND_SPEC.txt при поэтапной миграции.
+
+================================================================================
+1. ПРИНЦИПЫ ИЗМЕНЕНИЙ
+================================================================================
+
+  - Разделение слоёв: API (тонкий) → Application/Services (оркестрация) → Domain → Infrastructure.
+  - Единая точка конфигурации: конфиг загружается по окружению, передаётся в create_app(config=...).
+  - Явные зависимости: сервисы получают зависимости через конструктор/фабрику, а не через g.*.
+  - Валидация и ошибки: единые схемы запросов и централизованные обработчики исключений с JSON-ответом.
+  - Абстракция хранилища: сохранение файлов и шаблонов через интерфейс (легче тесты и замена на S3 и т.п.).
+  - Константы и имена: магические строки вынесены в config или constants.
+  - Тестируемость: бизнес-логика не зависит от Flask; тесты разнесены по unit/integration.
+  - Многопользовательность: идентификация пользователя/сессии (user_id, session_id); изоляция данных и хранилища по user_id; задания (job_id) привязаны к пользователю.
+  - Долгие операции парсинга: перевод PDF в текст и извлечение данных вынесены в отдельный воркер-сервис; API принимает загрузку файлов и возвращает job_id (202), клиент опрашивает статус и забирает результат по готовности.
+
+
+================================================================================
+2. ДЕРЕВО КАТАЛОГОВ И ФАЙЛОВ (REFACTORED)
+================================================================================
+
+LegalDocInspector/
+│
+├── run.py                            # Точка входа API: load_config(env), create_app(config), app.run(port=5001)
+│                                      # текущая реализация: run.py
+├── run_worker.py                     # Точка входа воркера: загрузка конфига и приложения, запуск воркера очереди (обработка заданий парсинга)
+│                                      # в проекте пока нет; планируется при рефакторинге
+│
+├── config/
+│   ├── __init__.py                   # load_config(env?), get_config_path()
+│   │                                  # в проекте: аналог в configs/ — отдельного __init__ с load_config может не быть
+│   ├── schema.py                     # AppConfig (dataclass), маппинг YAML -> AppConfig; поля для очереди и job store (broker_url, job_store_url, job_result_ttl_seconds)
+│   │                                  # текущая реализация: configs/config.py
+│   ├── development.yaml              # Конфиг для разработки (или debug_config.yaml)
+│   │                                  # текущая реализация: configs/debug_config.yaml
+│   ├── production.yaml               # [ОПЦИОНАЛЬНО] Конфиг для prod (пути, флаги, broker_url для Redis/RabbitMQ)
+│   └── .env.example                  # Переменные окружения (CONFIG_PATH, FLASK_ENV, REDIS_URL / CELERY_BROKER_URL, JOB_STORE_URL)
+│
+├── LegalDocInspector/
+│   │
+│   ├── __init__.py
+│   │                                  # текущая реализация: LegalDocInspector/__init__.py (если есть)
+│   │
+│   ├── api/                           # Слой HTTP: только маршруты, валидация, ответы
+│   │   ├── __init__.py
+│   │   ├── app.py                    # create_app(config: AppConfig) -> Flask; регистрация blueprints, error handlers, middleware user_id
+│   │   │                                # текущая реализация: LegalDocInspector/backend/__init__.py (create_app)
+│   │   ├── middleware/
+│   │   │   ├── __init__.py
+│   │   │   └── user_context.py      # Идентификация пользователя/сессии: из заголовка, cookie или токена; запись user_id/session_id в g
+│   │   │                                # в проекте пока нет; планируется при рефакторинге
+│   │   ├── routes/
+│   │   │   ├── __init__.py           # Регистрация blueprints
+│   │   │   ├── health.py             # GET / (healthcheck)
+│   │   │   │                            # текущая реализация: LegalDocInspector/backend/routes.py (функция home())
+│   │   │   ├── parse.py              # POST /parse — сохранение файлов, постановка задания в очередь, ответ 202 + job_id; GET /parse/result/<job_id> — результат (только свой user_id)
+│   │   │   │                            # текущая реализация: LegalDocInspector/backend/routes.py (функция parse())
+│   │   │   ├── jobs.py               # GET /jobs/<job_id> — статус задания (pending|running|completed|failed); опционально GET /jobs (список своих заданий)
+│   │   │   │                            # в проекте пока нет; планируется при рефакторинге
+│   │   │   ├── penalty.py            # POST /calculate_penalty — вызов PenaltyCalculationService
+│   │   │   │                            # текущая реализация: LegalDocInspector/backend/routes.py (функция calc_penalty())
+│   │   │   └── documents.py          # POST /create_doc, POST /create_calculating_table — вызов DocGenerationService (по path_to_save в рамках своего user_id)
+│   │   │                                # текущая реализация: LegalDocInspector/backend/routes.py (create_doc(), create_table())
+│   │   ├── schemas/                  # Валидация входящих данных (Pydantic, marshmallow или ручная)
+│   │   │   ├── __init__.py
+│   │   │   ├── parse_schema.py       # Параметры формы /parse (date, complects_count, egrul_certificate_file, ...); ответ 202: { job_id }
+│   │   │   ├── jobs_schema.py        # GET /jobs/<job_id>: ответ { status, result?, error? }; проверка доступа по user_id
+│   │   │   ├── penalty_schema.py     # Тело JSON /calculate_penalty (parsing_results, company_type, end_date)
+│   │   │   └── documents_schema.py   # Тело JSON /create_doc, /create_calculating_table (path_to_save в рамках user_id)
+│   │   │                                # текущая реализация: валидация выполняется внутри LegalDocInspector/backend/routes.py (отдельных schema-файлов нет)
+│   │   ├── errors.py                 # Обработчики ошибок (register_error_handlers), формат JSON { "error", "detail", "code" }
+│   │   │                                # текущая реализация: try/except и traceback.format_exc() в LegalDocInspector/backend/routes.py
+│   │   └── dependencies.py           # Получение сервисов (get_parse_service(), get_job_service(), get_config(), ...), get_current_user_id() из g
+│   │                                    # текущая реализация: before_request в LegalDocInspector/backend/__init__.py (g.table_parser, g.claim_generator, g.config и т.д.)
+│   │
+│   ├── application/                   # Слой приложения: оркестрация use-case'ов (сервисы)
+│   │   ├── __init__.py
+│   │   ├── services/
+│   │   │   ├── __init__.py
+│   │   │   ├── parse_documents.py     # ParseDocumentsService: parse(files, form, request_folder_path) -> ParseResult. Вызывается воркером по заданию.
+│   │   │   │                            # текущая реализация: логика внутри LegalDocInspector/backend/routes.py (функция parse())
+│   │   │   ├── penalty_calculation.py # PenaltyCalculationService: calculate(parsing_results, company_type, end_date) -> (claim_data, calculator_list)
+│   │   │   │                            # текущая реализация: логика внутри LegalDocInspector/backend/routes.py (функция calc_penalty())
+│   │   │   └── doc_generation.py     # DocGenerationService(claim_generator, calc_generator, config): create_claim_doc(...), create_calculation_doc(...)
+│   │   │                                # текущая реализация: вызовы генераторов в LegalDocInspector/backend/routes.py (create_doc(), create_table())
+│   │   ├── jobs/                      # Задания и очередь: постановка в очередь, статус, результат
+│   │   │   ├── __init__.py
+│   │   │   ├── job_service.py        # JobService(queue, job_store): enqueue_parse(user_id, request_folder_path, form_params) -> job_id; get_status(job_id, user_id); get_result(job_id, user_id)
+│   │   │   │                            # в проекте пока нет; планируется при рефакторинге
+│   │   │   └── tasks.py              # Функция задачи парсинга (run_parse_task(job_id)): загрузка параметров из job_store, вызов ParseDocumentsService.parse(...), сохранение результата и обновление статуса
+│   │   │                                # в проекте пока нет; планируется при рефакторинге
+│   │   └── dto.py                    # [ОПЦИОНАЛЬНО] Data transfer objects (ParseResult, PenaltyResult, JobStatus) для типизации между слоями
+│   │                                    # в проекте пока нет
+│   │
+│   ├── domain/                        # Слой домена: модели и интерфейсы без зависимостей от Flask/файлов
+│   │   ├── __init__.py
+│   │   ├── models.py                 # [ОПЦИОНАЛЬНО] Именованные структуры (ParsedComplect, DefendantInfo, ClaimData) — dataclass или TypedDict
+│   │   └── interfaces.py             # [ОПЦИОНАЛЬНО] Абстрактные интерфейсы: IFileStorage, IParser, IClaimGenerator (для подмены в тестах)
+│   │                                    # в проекте отдельного слоя domain нет
+│   │
+│   ├── infrastructure/                # Реализации: парсеры, хранилище, очередь, генерация DOCX
+│   │   ├── __init__.py
+│   │   ├── storage/
+│   │   │   ├── __init__.py
+│   │   │   ├── local_storage.py      # LocalFileStorage(save_data_folder): save_upload(file, rel_path), get_path(rel_path), create_request_folder(user_id, job_id?) -> path; изоляция по user_id (подпапка user_id/ в save_data_folder)
+│   │   │   │                            # текущая реализация: создание папок и сохранение файлов в LegalDocInspector/backend/routes.py (parse(): folder.mkdir, file.save)
+│   │   │   └── interfaces.py         # [ОПЦИОНАЛЬНО] IFileStorage
+│   │   ├── queue/                     # Очередь заданий для воркера (долгий парсинг)
+│   │   │   ├── __init__.py
+│   │   │   ├── interfaces.py         # IJobQueue: enqueue(job_id, payload), consume(callback) / или get_task() + ack()
+│   │   │   ├── rq_queue.py            # Реализация на Redis Queue (RQ) или Celery
+│   │   │   └── (memory_queue.py)      # [ОПЦИОНАЛЬНО] Для тестов: in-memory очередь
+│   │   │                                # в проекте пока нет; планируется при рефакторинге
+│   │   ├── job_store/                 # Хранение статуса и результата задания (по job_id, с проверкой user_id)
+│   │   │   ├── __init__.py
+│   │   │   ├── interfaces.py         # IJobStore: set_pending(job_id, user_id, meta), set_running(job_id), set_completed(job_id, result), set_failed(job_id, error), get(job_id) -> (status, result?, user_id?)
+│   │   │   ├── redis_job_store.py    # Реализация на Redis (TTL по конфигу)
+│   │   │   └── (file_job_store.py)   # [ОПЦИОНАЛЬНО] Файловое хранилище (JSON по job_id) для простого деплоя без Redis
+│   │   │                                # в проекте пока нет; планируется при рефакторинге
+│   │   ├── parsing/
+│   │   │   ├── __init__.py
+│   │   │   ├── excel/                # Парсинг Excel-справок (отдельный путь, не PDF)
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── table_parser.py   # ExcelReader, TableParser (перенос из exel_parser)
+│   │   │   │                            # текущая реализация: LegalDocInspector/legal_doc_inspector/exel_parser.py
+│   │   │   └── pdf/                  # Единый конвейер для всех PDF: договор, претензия, ЕГРЮЛ
+│   │   │       │                     # Принцип: 1) PDF → текст  2) текст → структурированные данные
+│   │   │       ├── __init__.py
+│   │   │       ├── pdf_to_text/      # Этап 1: перевод PDF в текст (подставляемая реализация)
+│   │   │       │   ├── __init__.py
+│   │   │       │   ├── interfaces.py # IPdfToText: pdf_to_text(path) -> str | list[str]
+│   │   │       │   │                    # в проекте: интерфейса нет; логика внутри парсеров
+│   │   │       │   ├── docling.py    # DoclingPdfToText — электронный документ (без OCR)
+│   │   │       │   │                    # текущая реализация: Docling используется в LegalDocInspector/legal_doc_inspector/pdf_parser/parser_models.py (_parse_contract_text, _parse_claim_text)
+│   │   │       │   ├── ocr.py        # OcrPdfToText — скан (Tesseract, EasyOCR и т.п.)
+│   │   │       │   │                    # текущая реализация: OCR в LegalDocInspector/legal_doc_inspector/pdf_parser/contract_parser.py, claim_parser.py (pdf_to_text через pytesseract/pdf2image); в parser_models — pipeline с do_ocr
+│   │   │       │   └── (другие)      # При необходимости: иной движок перевода PDF → текст
+│   │   │       ├── extractors/       # Этап 2: извлечение данных из текста (подставляемая реализация)
+│   │   │       │   ├── __init__.py
+│   │   │       │   ├── interfaces.py # IDataExtractor: extract(text, context?) -> dict | tuple
+│   │   │       │   │                    # в проекте: интерфейса нет
+│   │   │       │   ├── keyword.py    # Поиск по ключевым словам (конфиг: веса, исключения)
+│   │   │       │   │                    # текущая реализация: _find_point_of_overdue_date, _find_type_of_contract и т.д. в LegalDocInspector/legal_doc_inspector/pdf_parser/parser_models.py
+│   │   │       │   ├── llm.py        # LLM / RAG (llm_functions)
+│   │   │       │   │                    # текущая реализация: LegalDocInspector/backend/llm_functions.py; RAG в LegalDocInspector/legal_doc_inspector/pdf_parser/contract_parser.py, claim_parser.py, utils.py (retrieve_relevant_chunks, get_conversation_*)
+│   │   │       │   └── (другие)      # Иные способы извлечения при необходимости
+│   │   │       ├── contract_parser.py  # Парсер договора: pdf_to_text + extractor; analyse_contract(path, config)
+│   │   │       │                        # текущая реализация: LegalDocInspector/legal_doc_inspector/pdf_parser/parser_models.py (PDFContractParser); LLM-вариант: pdf_parser/contract_parser.py
+│   │   │       ├── claim_parser.py     # Парсер претензии: pdf_to_text + extractor; analyse_claim(path)
+│   │   │       │                        # текущая реализация: LegalDocInspector/legal_doc_inspector/pdf_parser/parser_models.py (PDFClaimParser); LLM-вариант: pdf_parser/claim_parser.py
+│   │   │       └── egrul_parser.py     # Парсер выписки ЕГРЮЛ: pdf_to_text + extractor; parse(path) -> (full_name, ...)
+│   │   │                                # текущая реализация: LegalDocInspector/legal_doc_inspector/utils/parse_egrul_sertificate.py
+│   │   ├── calculation/
+│   │   │   ├── __init__.py
+│   │   │   ├── penalty.py            # calculate_penalty, StrictFormattedMoney, sort_dict_by_months (из penalty_calculator)
+│   │   │   │                            # текущая реализация: LegalDocInspector/legal_doc_inspector/calculator/penalty_calculator.py
+│   │   │   └── adapter.py           # convert_data, group_consecutive_months (из calculator_adapter)
+│   │   │                                # текущая реализация: LegalDocInspector/legal_doc_inspector/utils/calculator_adapter.py
+│   │   ├── documents/
+│   │   │   ├── __init__.py
+│   │   │   ├── docx_editor.py        # DocxRedactor (из doc_creator)
+│   │   │   │                            # текущая реализация: LegalDocInspector/legal_doc_inspector/doc_creator/docx_editor.py
+│   │   │   ├── claim_generator.py    # ClaimGenerator
+│   │   │   │                            # текущая реализация: LegalDocInspector/legal_doc_inspector/doc_creator/claim_generator.py
+│   │   │   └── calculation_generator.py # CalculationClaimGenerator
+│   │   │                                # текущая реализация: LegalDocInspector/legal_doc_inspector/doc_creator/calculation_claim_generator.py
+│   │   │                                # клонирование таблиц DOCX: LegalDocInspector/legal_doc_inspector/utils/table_clone.py
+│   │   └── shared/                   # Общие утилиты инфраструктуры
+│   │       ├── __init__.py
+│   │       ├── money.py              # StrictFormattedMoney (единый источник)
+│   │       │                            # текущая реализация: LegalDocInspector/legal_doc_inspector/calculator/penalty_calculator.py (класс); дубликат: legal_doc_inspector/utils/strict_formatted_money.py
+│   │       ├── dates.py              # convert_month, last_day_of_month, _add_last_day_of_month
+│   │       │                            # текущая реализация: convert_month, last_day_of_month — LegalDocInspector/legal_doc_inspector/utils/convert_month.py; _add_last_day_of_month — legal_doc_inspector/calculator/penalty_calculator.py
+│   │       └── filename_encoding.py  # safe_decode_filename, safe_decode_filename_linux
+│   │                                    # текущая реализация: LegalDocInspector/backend/routes.py (функции safe_decode_filename, safe_decode_filename_linux)
+│   │                                    # расчёт госпошлины (state duty): LegalDocInspector/legal_doc_inspector/utils/calculate_tax.py (используется фронтом/Streamlit)
+│   │
+│   ├── workers/                       # Воркер-сервис: обработка долгих заданий (парсинг PDF → текст, извлечение данных)
+│   │   ├── __init__.py
+│   │   ├── worker.py                 # Запуск воркера: загрузка config, создание queue + job_store + ParseDocumentsService, цикл consume или регистрация task для Celery; при получении задания — tasks.run_parse_task(job_id)
+│   │   └── __main__.py               # [ОПЦИОНАЛЬНО] python -m LegalDocInspector.workers
+│   │                                    # в проекте пока нет; планируется при рефакторинге
+│   │
+│   └── backend/                       # [ОБРАТНАЯ СОВМЕСТИМОСТЬ] Тонкая обёртка: импорт из api.app create_app, реэкспорт; или оставить старый create_app с вызовом новых сервисов
+│       ├── __init__.py               # from ..api.app import create_app (или гибрид)
+│       │                                # текущая реализация: LegalDocInspector/backend/__init__.py
+│       └── routes.py                 # [ПЕРЕХОД] Импорт handlers из api.routes.* и регистрация; либо постепенно переносить сюда вызовы services
+│                                        # текущая реализация: LegalDocInspector/backend/routes.py
+│
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py                   # Фикстуры: app, client, config, mock_storage, mock_parsers
+│   │                                    # в проекте: test/conftest.py отсутствует; фикстуры в самих тестах
+│   ├── unit/
+│   │   ├── application/             # Тесты сервисов с моками (storage, parsers)
+│   │   │   ├── test_parse_documents_service.py
+│   │   │   ├── test_penalty_calculation_service.py
+│   │   │   └── test_doc_generation_service.py
+│   │   │                                # в проекте: отдельного unit/application нет
+│   │   └── infrastructure/
+│   │       ├── test_penalty_calculator.py
+│   │       │                            # текущая реализация: test/test_penalty_calculate.py, test/test_calculator.py
+│   │       ├── test_calculator_adapter.py
+│   │       └── test_table_parser.py
+│   │                                    # текущая реализация: test/test_table_parser.py
+│   └── integration/
+│       ├── test_parse_endpoint.py
+│       ├── test_calculate_penalty_endpoint.py
+│       └── test_create_doc_endpoints.py
+│                                    # в проекте: интеграционные тесты в test/; пример API: scripts/example_file_uploading.py
+│
+├── data/                             # По умолчанию save_data_folder (из конфига); изоляция по пользователю
+│   ├── templates/
+│   │   ├── claim.docx
+│   │   └── calculation_claim_*.docx
+│   │                                    # текущая реализация: пути к шаблонам задаются в config (templates_path, claim_template_name, calculation_claim_template_name); папка data/ или аналог по конфигу
+│   └── (runtime: <user_id>/documents_from_request_<job_id>_<timestamp>/ — файлы и result_parser.json по заданию)
+│
+├── constants.py                      # [ОПЦИОНАЛЬНО] Имена файлов: CLAIM_DOC_FILENAME = "ИСК.docx", CALCULATION_DOC_FILENAME = "расчёт к иску.docx"
+│                                      # в проекте: константы имён шаблонов в config (YAML) или в коде генераторов
+├── requirements.txt
+├── pyproject.toml
+├── .env.example
+└── BACKEND_SPEC.txt
+
+
+================================================================================
+3. ПОТОК ЗАВИСИМОСТЕЙ И ИНИЦИАЛИЗАЦИЯ
+================================================================================
+
+  run.py:
+    1. env = os.getenv("FLASK_ENV", "development")
+    2. config = load_config(env)   # config/__init__.py: читает CONFIG_PATH или config/{env}.yaml
+    3. app = create_app(config)
+    4. app.run(host=..., port=5001, debug=config.debug_mode)
+
+  create_app(config: AppConfig):
+    1. app = Flask(__name__)
+    2. app.config["APP_CONFIG"] = config
+    3. storage = LocalFileStorage(config.save_data_folder)   # пути с учётом user_id при create_request_folder(user_id, job_id)
+    4. queue = RqQueue(config.broker_url) (или Celery); job_store = RedisJobStore(config.job_store_url, ttl=config.job_result_ttl_seconds)
+    5. table_parser = TableParser(); contract_parser = PDFContractParser(); claim_parser = PDFClaimParser(); egrul_parser = parse_egrul_certificate
+    6. parse_service = ParseDocumentsService(config, storage, table_parser, contract_parser, claim_parser, egrul_parser)
+    7. job_service = JobService(queue, job_store, parse_service, storage)   # постановка заданий и выдача статуса/результата
+    8. penalty_service = PenaltyCalculationService(...); doc_service = DocGenerationService(...)
+    9. app.config["SERVICES"] = { "parse": parse_service, "job": job_service, "penalty": penalty_service, "doc": doc_service }
+    10. register_error_handlers(app); подключить middleware user_context (before_request: g.user_id из заголовка/cookie/токена)
+    11. app.register_blueprint(health_bp); app.register_blueprint(parse_bp); app.register_blueprint(jobs_bp); app.register_blueprint(penalty_bp); app.register_blueprint(documents_bp)
+    12. return app
+
+  Маршрут POST /parse (многопользовательский, долгая операция в воркере):
+    - Извлечь user_id из g (middleware); валидация формы и файлов.
+    - Создать job_id (uuid); сохранить файлы в storage.create_request_folder(user_id, job_id), записать метаданные (form) в job_store.set_pending(job_id, user_id, meta).
+    - job_service.enqueue_parse(job_id, user_id, path_to_request_folder, form_params).
+    - return jsonify({ "job_id": job_id }), 202 Accepted.
+  Маршрут GET /jobs/<job_id>:
+    - Проверить g.user_id; job_store.get(job_id): если user_id не совпадает — 404. Вернуть { "status": "pending"|"running"|"completed"|"failed", "result": ... при completed, "error": ... при failed }.
+  Маршрут GET /parse/result/<job_id> (или GET /jobs/<job_id>/result):
+    - Аналогично проверка user_id; при status == completed вернуть результат (result_parser.json); иначе 202 или 404.
+  Воркер (run_worker.py):
+    - Загрузка config, создание queue, job_store, ParseDocumentsService (парсеры те же).
+    - queue.consume(callback): при получении задания — job_store.set_running(job_id); run_parse_task(job_id) — чтение meta из job_store, вызов parse_service.parse(...) по сохранённым путям; при успехе job_store.set_completed(job_id, result), при ошибке job_store.set_failed(job_id, error).
+
+
+================================================================================
+4. КЛЮЧЕВЫЕ УЛУЧШЕНИЯ ПО МОДУЛЯМ
+================================================================================
+
+  4.1. Конфигурация (config/)
+  ---------------------------
+    - Отдельная папка config/ вместо configs/ (единый стиль с одной точкой входа).
+    - load_config(env): выбор файла по окружению (development.yaml, production.yaml) или по CONFIG_PATH.
+    - Нет жёстко прописанного пути "configs/debug_config.yaml" в коде приложения.
+    - .env.example документирует переменные (CONFIG_PATH, FLASK_ENV).
+
+  4.2. API слой (api/)
+  --------------------
+    - Маршруты разбиты по blueprints: health, parse, penalty, documents — проще навигация и тесты.
+    - schemas/: валидация входов в одном месте; при невалидных данных — 400 с единым форматом ошибки.
+    - errors.py: @app.errorhandler(Exception), @app.errorhandler(400), возврат JSON {"error": "...", "detail": "...", "code": 500}.
+    - dependencies.py: единственное место, откуда маршруты получают сервисы (из app.config или g), упрощает подмену в тестах.
+
+  4.3. Application слой (application/services/)
+  --------------------------------------------
+    - ParseDocumentsService: вся логика пунктов 1–11 из спецификации /parse (создание папки, цикл по комплектам, вызов парсеров, ЕГРЮЛ, сбор result_json). Маршрут только вызывает service.parse(...) и отдаёт ответ.
+    - PenaltyCalculationService: цикл по parsing_results, вызов calculate_penalty и convert_data, возврат claim_data и calculator_list.
+    - DocGenerationService: создание иска и расчёта по path_to_save и конфигу.
+    - Плюсы: бизнес-логику можно тестировать без Flask; при смене фреймворка переносится только api/.
+
+  4.4. Domain (domain/)
+  ---------------------
+    - models.py: типизированные структуры (ParseResult, DefendantInfo, ClaimData) улучшают читаемость и рефакторинг.
+    - interfaces.py: IFileStorage, IParser — позволяют в тестах подменять реальные парсеры и диск на моки.
+
+  4.5. Infrastructure (infrastructure/)
+  ------------------------------------
+    - storage/: LocalFileStorage сохраняет загруженные файлы и создаёт папки запроса; в тестах подменяется на InMemoryStorage или заглушку.
+    - parsing/: сгруппировано по источнику (excel, pdf). Переименование exel_parser -> excel/ убирает опечатку.
+    - parsing/pdf/ — единый конвейер для договора, претензии и выписки ЕГРЮЛ:
+        (1) PDF → текст: реализация выбирается по типу документа (электронный PDF → Docling, скан → OCR, при необходимости — другой движок). Интерфейс IPdfToText; реализации в pdf_to_text/ (docling, ocr, ...).
+        (2) Текст → данные: реализация выбирается по задаче (ключевые слова из конфига, LLM/RAG, другой способ). Интерфейс IDataExtractor; реализации в extractors/ (keyword, llm, ...).
+      Конкретные парсеры (contract_parser, claim_parser, egrul_parser) собираются из комбинации pdf_to_text + extractor; можно менять способ перевода или извлечения без переписывания парсеров.
+    - calculation/: penalty и adapter рядом; единый StrictFormattedMoney в shared/money.py убирает дублирование (см. DUPLICATES.md).
+    - documents/: генераторы и DocxRedactor в одном месте.
+    - shared/: общие утилиты (money, dates, filename_encoding) — один источник истины.
+
+  4.6. Обратная совместимость (backend/)
+  -------------------------------------
+    - Пакет backend/ остаётся точкой входа для run.py (from LegalDocInspector.backend import create_app).
+    - В backend/__init__.py можно оставить create_app, который внутри вызывает новую api.app.create_app(config) и регистрирует те же маршруты (через новые blueprints или старый routes.py, который вызывает сервисы).
+    - Постепенная миграция: сначала ввести сервисы и вызывать их из старых routes.py; затем перенести маршруты в api/routes/ и упростить backend до реэкспорта.
+
+  4.7. Многопользовательность и воркер-сервис (очередь заданий)
+  -------------------------------------------------------------
+    - Идентификация пользователя: api/middleware/user_context.py извлекает user_id (или session_id) из заголовка (X-User-Id, Authorization), cookie или JWT и записывает в g.user_id. Без авторизации можно использовать анонимный session_id (если разрешено конфигом).
+    - Изоляция хранилища: LocalFileStorage.create_request_folder(user_id, job_id) создаёт каталог save_data_folder / user_id / documents_from_request_<job_id>_<timestamp>. Все операции с файлами и результатами — в рамках этого пути; доступ к результатам только при совпадении g.user_id с user_id задания.
+    - Долгая операция парсинга вынесена в воркер: перевод PDF в текст (Docling/OCR) и извлечение данных занимают много времени, поэтому синхронный POST /parse не выполняет парсинг сам, а только сохраняет файлы, создаёт задание и ставит его в очередь, возвращая 202 и job_id. Отдельный процесс (run_worker.py) забирает задания из очереди (Redis/RQ или Celery), выполняет ParseDocumentsService.parse(...), сохраняет результат в job_store и обновляет статус.
+    - Очередь (infrastructure/queue): интерфейс IJobQueue (enqueue(job_id, payload), consume(callback)); реализация на RQ или Celery. Payload содержит job_id, user_id, path_to_request_folder, form_params (сериализуемые), чтобы воркер мог вызвать parse без доступа к HTTP-запросу.
+    - Job store (infrastructure/job_store): интерфейс IJobStore для статуса (pending → running → completed | failed) и результата (ParseResult или ошибка). Реализация на Redis с TTL или файловая (JSON по job_id). При get(job_id) возвращается user_id для проверки доступа.
+    - Маршруты: POST /parse → 202 + job_id; GET /jobs/<job_id> → статус и при completed — результат (с проверкой user_id); GET /parse/result/<job_id> — то же. Клиент после 202 опрашивает GET /jobs/<job_id> до status == completed или failed.
+    - Запуск: run.py — только API; run_worker.py — один или несколько воркеров (масштабирование по числу воркеров при одной очереди). Конфиг: broker_url (Redis), job_store_url, job_result_ttl_seconds.
+
+
+================================================================================
+5. ОБРАБОТКА ОШИБОК И ВАЛИДАЦИЯ
+================================================================================
+
+  - Все необработанные исключения перехватываются в errors.py: возврат JSON с полем "error" (или "message"), "detail" (traceback в debug), "code".
+  - Валидация формы /parse: проверка наличия date, complects_count, egrul_certificate_file, для каждого id — complect_{id}_claim_file, complect_{id}_contract_file, {id}_certificates_count и соответствующих certificate_file_{j}. При ошибке — 400 с перечнем недостающих полей.
+  - Валидация JSON /calculate_penalty: parsing_results — массив объектов с полями parsed_info, contract_number, contract_type, contract_point, day_of_penalty; company_type, end_date — обязательные. При ошибке — 400.
+  - Кастомные исключения (опционально): ParseError, ValidationError, StorageError — в error handler по типу возвращать нужный код (400, 500).
+  - Доступ к заданию: GET /jobs/<job_id> и GET /parse/result/<job_id> возвращают 404, если job_id не найден или user_id из g не совпадает с user_id задания (изоляция данных пользователей).
+
+
+================================================================================
+6. ПОРЯДОК РЕАЛИЗАЦИИ (REFACTORED)
+================================================================================
+
+  Этап 1 — Конфиг и каркас
+    - config/: schema.py (AppConfig), load_config(env), development.yaml, .env.example
+    - api/app.py: create_app(config), регистрация одного blueprint (health), register_error_handlers(app)
+    - run.py: load_config(), create_app(config), app.run()
+    - backend/__init__.py: реэкспорт create_app из api.app (или оставить старый create_app, принимающий config)
+
+  Этап 2 — Storage и зависимости
+    - infrastructure/storage/local_storage.py: LocalFileStorage
+    - infrastructure/shared/money.py: StrictFormattedMoney
+    - infrastructure/shared/dates.py: convert_month, last_day_of_month (или _add_last_day_of_month)
+    - infrastructure/shared/filename_encoding.py: safe_decode_filename*
+
+  Этап 3 — Инфраструктура парсинга и расчёта
+    - infrastructure/parsing/excel/table_parser.py (перенос exel_parser)
+    - infrastructure/parsing/pdf/pdf_to_text/: interfaces (IPdfToText), docling.py, ocr.py
+    - infrastructure/parsing/pdf/extractors/: interfaces (IDataExtractor), keyword.py, llm.py (при необходимости)
+    - infrastructure/parsing/pdf/contract_parser.py, claim_parser.py, egrul_parser.py — сборка из pdf_to_text + extractor (перенос логики из parser_models, parse_egrul_sertificate)
+    - infrastructure/calculation/penalty.py, adapter.py (перенос penalty_calculator, calculator_adapter)
+
+  Этап 4 — Инфраструктура документов
+    - infrastructure/documents/docx_editor.py, claim_generator.py, calculation_generator.py
+
+  Этап 5 — Сервисы приложения
+    - ParseDocumentsService, PenaltyCalculationService, DocGenerationService (вызовы инфраструктуры)
+    - api/dependencies.py: создание сервисов в create_app и сохранение в app.config или g
+
+  Этап 6 — Маршруты и валидация
+    - api/schemas: parse_schema, penalty_schema, documents_schema, jobs_schema
+    - api/routes: health, parse (202 + job_id), jobs (статус/результат по job_id), penalty, documents
+    - Подключение blueprints в app.py
+
+  Этап 7 — Многопользовательность и воркер
+    - config: broker_url, job_store_url, job_result_ttl_seconds
+    - infrastructure/queue: IJobQueue, реализация (RQ/Celery)
+    - infrastructure/job_store: IJobStore, реализация (Redis или file)
+    - storage: create_request_folder(user_id, job_id), изоляция путей по user_id
+    - application/jobs: JobService (enqueue_parse, get_status, get_result), tasks.run_parse_task(job_id)
+    - workers/worker.py: цикл consume очереди, вызов run_parse_task, обновление job_store
+    - api/middleware/user_context.py: g.user_id из заголовка/cookie/токена
+    - run_worker.py: запуск воркера (отдельный процесс)
+
+  Этап 8 — Тесты и константы
+    - tests/conftest.py: фикстуры app, client, mock_queue, mock_job_store, user_id
+    - unit/integration тесты для JobService, маршрутов parse/jobs с проверкой изоляции по user_id
+    - constants.py при необходимости
+
+
+================================================================================
+7. СВОДКА: ПОЧЕМУ ТАК ЛУЧШЕ
+================================================================================
+
+  - Чёткие слои: смена фреймворка или добавление CLI затрагивает только api/; бизнес-логика в application/ и infrastructure/ переиспользуется.
+  - Тестируемость: сервисы и парсеры тестируются без поднятия Flask; в интеграционных тестах подменяются storage, queue и тяжёлые парсеры при необходимости.
+  - Единая конфигурация и ошибки: меньше магических строк, предсказуемый формат ошибок для фронта.
+  - Масштабируемость: добавление нового маршрута = новый blueprint + вызов сервиса; парсеры и хранилище можно менять без правок в маршрутах; воркеры можно масштабировать по числу процессов при одной очереди.
+  - Один источник истины для денег, дат и кодировок имён файлов — меньше дублирования (см. DUPLICATES.md).
+  - Обратная совместимость: старый run.py и импорт create_app из backend сохраняются за счёт тонкой обёртки в backend/__init__.py.
+  - Многопользовательность: изоляция данных по user_id; один пользователь не видит задания и файлы другого; path_to_save и результаты привязаны к user_id и job_id.
+  - Долгий парсинг не блокирует API: операция перевода PDF в текст и извлечения данных выполняется в воркере; API быстро возвращает 202 и job_id, клиент опрашивает статус и забирает результат по готовности; несколько пользователей могут одновременно отправить задания без взаимной блокировки.
+
+
+================================================================================
+КОНЕЦ ОПИСАНИЯ REFACTORED СТРУКТУРЫ
+================================================================================
