@@ -76,7 +76,47 @@ class PDFClaimParser:
         init_runtime = time.time() - start_time
         _log.info(f"Pipeline initialized in {init_runtime:.2f} seconds.")
 
-        
+    def _parse_doc_with_ocr(self, path_to_file: str | Path) -> DoclingDocument:
+        pipeline_options = ThreadedPdfPipelineOptions(
+            accelerator_options=AcceleratorOptions(
+                device=AcceleratorDevice.CUDA if torch.cuda.is_available() else AcceleratorDevice.CPU,
+                num_threads=64
+
+            ),
+            ocr_batch_size=4,
+            layout_batch_size=16,
+            table_batch_size=4,
+            do_ocr=True,
+            do_table_structure= True
+        )
+
+        pipeline_options.ocr_options = EasyOcrOptions(lang=['ru'], force_full_page_ocr=True) # лучший вариант
+        # pipeline_options.ocr_options = PdfPipelineOptions()
+
+        doc_converter_ocr = DocumentConverter(
+            format_options={
+                InputFormat.PDF: PdfFormatOption(
+                    pipeline_cls=ThreadedStandardPdfPipeline,
+                    pipeline_options=pipeline_options,
+                )
+            }
+        )
+
+        if isinstance(path_to_file, str):
+            path_to_file = Path(path_to_file)
+        start_time = time.time()
+        _log.info(f"Starting conversion of document - ocr attempt: {path_to_file}")
+        conv_result = doc_converter_ocr.convert(path_to_file)
+        if conv_result.status != ConversionStatus.SUCCESS:
+            raise RuntimeError(f"Conversion failed for {path_to_file}")
+        _log.info(f"Document converted in {time.time() - start_time:.2f} seconds.")
+
+        del doc_converter_ocr
+        return conv_result.document
+
+
+
+
     def _parse_claim_text(self, path_to_file: str | Path) -> DoclingDocument:
         if isinstance(path_to_file, str):
             path_to_file = Path(path_to_file)
@@ -115,10 +155,18 @@ class PDFClaimParser:
     def analyse_claim(self, path_to_file: str|Path):
         document = self._parse_claim_text(path_to_file)
         data = list(document.export_to_dict().values())
+
         text_pairs = self._extract_text_with_page(data)
         claims = self._parse_claim_number_and_date(text_pairs)
+        if len(claims)==0 :
+            document = self._parse_doc_with_ocr(path_to_file)
+            data = list(document.export_to_dict().values())
+            text_pairs = self._extract_text_with_page(data)
+            claims = self._parse_claim_number_and_date(text_pairs)
         torch.cuda.empty_cache()
         claims = self._standartize_claims(claims)
+        if len(claims) == 0:
+            claims = [{"claim-date": "Не удалось распознать дату", "claim_number" : "Не удалось распознать номер"}]
         return claims
 
     def _standartize_claims(self, claims:list[tuple[str | None, str | None]]):
