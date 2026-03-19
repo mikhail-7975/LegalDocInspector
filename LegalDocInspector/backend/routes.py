@@ -141,6 +141,8 @@ def parse():
         try:
         # full_name, short_name, address, kpp, ogrn = parse_html(int(defendant_inn))
             full_name, short_name, address, kpp, ogrn, text_content = parse_egrul_certificate(str(egrul_certificate_file_path))
+            if len(short_name) < 1 or short_name is None:
+                short_name = full_name
             print("EGRUL certificate parsed successfully")
         except Exception as e:
             print(e)
