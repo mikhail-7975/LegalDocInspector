@@ -1,0 +1,188 @@
+{
+    "company_type": "ТСЖ",
+    "end_date": "20.03.2026",
+    "parsing_results": [
+        {
+            "parsed_info": {
+                "Апрель 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 621955.17,
+                                "period": "04.2025"
+                            }
+                        ],
+                        "additionals": [],
+                        "debt": 621955.17,
+                        "payments": [],
+                        "total_amount_of_accruals": 621955.17,
+                        "total_amount_of_payments": 0
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "additionals": [
+                            {
+                                "accrual": 15352.49,
+                                "period": "12.2024"
+                            }
+                        ],
+                        "debt": 15352.49,
+                        "payments": [],
+                        "total_amount_of_accruals": 15352.49,
+                        "total_amount_of_payments": 0
+                    }
+                },
+                "Июнь 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 713425.01,
+                                "period": "06.2025"
+                            }
+                        ],
+                        "additionals": [],
+                        "debt": 706721.57,
+                        "payments": [
+                            {
+                                "contract_type": 8901,
+                                "date": "18.07.2025",
+                                "payment": 6703.44
+                            }
+                        ],
+                        "total_amount_of_accruals": 713425.01,
+                        "total_amount_of_payments": 6703.44
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "additionals": [
+                            {
+                                "accrual": 15352.49,
+                                "period": "12.2024"
+                            }
+                        ],
+                        "debt": 15352.49,
+                        "payments": [],
+                        "total_amount_of_accruals": 15352.49,
+                        "total_amount_of_payments": 0
+                    }
+                },
+                "Май 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 515910.51,
+                                "period": "05.2025"
+                            }
+                        ],
+                        "additionals": [],
+                        "debt": 515910.51,
+                        "payments": [],
+                        "total_amount_of_accruals": 515910.51,
+                        "total_amount_of_payments": 0
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "additionals": [
+                            {
+                                "accrual": 15352.49,
+                                "period": "12.2024"
+                            }
+                        ],
+                        "debt": 15352.49,
+                        "payments": [],
+                        "total_amount_of_accruals": 15352.49,
+                        "total_amount_of_payments": 0
+                    }
+                },
+                "Март 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 793420.94,
+                                "period": "03.2025"
+                            }
+                        ],
+                        "additionals": [],
+                        "debt": 793420.94,
+                        "payments": [],
+                        "total_amount_of_accruals": 793420.94,
+                        "total_amount_of_payments": 0
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "additionals": [
+                            {
+                                "accrual": 15352.49,
+                                "period": "12.2024"
+                            }
+                        ],
+                        "debt": 15352.49,
+                        "payments": [],
+                        "total_amount_of_accruals": 15352.49,
+                        "total_amount_of_payments": 0
+                    }
+                },
+                "Февраль 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 683622.74,
+                                "period": "02.2025"
+                            }
+                        ],
+                        "additionals": [],
+                        "debt": 683622.74,
+                        "payments": [],
+                        "total_amount_of_accruals": 683622.74,
+                        "total_amount_of_payments": 0
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "additionals": [
+                            {
+                                "accrual": 15352.49,
+                                "period": "12.2024"
+                            }
+                        ],
+                        "debt": 15352.49,
+                        "payments": [],
+                        "total_amount_of_accruals": 15352.49,
+                        "total_amount_of_payments": 0
+                    }
+                },
+                "Январь 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 698675.46,
+                                "period": "01.2025"
+                            }
+                        ],
+                        "additionals": [],
+                        "debt": 698675.46,
+                        "payments": [],
+                        "total_amount_of_accruals": 698675.46,
+                        "total_amount_of_payments": 0
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "additionals": [
+                            {
+                                "accrual": 15352.49,
+                                "period": "12.2024"
+                            }
+                        ],
+                        "debt": 15352.49,
+                        "payments": [],
+                        "total_amount_of_accruals": 15352.49,
+                        "total_amount_of_payments": 0
+                    }
+                }
+            },
+            "contract_point": "4.5",
+            "day_of_penalty": 18,
+            "contract_type": "ТЭ",
+            "contract_number": "№ 01.010151-ТЭ от 01.04.2020"
+        }
+    ]
+}
