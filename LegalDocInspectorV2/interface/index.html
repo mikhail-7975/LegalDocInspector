@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LegalDocInspector — макет интерфейса (проверка ТЗ)</title>
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <!-- SVG-спрайт значков из макета -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+    <defs>
+      <symbol id="i-pdf" viewBox="0 0 24 24"><path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2 5 5h-5V4zM8 12h8v2H8v-2zm0 4h8v2H8v-2z"/></symbol>
+      <symbol id="i-xls" viewBox="0 0 24 24"><path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2 5 5h-5V4zM9 13l1.5 2L9 17h2l.75-1.25L12.5 17h2l-1.5-2 1.5-2h-2l-.75 1.25L11 13H9z"/></symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24"><path fill="currentColor" d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path fill="currentColor" d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24"><path fill="currentColor" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></symbol>
+      <symbol id="i-error" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><path fill="currentColor" d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></symbol>
+      <symbol id="i-text" viewBox="0 0 24 24"><path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2 5 5h-5V4zM8 12h8v2H8v-2zm0 4h5v2H8v-2z"/></symbol>
+      <symbol id="i-scan" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5v4h2V5h4V3H5a2 2 0 0 0-2 2zm2 10H3v4a2 2 0 0 0 2 2h4v-2H5v-4zm14 4h-4v2h4a2 2 0 0 0 2-2v-4h-2v4zm0-10h2V5a2 2 0 0 0-2-2h-4v2h4v4zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><path fill="currentColor" d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></symbol>
+      <symbol id="i-queue" viewBox="0 0 24 24"><path fill="currentColor" d="M4 14h4v-4H4v4zm0 5h4v-4H4v4zM4 9h4V5H4v4zm5 15h12v-4H9v4zm0-5h12v-4H9v4zm0-14v4h12V5H9z"/></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></symbol>
+      <symbol id="i-user" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></symbol>
+      <symbol id="i-bell" viewBox="0 0 24 24"><path fill="currentColor" d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></symbol>
+      <symbol id="i-spinner" viewBox="0 0 24 24"><path fill="currentColor" d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24"><path fill="currentColor" d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></symbol>
+      <symbol id="i-chevron-left" viewBox="0 0 24 24"><path fill="currentColor" d="M15.41 16.59 10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></symbol>
+      <symbol id="i-chevron-right" viewBox="0 0 24 24"><path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></symbol>
+    </defs>
+  </svg>
+
+  <header class="app-header">
+    <h1 class="app-title">LegalDocInspector — макет UI (FullSpecification)</h1>
+    <div class="app-header-meta">
+      <span class="badge badge--extracting">
+        <svg class="icon" aria-hidden="true"><use href="#i-user"/></svg>
+        user@example.local
+      </span>
+      <span class="badge">packageId: 19_04_2026_10_15_00_042_a3f9</span>
+      <span class="badge badge--ok" title="Состояние пакета по §6">
+        <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>
+        form_editing
+      </span>
+      <button type="button" class="btn btn--secondary">Выйти</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <main class="stack">
+      <!-- Вход (ТЗ §2: логин/пароль) -->
+      <section class="panel">
+        <h2>1. Аутентификация</h2>
+        <p class="hint-muted">Макет экрана входа; по умолчанию admin / admin (доп. к ролям).</p>
+        <div class="login-card" style="margin:0">
+          <label for="login">Логин</label>
+          <input id="login" type="text" value="admin" readonly />
+          <label for="pass">Пароль</label>
+          <input id="pass" type="password" value="••••••" readonly />
+          <button type="button" class="btn btn--primary" style="width:100%">Войти</button>
+        </div>
+      </section>
+
+      <!-- Метаданные пакета -->
+      <section class="panel">
+        <h2>2. Пакет и дата заявления</h2>
+        <div class="form-grid form-grid--align-inputs">
+          <div class="field">
+            <label>Дата составления заявления (по умолчанию — сегодня)</label>
+            <input type="date" value="2026-04-19" />
+          </div>
+          <div class="field">
+            <label>Дата конца просрочки (расчёт)</label>
+            <input type="text" value="20.03.2026" placeholder="ДД.ММ.ГГГГ" />
+          </div>
+          <div class="field">
+            <label>Тип компании (УК / ТСЖ / Прочие)</label>
+            <select><option>ТСЖ</option><option>УК</option><option>Прочие</option></select>
+          </div>
+        </div>
+        <div class="pipeline" aria-label="Состояния пакета §6">
+          <span class="pipeline-step pipeline-step--done">created</span>
+          <span class="pipeline-arrow">→</span>
+          <span class="pipeline-step pipeline-step--done">files_uploaded</span>
+          <span class="pipeline-arrow">→</span>
+          <span class="pipeline-step pipeline-step--done">extracting</span>
+          <span class="pipeline-arrow">→</span>
+          <span class="pipeline-step pipeline-step--done">extracted</span>
+          <span class="pipeline-arrow">→</span>
+          <span class="pipeline-step pipeline-step--active">form_editing</span>
+          <span class="pipeline-arrow">→</span>
+          <span class="pipeline-step">calculating</span>
+          <span class="pipeline-arrow">→</span>
+          <span class="pipeline-step">calculated</span>
+          <span class="pipeline-arrow">→</span>
+          <span class="pipeline-step">generating</span>
+          <span class="pipeline-arrow">→</span>
+          <span class="pipeline-step">documents_ready</span>
+        </div>
+      </section>
+
+      <!-- Загрузка -->
+      <section class="panel">
+        <h2>3. Загрузка документов (FR-1, FR-2)</h2>
+        <p class="hint-muted">Один пакет с клиента · drag-and-drop + file input · beforeunload в реализации.</p>
+
+        <p class="section-label">Выписка ЕГРЮЛ (PDF)</p>
+        <div class="dropzone" tabindex="0">
+          <svg class="icon icon-lg" style="color:var(--primary)" aria-hidden="true"><use href="#i-upload"/></svg>
+          <strong>Перетащите PDF сюда</strong> или
+          <button type="button" class="btn btn--secondary" style="margin-top:0.5rem">Выбрать файл…</button>
+          <p>Один файл · типичный источник — сайт ФНС</p>
+        </div>
+
+        <h3>Комплект 1</h3>
+        <div class="docset">
+          <div class="docset-header">
+            <span class="docset-title">Комплект 1</span>
+            <button type="button" class="btn btn--secondary">
+              <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg> Удалить комплект
+            </button>
+          </div>
+          <div class="file-row">
+            <svg class="icon" aria-hidden="true" style="color:#c42b2b"><use href="#i-pdf"/></svg>
+            <div class="file-row__meta">
+              <strong>Договор</strong> — dogovor.pdf
+              <div class="provenance">
+                <svg class="icon" aria-hidden="true"><use href="#i-scan"/></svg>
+                textSource: <strong>ocr</strong> · постраничный OCR, ранний выход
+              </div>
+            </div>
+            <div class="file-row__actions">
+              <span class="badge badge--ok"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> ok</span>
+              <button type="button" class="btn btn--secondary btn--compact">
+                <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg> Удалить файл
+              </button>
+            </div>
+          </div>
+          <div class="file-row">
+            <svg class="icon" aria-hidden="true" style="color:#c42b2b"><use href="#i-pdf"/></svg>
+            <div class="file-row__meta">
+              <strong>Претензия</strong> — pretensiya.pdf
+              <div class="provenance">
+                <svg class="icon" aria-hidden="true"><use href="#i-text"/></svg>
+                textSource: <strong>direct</strong>
+              </div>
+            </div>
+            <div class="file-row__actions">
+              <span class="badge badge--partial">partial</span>
+              <button type="button" class="btn btn--secondary btn--compact">
+                <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg> Удалить файл
+              </button>
+            </div>
+          </div>
+          <div class="docset-spravki">
+            <div class="docset-spravki__toolbar">
+              <span class="docset-spravki__title">Справки о задолженности</span>
+              <button type="button" class="btn btn--secondary btn--compact js-add-spravka">Добавить справку</button>
+            </div>
+            <div class="docset-spravki__list">
+              <div class="file-row file-row--spravka">
+                <svg class="icon" aria-hidden="true" style="color:#1d7a4c"><use href="#i-xls"/></svg>
+                <div class="file-row__meta">
+                  <strong><span class="spravka-slot-title">Справка 1</span></strong> — <span class="spravka-filename">spravka_01_mart.xlsx</span>
+                  <div class="provenance">extractionMethod: excelParser (TableParser)</div>
+                </div>
+                <div class="file-row__actions">
+                  <span class="badge badge--ok"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span>
+                  <button type="button" class="btn btn--secondary btn--compact js-spravka-delete-file">
+                    <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg> Удалить файл
+                  </button>
+                  <button type="button" class="btn btn--secondary btn--compact js-spravka-remove-slot" hidden>Удалить справку</button>
+                </div>
+              </div>
+              <div class="file-row file-row--spravka">
+                <svg class="icon" aria-hidden="true" style="color:#1d7a4c"><use href="#i-xls"/></svg>
+                <div class="file-row__meta">
+                  <strong><span class="spravka-slot-title">Справка 2</span></strong> — <span class="spravka-filename">spravka_02_aprel.xlsm</span>
+                  <div class="provenance">extractionMethod: excelParser (TableParser)</div>
+                </div>
+                <div class="file-row__actions">
+                  <span class="badge badge--partial">partial</span>
+                  <button type="button" class="btn btn--secondary btn--compact js-spravka-delete-file">
+                    <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg> Удалить файл
+                  </button>
+                  <button type="button" class="btn btn--secondary btn--compact js-spravka-remove-slot" hidden>Удалить справку</button>
+                </div>
+              </div>
+            </div>
+            <p class="hint-muted docset-spravki__hint">Несколько файлов справок — отдельный Excel на каждую. Не более 20 на комплект.</p>
+          </div>
+        </div>
+
+        <h3>Комплект 2</h3>
+        <p class="hint-muted" style="margin:0 0 0.35rem">Пример: ни один файл в комплекте ещё не выбран (пустые слоты).</p>
+        <div class="docset">
+          <div class="docset-header">
+            <span class="docset-title">Комплект 2</span>
+            <button type="button" class="btn btn--secondary">
+              <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg> Удалить комплект
+            </button>
+          </div>
+          <div class="file-row file-row--empty">
+            <svg class="icon" aria-hidden="true" style="color:var(--muted)"><use href="#i-pdf"/></svg>
+            <div class="file-row__meta">
+              <strong>Договор</strong> (PDF)
+              <div class="file-row__empty-note">Файл не загружен</div>
+            </div>
+            <button type="button" class="btn btn--secondary btn--compact">Выбрать файл…</button>
+          </div>
+          <div class="file-row file-row--empty">
+            <svg class="icon" aria-hidden="true" style="color:var(--muted)"><use href="#i-pdf"/></svg>
+            <div class="file-row__meta">
+              <strong>Претензия</strong> (PDF)
+              <div class="file-row__empty-note">Файл не загружен</div>
+            </div>
+            <button type="button" class="btn btn--secondary btn--compact">Выбрать файл…</button>
+          </div>
+          <div class="docset-spravki">
+            <div class="docset-spravki__toolbar">
+              <span class="docset-spravki__title">Справки о задолженности</span>
+              <button type="button" class="btn btn--secondary btn--compact js-add-spravka">Добавить справку</button>
+            </div>
+            <div class="docset-spravki__list">
+              <div class="file-row file-row--empty file-row--spravka">
+                <svg class="icon" aria-hidden="true" style="color:var(--muted)"><use href="#i-xls"/></svg>
+                <div class="file-row__meta">
+                  <strong><span class="spravka-slot-title">Справка 1</span></strong> (.xls / .xlsx / .xlsm)
+                  <div class="file-row__empty-note">Файл не загружен</div>
+                </div>
+                <div class="file-row__actions file-row__actions--spravka-empty">
+                  <button type="button" class="btn btn--secondary btn--compact js-spravka-pick">Выбрать файл…</button>
+                  <button type="button" class="btn btn--secondary btn--compact js-spravka-remove-slot" hidden>Удалить справку</button>
+                </div>
+              </div>
+            </div>
+            <p class="hint-muted docset-spravki__hint">Можно добавить ещё слоты — каждая справка загружается отдельным файлом (до 20).</p>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn--primary">
+          <svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg>
+          Добавить комплект
+        </button>
+        <button type="button" class="btn btn--primary" style="margin-left:0.5rem">
+          <svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg>
+          Запустить извлечение
+        </button>
+      </section>
+
+      <!-- Прогресс извлечения -->
+      <section class="panel">
+        <h2>4. Прогресс (§2, §5)</h2>
+        <div class="progress-meta">
+          <span><svg class="icon" aria-hidden="true"><use href="#i-spinner"/></svg> Файл: <strong>complect_2 / contract_scan.pdf</strong></span>
+          <span>Осталось файлов: <strong>4</strong></span>
+        </div>
+        <div class="progress-line"><div class="progress-line__fill"></div></div>
+        <div class="progress-meta">
+          <span><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg> Оценка OCR: <strong>~6 мин</strong></span>
+          <span><svg class="icon" aria-hidden="true"><use href="#i-queue"/></svg> В очереди перед вами: <strong>3</strong> документа</span>
+        </div>
+        <p class="hint-muted">Перезапуск OCR одного файла не предусмотрен — только ручной ввод при недовольстве результатом.</p>
+      </section>
+
+      <!-- Конфликты данных -->
+      <section class="panel">
+        <h2>5. Конфликты и поля по документам (§3 Q-3.1.6)</h2>
+        <div class="conflict-banner">
+          <svg class="icon" aria-hidden="true" style="vertical-align:middle;color:var(--warning)"><use href="#i-alert"/></svg>
+          <strong>Обнаружены различия в данных в полях:</strong> ИНН ответчика, номер договора.
+          Итоговые значения введите в форме ниже.
+        </div>
+        <p class="section-label">Значения из договора (фрагмент)</p>
+        <div class="form-grid">
+          <div class="field">
+            <label>ИНН (из договора)</label>
+            <input type="text" value="7704065001" readonly />
+          </div>
+          <div class="field">
+            <label>ИНН (из ЕГРЮЛ)</label>
+            <input type="text" value="7704065007" readonly />
+          </div>
+        </div>
+      </section>
+
+      <!-- Форма -->
+      <section class="panel">
+        <h2>6. Форма (истец, ответчик, суд, иск)</h2>
+        <p class="hint-muted">Все поля обязательны; пустые — подсветка и блокировка «Произвести расчёт».</p>
+
+        <h3>Суд</h3>
+        <div class="form-grid">
+          <div class="field field--full">
+            <label>Название органа</label>
+            <input type="text" value="Арбитражный суд г. Москвы" />
+          </div>
+          <div class="field field--error field--full">
+            <label>Адрес органа</label>
+            <input type="text" value="" placeholder="обязательное поле" />
+            <div class="field-hint"><svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg> Заполните поле</div>
+          </div>
+        </div>
+
+        <h3>Истец (plaintiff_info)</h3>
+        <div class="form-grid">
+          <div class="field field--full"><label>Полное наименование</label><input value="ПАО «МОЭК»" /></div>
+          <div class="field"><label>Сокращённое наименование</label><input value="ПАО «МОЭК»" /></div>
+          <div class="field"><label>ИНН</label><input value="7720518494" /></div>
+          <div class="field"><label>ОГРН</label><input value="1047796974092" /></div>
+          <div class="field field--full"><label>Адрес (addres)</label><input value="119526, Москва, пр-кт Вернадского…" /></div>
+          <div class="field field--full"><label>Адрес для корреспонденции</label><input value="121596, г. Москва, ул. Горбунова…" /></div>
+        </div>
+
+        <h3>Ответчик (defendant_info)</h3>
+        <div class="form-grid">
+          <div class="field field--full"><label>Полное наименование</label><input value="Жилищно-строительный кооператив №3 …" /></div>
+          <div class="field"><label>Сокращённое наименование</label><input value="ЖСК №3 …" /></div>
+          <div class="field"><label>ИНН</label><input value="7704065007" /></div>
+          <div class="field"><label>ОГРН</label><input value="1037700251874" /></div>
+          <div class="field field--full"><label>Адрес</label><input value="121099, Москва…" /></div>
+        </div>
+
+        <h3>По договору (комплект 1)</h3>
+        <div class="form-grid">
+          <div class="field"><label>Тип договора</label><select><option>ТЭ</option><option>ГВС</option><option>СОИ</option><option>ФОТЭ</option></select></div>
+          <div class="field field--error">
+            <label>День оплаты (day_of_penalty)</label>
+            <input type="text" placeholder="число месяца" value="" />
+            <div class="field-hint"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg> Срок оплаты не найден в PDF — введите вручную (§3)</div>
+          </div>
+          <div class="field"><label>Пункт договора (contract_point)</label><input value="4.5" /></div>
+        </div>
+
+        <div class="lawsuit-calc-toolbar">
+          <button type="button" class="btn btn--primary" disabled>
+            <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>
+            Произвести расчёт
+          </button>
+          <span class="hint-muted">Кнопка недоступна, пока не заполнены обязательные поля.</span>
+        </div>
+
+        <h3>Иск (lawsuit_info)</h3>
+        <div class="form-grid">
+          <div class="field"><label>Цена иска</label><input value="4 890 326,78" /></div>
+          <div class="field"><label>Госпошлина</label><input value="171 710,00" /></div>
+          <div class="field"><label>Претензии (список)</label><input value="№ 567381 от 21.07.2025" /></div>
+          <div class="field field--error field--full">
+            <label>ФИО ответственного (responsitive_name)</label>
+            <input value="" placeholder="обязательно" />
+            <div class="field-hint"><svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg> Данные не найдены — введите вручную (претензия §3)</div>
+          </div>
+        </div>
+
+        <div class="lawsuit-docset-calcs">
+          <p class="section-label" style="margin-top:0">Расчёты по комплектам документов</p>
+          <p class="hint-muted">
+            Все комплекты показываются подряд: просмотр и правка агрегированных сумм по каждому (<code>calculator_list</code> / JSON в ТЗ).
+          </p>
+
+          <div class="lawsuit-docset-calc-block">
+            <h4 class="lawsuit-docset-calc-block__title">Комплект 1</h4>
+            <div class="form-grid">
+              <div class="field"><label>Основной долг</label><input type="text" name="calc_c1_debt" value="4 112 421,33" autocomplete="off" /></div>
+              <div class="field"><label>Пеня</label><input type="text" name="calc_c1_penalty" value="777 905,45" autocomplete="off" /></div>
+              <div class="field"><label>Всего по комплекту</label><input type="text" name="calc_c1_total" value="4 890 326,78" autocomplete="off" /></div>
+              <div class="field field--full">
+                <label>Комментарий к расчёту (опционально)</label>
+                <textarea name="calc_c1_note" rows="2" placeholder="Пояснения к суммам по этому комплекту…"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="lawsuit-docset-calc-block">
+            <h4 class="lawsuit-docset-calc-block__title">Комплект 2</h4>
+            <div class="form-grid">
+              <div class="field"><label>Основной долг</label><input type="text" name="calc_c2_debt" value="" placeholder="не рассчитано" autocomplete="off" /></div>
+              <div class="field"><label>Пеня</label><input type="text" name="calc_c2_penalty" value="" placeholder="не рассчитано" autocomplete="off" /></div>
+              <div class="field"><label>Всего по комплекту</label><input type="text" name="calc_c2_total" value="" placeholder="не рассчитано" autocomplete="off" /></div>
+              <div class="field field--full">
+                <label>Комментарий к расчёту (опционально)</label>
+                <textarea name="calc_c2_note" rows="2" placeholder="После «Произвести расчёт» по комплекту 2 можно скорректировать суммы вручную."></textarea>
+              </div>
+              <p class="hint-muted field--full" style="margin:0">Макет: комплект без выполненного расчёта — поля доступны для ввода после расчёта или вручную.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="toolbar toolbar--after-docset-calcs">
+          <button type="button" class="btn btn--primary">
+            <svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>
+            Сгенерировать иск и расчёт к иску
+          </button>
+        </div>
+      </section>
+
+      <!-- Справочник значков -->
+      <section class="panel">
+        <h2>7. Справочник значков макета</h2>
+        <div class="legend-grid">
+          <div class="legend-item"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-pdf"/></svg> PDF-документ</div>
+          <div class="legend-item"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-xls"/></svg> Excel-справка</div>
+          <div class="legend-item"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-upload"/></svg> Загрузка / отправка пакета</div>
+          <div class="legend-item"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-text"/></svg> Текстовый слой PDF (direct)</div>
+          <div class="legend-item"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-scan"/></svg> OCR / скан</div>
+          <div class="legend-item"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-check"/></svg> Успех</div>
+          <div class="legend-item"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-alert"/></svg> Предупреждение / валидация</div>
+          <div class="legend-item"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-error"/></svg> Ошибка / битый файл</div>
+          <div class="legend-item"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-info"/></svg> Информация / подсказка</div>
+          <div class="legend-item"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-lock"/></svg> Файл недоступен (пароль и т.п.)</div>
+          <div class="legend-item"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-clock"/></svg> Оценка времени (ETA)</div>
+          <div class="legend-item"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-queue"/></svg> Очередь OCR</div>
+          <div class="legend-item"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-spinner"/></svg> Обработка</div>
+          <div class="legend-item"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-download"/></svg> Скачивание DOCX</div>
+          <div class="legend-item"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-bell"/></svg> Push / напоминание (frontend)</div>
+          <div class="legend-item"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-user"/></svg> Пользователь / сессия</div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Единая панель уведомлений бэкенда §5 -->
+    <aside
+      class="panel notifications-panel"
+      id="backend-notifications-panel"
+      aria-label="Панель уведомлений от бэкенда"
+    >
+      <div class="notifications-panel__header">
+        <h2 class="notifications-panel__title" id="backend-notifications-heading">Уведомления бэкенда</h2>
+        <button
+          type="button"
+          class="btn btn--icon notifications-panel__toggle"
+          id="backend-notifications-toggle"
+          aria-expanded="true"
+          aria-controls="backend-notifications-body"
+          title="Свернуть панель"
+        >
+          <svg class="icon icon-lg notifications-panel__toggle-icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+          <span class="visually-hidden notifications-panel__toggle-label">Свернуть панель уведомлений</span>
+        </button>
+      </div>
+
+      <div class="notifications-panel__body" id="backend-notifications-body" role="region" aria-labelledby="backend-notifications-heading">
+      <p class="hint-muted" style="margin-top:0">Все типы сообщений из ТЗ (для ревью полноты).</p>
+
+      <div class="notice notice--info">
+        <svg class="icon icon-lg" aria-hidden="true"><use href="#i-info"/></svg>
+        <div class="notice__body">
+          <div class="notice__title">Инфо · статус</div>
+          Извлечение выполняется, polling активен (WebSocket не обязателен).
+          <div class="notice__code">HTTP 200 · extraction pending</div>
+        </div>
+      </div>
+
+      <div class="notice notice--success">
+        <svg class="icon icon-lg" aria-hidden="true"><use href="#i-check"/></svg>
+        <div class="notice__body">
+          <div class="notice__title">Успех</div>
+          Файл справки успешно разобран парсером TableParser.
+          <div class="notice__code">extractionMethod: excelParser</div>
+        </div>
+      </div>
+
+      <div class="notice notice--warning">
+        <svg class="icon icon-lg" aria-hidden="true"><use href="#i-alert"/></svg>
+        <div class="notice__body">
+          <div class="notice__title">Частичный успех (FR-7)</div>
+          Не удалось извлечь дату претензии; поля можно заполнить вручную.
+          <div class="notice__code">EXTRACTION_FAILED · preClaim</div>
+        </div>
+      </div>
+
+      <div class="notice notice--error">
+        <svg class="icon icon-lg" aria-hidden="true"><use href="#i-error"/></svg>
+        <div class="notice__body">
+          <div class="notice__title">Битый файл (Q-2.3.3)</div>
+          PDF повреждён и не открывается. Пустые поля для ручного ввода.
+          <div class="notice__code">FILE_CORRUPT</div>
+        </div>
+      </div>
+
+      <div class="notice notice--error">
+        <svg class="icon icon-lg" aria-hidden="true"><use href="#i-lock"/></svg>
+        <div class="notice__body">
+          <div class="notice__title">Невозможно открыть / прочитать (§3 Q-3.2.5)</div>
+          Файл защищён паролем или недоступен для чтения библиотекой.
+          <div class="notice__code">FILE_OPEN_ERROR</div>
+        </div>
+      </div>
+
+      <div class="notice notice--error">
+        <svg class="icon icon-lg" aria-hidden="true"><use href="#i-alert"/></svg>
+        <div class="notice__body">
+          <div class="notice__title">Невозможно произвести рассчёты (§3 Q-3.1.4)</div>
+          Невозможно произвести рассчёты: Division by zero в парсере. Произведите рассчёты вручную.
+          <div class="notice__code">CALCULATION_ERROR</div>
+        </div>
+      </div>
+
+      <div class="notice notice--warning">
+        <svg class="icon icon-lg" aria-hidden="true"><use href="#i-alert"/></svg>
+        <div class="notice__body">
+          <div class="notice__title">Конфликт полей (Q-3.1.6)</div>
+          Обнаружены различия в данных в полях: ИНН ответчика, номер договора.
+        </div>
+      </div>
+
+      <div class="notice notice--warning">
+        <svg class="icon icon-lg" aria-hidden="true"><use href="#i-info"/></svg>
+        <div class="notice__body">
+          <div class="notice__title">Срок оплаты не найден (§3 договор)</div>
+          Введите вручную день месяца оплаты и пункт договора.
+        </div>
+      </div>
+
+      <div class="notice notice--warning">
+        <svg class="icon icon-lg" aria-hidden="true"><use href="#i-info"/></svg>
+        <div class="notice__body">
+          <div class="notice__title">ЕГРЮЛ / претензия</div>
+          Данные не найдены — заполните поля вручную (подсветка поля).
+        </div>
+      </div>
+
+      <div class="notice notice--error">
+        <svg class="icon icon-lg" aria-hidden="true"><use href="#i-error"/></svg>
+        <div class="notice__body">
+          <div class="notice__title">Падение ocr-pipeline (§5 Q-5.3.4)</div>
+          Задача прервана. Введите данные вручную; повтор OCR не выполняется. Следующая задача в очереди обрабатывается.
+          <div class="notice__code">OCR_PIPELINE_CRASH</div>
+        </div>
+      </div>
+
+      <div class="notice notice--error">
+        <svg class="icon icon-lg" aria-hidden="true"><use href="#i-alert"/></svg>
+        <div class="notice__body">
+          <div class="notice__title">Лимиты (§2)</div>
+          Превышено максимальное число комплектов (30) или справок в комплекте (20). Сообщение из config.
+          <div class="notice__code">VALIDATION_ERROR · LIMIT_EXCEEDED</div>
+        </div>
+      </div>
+
+      <div class="notice notice--error">
+        <svg class="icon icon-lg" aria-hidden="true"><use href="#i-alert"/></svg>
+        <div class="notice__body">
+          <div class="notice__title">Валидация загрузки (FR-2)</div>
+          Договор должен быть в формате PDF; справка — .xls / .xlsx / .xlsm. Тексты из config.
+          <div class="notice__code">UNSUPPORTED_FORMAT</div>
+        </div>
+      </div>
+
+      <div class="notice notice--error">
+        <svg class="icon icon-lg" aria-hidden="true"><use href="#i-alert"/></svg>
+        <div class="notice__body">
+          <div class="notice__title">Размер файла (NFR-10 / открытый Q-3.2.1)</div>
+          Превышен допустимый размер файла (порог задаётся после уточнения).
+          <div class="notice__code">FILE_TOO_LARGE</div>
+        </div>
+      </div>
+
+      <div class="notice notice--info">
+        <svg class="icon icon-lg" aria-hidden="true"><use href="#i-clock"/></svg>
+        <div class="notice__body">
+          <div class="notice__title">ETA OCR (§5 Q-5.0.2)</div>
+          Ориентировочное время обработки: ~12 мин (в очереди 5 документов). Формула — на реализацию.
+        </div>
+      </div>
+
+      <div class="notice notice--info">
+        <svg class="icon icon-lg" aria-hidden="true"><use href="#i-bell"/></svg>
+        <div class="notice__body">
+          <div class="notice__title">Browser Push (§5)</div>
+          Разрешите уведомления — оповестим о завершении длинной очереди (email не требуется).
+        </div>
+      </div>
+
+      <div class="notice notice--warning">
+        <svg class="icon icon-lg" aria-hidden="true"><use href="#i-info"/></svg>
+        <div class="notice__body">
+          <div class="notice__title">beforeunload (§4 FR-1)</div>
+          При закрытии вкладки: «Данные на странице будут потеряны. Продолжить?»
+        </div>
+      </div>
+
+      <div class="notice notice--error">
+        <svg class="icon icon-lg" aria-hidden="true"><use href="#i-error"/></svg>
+        <div class="notice__body">
+          <div class="notice__title">Генерация DOCX</div>
+          Ошибка подстановки в шаблон. Повторите после проверки полей.
+          <div class="notice__code">GENERATION_ERROR</div>
+        </div>
+      </div>
+
+      <div class="notice notice--error">
+        <svg class="icon icon-lg" aria-hidden="true"><use href="#i-error"/></svg>
+        <div class="notice__body">
+          <div class="notice__title">Сервер</div>
+          Внутренняя ошибка сервиса. Повторите запрос позже.
+          <div class="notice__code">HTTP 500</div>
+        </div>
+      </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Демо всплывающих тостов (дополнительная визуализация) -->
+  <div class="toast-stack" aria-live="polite">
+    <div class="toast toast--info" role="status">
+      <div class="toast__body">
+        <strong>Всплывающее уведомление</strong><br />
+        Дублирование критичного сообщения (допускается ТЗ §5).
+      </div>
+      <button type="button" class="toast__close" aria-label="Закрыть уведомление" title="Закрыть">
+        <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
+    </div>
+    <div class="toast toast--warning" role="status">
+      <div class="toast__body">
+        <strong>Внимание</strong><br />
+        Сессия не сохраняется при перезагрузке вкладки (§2).
+      </div>
+      <button type="button" class="toast__close" aria-label="Закрыть уведомление" title="Закрыть">
+        <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <template id="tpl-spravka-row-empty">
+    <div class="file-row file-row--empty file-row--spravka">
+      <svg class="icon" aria-hidden="true" style="color:var(--muted)"><use href="#i-xls"/></svg>
+      <div class="file-row__meta">
+        <strong><span class="spravka-slot-title">Справка</span></strong> (.xls / .xlsx / .xlsm)
+        <div class="file-row__empty-note">Файл не загружен</div>
+      </div>
+      <div class="file-row__actions file-row__actions--spravka-empty">
+        <button type="button" class="btn btn--secondary btn--compact js-spravka-pick">Выбрать файл…</button>
+        <button type="button" class="btn btn--secondary btn--compact js-spravka-remove-slot" hidden>Удалить справку</button>
+      </div>
+    </div>
+  </template>
+
+  <template id="tpl-spravka-row-loaded">
+    <div class="file-row file-row--spravka">
+      <svg class="icon" aria-hidden="true" style="color:#1d7a4c"><use href="#i-xls"/></svg>
+      <div class="file-row__meta">
+        <strong><span class="spravka-slot-title">Справка</span></strong> — <span class="spravka-filename"></span>
+        <div class="provenance">extractionMethod: excelParser (TableParser) · макет</div>
+      </div>
+      <div class="file-row__actions">
+        <span class="badge badge--ok"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span>
+        <button type="button" class="btn btn--secondary btn--compact js-spravka-delete-file">
+          <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg> Удалить файл
+        </button>
+        <button type="button" class="btn btn--secondary btn--compact js-spravka-remove-slot" hidden>Удалить справку</button>
+      </div>
+    </div>
+  </template>
+
+  <script src="js/mock.js"></script>
+</body>
+</html>
