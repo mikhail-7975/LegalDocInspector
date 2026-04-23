@@ -1,0 +1,995 @@
+{
+  "claim_data": {
+    "company_type": "ТСЖ",
+    "current_date": "2026-04-20",
+    "contracts_info": [
+      [
+        "27e6bd55-8d93-4d47-a444-3d76df9a586f",
+        "№ 01.002023 ТЭ от 01.05.2012",
+        {
+          "correcting_year": "2024",
+          "contract_point": "отработала заглушка, введите данные вручную",
+          "last_day": "До 18 числа месяца, следующего за расчётным",
+          "penalty_period": "19.02.2025 по 20.04.2026",
+          "accrual_debt": "1 087 323,10",
+          "correcting_debt": "782 101,42",
+          "contract_periods": "01.2025-05.2025, 07.2025-08.2025, 10.2025",
+          "contract_periods_correcting": "05.2025-10.2025",
+          "debt": "1 869 424,52",
+          "penalty": "291 113,73",
+          "debt_penalty": "2 160 538,25"
+        },
+        "отработала заглушка, введите данные вручную"
+      ]
+    ],
+    "table_info": {
+      "№ 01.002023 ТЭ от 01.05.2012": {
+        "contract_periods": "01.2025-05.2025, 07.2025-08.2025, 10.2025",
+        "contract_periods_correcting": "05.2025-10.2025",
+        "debt": "1 869 424,52",
+        "debt_penalty": "2 160 538,25",
+        "penalty": "291 113,73",
+        "penalty_period": "19.02.2025 по 20.04.2026",
+        "last_day": "До 18 числа месяца, следующего за расчётным",
+        "contract_point": "отработала заглушка, введите данные вручную",
+        "accrual_debt": "1 087 323,10",
+        "correcting_debt": "782 101,42",
+        "correcting_year": "2024"
+      },
+      "all_debt": "1 869 424,52",
+      "all_penalty": "291 113,73",
+      "cost_of_lawsuit": "2 160 538,25"
+    }
+  },
+  "calculator_list": [
+    {
+      "start_of_table": {
+        "text1": "Начало просрочки",
+        "text2": "Конец просрочки",
+        "start": "19.02.2025",
+        "end": "20.04.2026"
+      },
+      "Январь 2025": [
+        {
+          "debt": "2 023 473,99",
+          "period": [
+            "31.01.2025",
+            null,
+            null
+          ],
+          "type": "debt_accrual",
+          "penalty_period_info": null,
+          "text": "Начислено за период 01.2025"
+        },
+        {
+          "debt": "139 310,23",
+          "period": [
+            "31.01.2025",
+            null,
+            null
+          ],
+          "type": "correcting",
+          "penalty_period_info": null,
+          "text": "Доля от годовой корректировки 2024 за период 01.2025"
+        },
+        {
+          "debt": "-1 918 283,27",
+          "period": [
+            "28.02.2025",
+            null,
+            null
+          ],
+          "penalty_period_info": null,
+          "type": "payment_after_penalty",
+          "text": "Погашение части долга"
+        },
+        {
+          "debt": "244 500,95",
+          "period": [
+            "19.02.2025",
+            "18.03.2025",
+            28
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "0"
+          ],
+          "text": null,
+          "penalty": "0,00",
+          "formulae": "244 500,95 × 28 × 0 × 9,5%"
+        },
+        {
+          "debt": "142 505,41",
+          "period": [
+            "18.03.2025",
+            null,
+            null
+          ],
+          "penalty_period_info": null,
+          "type": "correcting",
+          "text": "Корректировка обязательств"
+        },
+        {
+          "debt": "387 006,36",
+          "period": [
+            "19.03.2025",
+            "20.03.2025",
+            2
+          ],
+          "penalty_period_info": [
+            "9,5 %",
+            "0"
+          ],
+          "type": "penalty_period",
+          "text": null,
+          "penalty": "0,00",
+          "formulae": "387 006,36 × 2 × 0 × 9,5%"
+        },
+        {
+          "debt": "387 006,36",
+          "period": [
+            "21.03.2025",
+            "19.05.2025",
+            60
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "1/300"
+          ],
+          "text": null,
+          "penalty": "7 353,12",
+          "formulae": "387 006,36 × 60 × 1/300 × 9,5%"
+        },
+        {
+          "debt": "387 006,36",
+          "period": [
+            "20.05.2025",
+            "20.04.2026",
+            336
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "1/130"
+          ],
+          "text": null,
+          "penalty": "95 024,95",
+          "formulae": "387 006,36 × 336 × 1/130 × 9,5%"
+        },
+        {
+          "text": "Итого:",
+          "type": "field",
+          "penalty": "102 378,07"
+        },
+        {
+          "text": null,
+          "type": "debt_info",
+          "accrual_debt": "387 006,36",
+          "correcting_debt": "0,00"
+        }
+      ],
+      "Февраль 2025": [
+        {
+          "debt": "1 835 953,65",
+          "period": [
+            "28.02.2025",
+            null,
+            null
+          ],
+          "type": "debt_accrual",
+          "penalty_period_info": null,
+          "text": "Начислено за период 02.2025"
+        },
+        {
+          "debt": "139 310,23",
+          "period": [
+            "28.02.2025",
+            null,
+            null
+          ],
+          "type": "correcting",
+          "penalty_period_info": null,
+          "text": "Доля от годовой корректировки 2024 за период 02.2025"
+        },
+        {
+          "debt": "-1 888 640,61",
+          "period": [
+            "31.03.2025",
+            null,
+            null
+          ],
+          "penalty_period_info": null,
+          "type": "payment_after_penalty",
+          "text": "Погашение части долга"
+        },
+        {
+          "debt": "86 623,27",
+          "period": [
+            "19.03.2025",
+            "17.04.2025",
+            30
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "0"
+          ],
+          "text": null,
+          "penalty": "0,00",
+          "formulae": "86 623,27 × 30 × 0 × 9,5%"
+        },
+        {
+          "debt": "86 623,27",
+          "period": [
+            "18.04.2025",
+            "16.06.2025",
+            60
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "1/300"
+          ],
+          "text": null,
+          "penalty": "1 645,84",
+          "formulae": "86 623,27 × 60 × 1/300 × 9,5%"
+        },
+        {
+          "debt": "86 623,27",
+          "period": [
+            "17.06.2025",
+            "20.04.2026",
+            308
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "1/130"
+          ],
+          "text": null,
+          "penalty": "19 496,90",
+          "formulae": "86 623,27 × 308 × 1/130 × 9,5%"
+        },
+        {
+          "text": "Итого:",
+          "type": "field",
+          "penalty": "21 142,74"
+        },
+        {
+          "text": null,
+          "type": "debt_info",
+          "accrual_debt": "86 623,27",
+          "correcting_debt": "0,00"
+        }
+      ],
+      "Март 2025": [
+        {
+          "debt": "1 835 953,65",
+          "period": [
+            "31.03.2025",
+            null,
+            null
+          ],
+          "type": "debt_accrual",
+          "penalty_period_info": null,
+          "text": "Начислено за период 03.2025"
+        },
+        {
+          "debt": "139 310,23",
+          "period": [
+            "31.03.2025",
+            null,
+            null
+          ],
+          "type": "correcting",
+          "penalty_period_info": null,
+          "text": "Доля от годовой корректировки 2024 за период 03.2025"
+        },
+        {
+          "debt": "-1 944 107,84",
+          "period": [
+            "30.04.2025",
+            null,
+            null
+          ],
+          "penalty_period_info": null,
+          "type": "payment_after_penalty",
+          "text": "Погашение части долга"
+        },
+        {
+          "debt": "31 156,04",
+          "period": [
+            "19.04.2025",
+            "18.05.2025",
+            30
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "0"
+          ],
+          "text": null,
+          "penalty": "0,00",
+          "formulae": "31 156,04 × 30 × 0 × 9,5%"
+        },
+        {
+          "debt": "31 156,04",
+          "period": [
+            "19.05.2025",
+            "17.07.2025",
+            60
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "1/300"
+          ],
+          "text": null,
+          "penalty": "591,96",
+          "formulae": "31 156,04 × 60 × 1/300 × 9,5%"
+        },
+        {
+          "debt": "31 156,04",
+          "period": [
+            "18.07.2025",
+            "20.04.2026",
+            277
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "1/130"
+          ],
+          "text": null,
+          "penalty": "6 306,70",
+          "formulae": "31 156,04 × 277 × 1/130 × 9,5%"
+        },
+        {
+          "text": "Итого:",
+          "type": "field",
+          "penalty": "6 898,66"
+        },
+        {
+          "text": null,
+          "type": "debt_info",
+          "accrual_debt": "31 156,04",
+          "correcting_debt": "0,00"
+        }
+      ],
+      "Апрель 2025": [
+        {
+          "debt": "1 835 953,65",
+          "period": [
+            "30.04.2025",
+            null,
+            null
+          ],
+          "type": "debt_accrual",
+          "penalty_period_info": null,
+          "text": "Начислено за период 04.2025"
+        },
+        {
+          "debt": "139 310,23",
+          "period": [
+            "30.04.2025",
+            null,
+            null
+          ],
+          "type": "correcting",
+          "penalty_period_info": null,
+          "text": "Доля от годовой корректировки 2024 за период 04.2025"
+        },
+        {
+          "debt": "-1 918 854,95",
+          "period": [
+            "31.05.2025",
+            null,
+            null
+          ],
+          "penalty_period_info": null,
+          "type": "payment_after_penalty",
+          "text": "Погашение части долга"
+        },
+        {
+          "debt": "56 408,93",
+          "period": [
+            "20.05.2025",
+            "18.06.2025",
+            30
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "0"
+          ],
+          "text": null,
+          "penalty": "0,00",
+          "formulae": "56 408,93 × 30 × 0 × 9,5%"
+        },
+        {
+          "debt": "56 408,93",
+          "period": [
+            "19.06.2025",
+            "17.08.2025",
+            60
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "1/300"
+          ],
+          "text": null,
+          "penalty": "1 071,77",
+          "formulae": "56 408,93 × 60 × 1/300 × 9,5%"
+        },
+        {
+          "debt": "56 408,93",
+          "period": [
+            "18.08.2025",
+            "20.04.2026",
+            246
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "1/130"
+          ],
+          "text": null,
+          "penalty": "10 140,59",
+          "formulae": "56 408,93 × 246 × 1/130 × 9,5%"
+        },
+        {
+          "text": "Итого:",
+          "type": "field",
+          "penalty": "11 212,36"
+        },
+        {
+          "text": null,
+          "type": "debt_info",
+          "accrual_debt": "56 408,93",
+          "correcting_debt": "0,00"
+        }
+      ],
+      "Май 2025": [
+        {
+          "debt": "1 835 953,65",
+          "period": [
+            "31.05.2025",
+            null,
+            null
+          ],
+          "type": "debt_accrual",
+          "penalty_period_info": null,
+          "text": "Начислено за период 05.2025"
+        },
+        {
+          "debt": "139 310,23",
+          "period": [
+            "31.05.2025",
+            null,
+            null
+          ],
+          "type": "correcting",
+          "penalty_period_info": null,
+          "text": "Доля от годовой корректировки 2024 за период 05.2025"
+        },
+        {
+          "debt": "-1 781 157,93",
+          "period": [
+            "30.06.2025",
+            null,
+            null
+          ],
+          "penalty_period_info": null,
+          "type": "payment_after_penalty",
+          "text": "Погашение части долга"
+        },
+        {
+          "debt": "194 105,95",
+          "period": [
+            "19.06.2025",
+            "18.07.2025",
+            30
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "0"
+          ],
+          "text": null,
+          "penalty": "0,00",
+          "formulae": "194 105,95 × 30 × 0 × 9,5%"
+        },
+        {
+          "debt": "194 105,95",
+          "period": [
+            "19.07.2025",
+            "16.09.2025",
+            60
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "1/300"
+          ],
+          "text": null,
+          "penalty": "3 688,01",
+          "formulae": "194 105,95 × 60 × 1/300 × 9,5%"
+        },
+        {
+          "debt": "194 105,95",
+          "period": [
+            "17.09.2025",
+            "20.04.2026",
+            216
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "1/130"
+          ],
+          "text": null,
+          "penalty": "30 638,88",
+          "formulae": "194 105,95 × 216 × 1/130 × 9,5%"
+        },
+        {
+          "text": "Итого:",
+          "type": "field",
+          "penalty": "34 326,89"
+        },
+        {
+          "text": null,
+          "type": "debt_info",
+          "accrual_debt": "108 555,68",
+          "correcting_debt": "85 550,27"
+        }
+      ],
+      "Июнь 2025": [
+        {
+          "debt": "139 310,23",
+          "period": [
+            "30.06.2025",
+            null,
+            null
+          ],
+          "type": "correcting",
+          "penalty_period_info": null,
+          "text": "Доля от годовой корректировки 2024 за период 06.2025"
+        },
+        {
+          "debt": "139 310,23",
+          "period": [
+            "19.07.2025",
+            "17.08.2025",
+            30
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "0"
+          ],
+          "text": null,
+          "penalty": "0,00",
+          "formulae": "139 310,23 × 30 × 0 × 9,5%"
+        },
+        {
+          "debt": "139 310,23",
+          "period": [
+            "18.08.2025",
+            "16.10.2025",
+            60
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "1/300"
+          ],
+          "text": null,
+          "penalty": "2 646,89",
+          "formulae": "139 310,23 × 60 × 1/300 × 9,5%"
+        },
+        {
+          "debt": "139 310,23",
+          "period": [
+            "17.10.2025",
+            "20.04.2026",
+            186
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "1/130"
+          ],
+          "text": null,
+          "penalty": "18 935,48",
+          "formulae": "139 310,23 × 186 × 1/130 × 9,5%"
+        },
+        {
+          "text": "Итого:",
+          "type": "field",
+          "penalty": "21 582,37"
+        },
+        {
+          "text": null,
+          "type": "debt_info",
+          "accrual_debt": "0,00",
+          "correcting_debt": "139 310,23"
+        }
+      ],
+      "Июль 2025": [
+        {
+          "debt": "2 139 574,47",
+          "period": [
+            "31.07.2025",
+            null,
+            null
+          ],
+          "type": "debt_accrual",
+          "penalty_period_info": null,
+          "text": "Начислено за период 07.2025"
+        },
+        {
+          "debt": "139 310,23",
+          "period": [
+            "31.07.2025",
+            null,
+            null
+          ],
+          "type": "correcting",
+          "penalty_period_info": null,
+          "text": "Доля от годовой корректировки 2024 за период 07.2025"
+        },
+        {
+          "debt": "-2 052 494,39",
+          "period": [
+            "31.08.2025",
+            null,
+            null
+          ],
+          "penalty_period_info": null,
+          "type": "payment_after_penalty",
+          "text": "Погашение части долга"
+        },
+        {
+          "debt": "226 390,31",
+          "period": [
+            "19.08.2025",
+            "17.09.2025",
+            30
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "0"
+          ],
+          "text": null,
+          "penalty": "0,00",
+          "formulae": "226 390,31 × 30 × 0 × 9,5%"
+        },
+        {
+          "debt": "226 390,31",
+          "period": [
+            "18.09.2025",
+            "16.11.2025",
+            60
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "1/300"
+          ],
+          "text": null,
+          "penalty": "4 301,42",
+          "formulae": "226 390,31 × 60 × 1/300 × 9,5%"
+        },
+        {
+          "debt": "226 390,31",
+          "period": [
+            "17.11.2025",
+            "20.04.2026",
+            155
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "1/130"
+          ],
+          "text": null,
+          "penalty": "25 643,06",
+          "formulae": "226 390,31 × 155 × 1/130 × 9,5%"
+        },
+        {
+          "text": "Итого:",
+          "type": "field",
+          "penalty": "29 944,48"
+        },
+        {
+          "text": null,
+          "type": "debt_info",
+          "accrual_debt": "87 080,08",
+          "correcting_debt": "139 310,23"
+        }
+      ],
+      "Август 2025": [
+        {
+          "debt": "2 133 375,61",
+          "period": [
+            "31.08.2025",
+            null,
+            null
+          ],
+          "type": "debt_accrual",
+          "penalty_period_info": null,
+          "text": "Начислено за период 08.2025"
+        },
+        {
+          "debt": "139 310,23",
+          "period": [
+            "31.08.2025",
+            null,
+            null
+          ],
+          "type": "correcting",
+          "penalty_period_info": null,
+          "text": "Доля от годовой корректировки 2024 за период 08.2025"
+        },
+        {
+          "debt": "-2 003 498,21",
+          "period": [
+            "30.09.2025",
+            null,
+            null
+          ],
+          "penalty_period_info": null,
+          "type": "payment_after_penalty",
+          "text": "Погашение части долга"
+        },
+        {
+          "debt": "269 187,63",
+          "period": [
+            "19.09.2025",
+            "18.10.2025",
+            30
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "0"
+          ],
+          "text": null,
+          "penalty": "0,00",
+          "formulae": "269 187,63 × 30 × 0 × 9,5%"
+        },
+        {
+          "debt": "269 187,63",
+          "period": [
+            "19.10.2025",
+            "17.12.2025",
+            60
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "1/300"
+          ],
+          "text": null,
+          "penalty": "5 114,56",
+          "formulae": "269 187,63 × 60 × 1/300 × 9,5%"
+        },
+        {
+          "debt": "269 187,63",
+          "period": [
+            "18.12.2025",
+            "20.04.2026",
+            124
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "1/130"
+          ],
+          "text": null,
+          "penalty": "24 392,54",
+          "formulae": "269 187,63 × 124 × 1/130 × 9,5%"
+        },
+        {
+          "text": "Итого:",
+          "type": "field",
+          "penalty": "29 507,10"
+        },
+        {
+          "text": null,
+          "type": "debt_info",
+          "accrual_debt": "129 877,40",
+          "correcting_debt": "139 310,23"
+        }
+      ],
+      "Сентябрь 2025": [
+        {
+          "debt": "139 310,23",
+          "period": [
+            "30.09.2025",
+            null,
+            null
+          ],
+          "type": "correcting",
+          "penalty_period_info": null,
+          "text": "Доля от годовой корректировки 2024 за период 09.2025"
+        },
+        {
+          "debt": "139 310,23",
+          "period": [
+            "21.10.2025",
+            "19.11.2025",
+            30
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "0"
+          ],
+          "text": null,
+          "penalty": "0,00",
+          "formulae": "139 310,23 × 30 × 0 × 9,5%"
+        },
+        {
+          "debt": "139 310,23",
+          "period": [
+            "20.11.2025",
+            "18.01.2026",
+            60
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "1/300"
+          ],
+          "text": null,
+          "penalty": "2 646,89",
+          "formulae": "139 310,23 × 60 × 1/300 × 9,5%"
+        },
+        {
+          "debt": "139 310,23",
+          "period": [
+            "19.01.2026",
+            "20.04.2026",
+            92
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "1/130"
+          ],
+          "text": null,
+          "penalty": "9 365,93",
+          "formulae": "139 310,23 × 92 × 1/130 × 9,5%"
+        },
+        {
+          "text": "Итого:",
+          "type": "field",
+          "penalty": "12 012,82"
+        },
+        {
+          "text": null,
+          "type": "debt_info",
+          "accrual_debt": "0,00",
+          "correcting_debt": "139 310,23"
+        }
+      ],
+      "Октябрь 2025": [
+        {
+          "debt": "2 133 375,61",
+          "period": [
+            "31.10.2025",
+            null,
+            null
+          ],
+          "type": "debt_accrual",
+          "penalty_period_info": null,
+          "text": "Начислено за период 10.2025"
+        },
+        {
+          "debt": "139 310,23",
+          "period": [
+            "31.10.2025",
+            null,
+            null
+          ],
+          "type": "correcting",
+          "penalty_period_info": null,
+          "text": "Доля от годовой корректировки 2024 за период 10.2025"
+        },
+        {
+          "debt": "-1 932 760,27",
+          "period": [
+            "30.11.2025",
+            null,
+            null
+          ],
+          "penalty_period_info": null,
+          "type": "payment_after_penalty",
+          "text": "Погашение части долга"
+        },
+        {
+          "debt": "339 925,57",
+          "period": [
+            "19.11.2025",
+            "18.12.2025",
+            30
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "0"
+          ],
+          "text": null,
+          "penalty": "0,00",
+          "formulae": "339 925,57 × 30 × 0 × 9,5%"
+        },
+        {
+          "debt": "339 925,57",
+          "period": [
+            "19.12.2025",
+            "16.02.2026",
+            60
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "1/300"
+          ],
+          "text": null,
+          "penalty": "6 458,59",
+          "formulae": "339 925,57 × 60 × 1/300 × 9,5%"
+        },
+        {
+          "debt": "339 925,57",
+          "period": [
+            "17.02.2026",
+            "20.04.2026",
+            63
+          ],
+          "type": "penalty_period",
+          "penalty_period_info": [
+            "9,5 %",
+            "1/130"
+          ],
+          "text": null,
+          "penalty": "15 649,65",
+          "formulae": "339 925,57 × 63 × 1/130 × 9,5%"
+        },
+        {
+          "text": "Итого:",
+          "type": "field",
+          "penalty": "22 108,24"
+        },
+        {
+          "text": null,
+          "type": "debt_info",
+          "accrual_debt": "200 615,34",
+          "correcting_debt": "139 310,23"
+        }
+      ],
+      "end_of_table1": {
+        "text": "Сумма Основного долга",
+        "money": "1 869 424,52",
+        "type": "field"
+      },
+      "end_of_table2": {
+        "text": "Сумма пеней по всем задолженностям",
+        "money": "291 113,73",
+        "type": "field"
+      },
+      "debt_info": {
+        "text": null,
+        "type": "debt_info",
+        "accrual_debt": "1 087 323,10",
+        "correcting_debt": "782 101,42"
+      },
+      "contract_number": "№ 01.002023 ТЭ от 01.05.2012",
+      "contract_type": "отработала заглушка, введите данные вручную"
+    }
+  ]
+}

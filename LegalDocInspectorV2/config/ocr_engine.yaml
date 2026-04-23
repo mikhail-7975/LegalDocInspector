@@ -1,0 +1,6 @@
+# Выбор реализации OCR (подключается фабрикой legaldoc_v2.ocr)
+# backend: docling — Docling + EasyOCR, как в существующем коде извлечения PDF
+backend: docling
+
+# cuda | cpu — предпочтение для accelerator Docling
+device: cuda

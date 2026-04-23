@@ -1,0 +1,2934 @@
+{
+  "table_parser_result": [
+    {
+      "parsed_info": {
+        "Январь 2025": {
+          "accrual": {
+            "accruals": [
+              {
+                "accrual": 2023473.99,
+                "period": "01.2025"
+              }
+            ],
+            "payments": [
+              {
+                "payment": 49248.07,
+                "date": "03.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 68874.93,
+                "date": "04.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 20493.49,
+                "date": "04.02.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 37683.34,
+                "date": "05.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 11034.96,
+                "date": "05.02.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 36302.87,
+                "date": "06.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 1994.65,
+                "date": "06.02.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 28858.17,
+                "date": "06.02.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 78589.86,
+                "date": "07.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 36225.54,
+                "date": "07.02.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 67297.31,
+                "date": "10.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 6112.66,
+                "date": "10.02.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 128085.38,
+                "date": "11.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 58251.64,
+                "date": "11.02.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 54171.01,
+                "date": "12.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 40528.59,
+                "date": "13.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 4035,
+                "date": "13.02.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 36418.57,
+                "date": "13.02.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 9874.89,
+                "date": "14.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 14831.23,
+                "date": "14.02.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 22654.33,
+                "date": "17.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 2155.51,
+                "date": "17.02.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -26645.45,
+                "date": "18.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 260694.32,
+                "date": "18.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 18195.46,
+                "date": "18.02.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -6283.04,
+                "date": "19.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 107347.97,
+                "date": "19.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 107738.59,
+                "date": "20.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -8219.05,
+                "date": "20.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 1158.19,
+                "date": "20.02.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -7844.23,
+                "date": "21.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 81221.68,
+                "date": "21.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 5083.15,
+                "date": "21.02.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 100845.67,
+                "date": "24.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -8149.98,
+                "date": "24.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 167541.21,
+                "date": "25.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -14084.8,
+                "date": "25.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 47945.56,
+                "date": "26.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -2230.73,
+                "date": "26.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 15699.88,
+                "date": "26.02.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 63340.17,
+                "date": "27.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -4423.46,
+                "date": "27.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 45673.82,
+                "date": "28.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -2999.87,
+                "date": "28.02.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 23645.98,
+                "date": "28.02.2025",
+                "contract_type": 1960
+              }
+            ],
+            "additionals": [
+              {
+                "accrual": 142505.41,
+                "period": "02.2025"
+              }
+            ],
+            "total_amount_of_accruals": 2165979.4,
+            "total_amount_of_payments": 1778973.04,
+            "debt": 387006.36
+          },
+          "adjustment": {
+            "accruals": [],
+            "payments": [
+              {
+                "payment": 501.18,
+                "date": "31.01.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 1994.65,
+                "date": "31.01.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 8281.83,
+                "date": "24.12.2025",
+                "contract_type": 8901
+              },
+              {
+                "payment": 50000,
+                "date": "29.12.2025",
+                "contract_type": 8901
+              },
+              {
+                "payment": 30000,
+                "date": "30.12.2025",
+                "contract_type": 8901
+              },
+              {
+                "payment": 2401.06,
+                "date": "30.12.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 14355.35,
+                "date": "30.12.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 31776.16,
+                "date": "30.12.2025",
+                "contract_type": 1960
+              }
+            ],
+            "additionals": [
+              {
+                "accrual": 139310.23,
+                "period": "12.2024"
+              }
+            ],
+            "total_amount_of_accruals": 139310.23,
+            "total_amount_of_payments": 139310.23,
+            "debt": 0
+          }
+        },
+        "Февраль 2025": {
+          "accrual": {
+            "accruals": [
+              {
+                "accrual": 1835953.65,
+                "period": "02.2025"
+              }
+            ],
+            "payments": [
+              {
+                "payment": -3090.14,
+                "date": "03.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 42439.2,
+                "date": "03.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 6080.48,
+                "date": "03.03.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -8863.34,
+                "date": "04.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 107860.25,
+                "date": "04.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 3056.33,
+                "date": "04.03.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 141780.95,
+                "date": "05.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -5488.47,
+                "date": "05.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 23485.46,
+                "date": "05.03.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -10166.77,
+                "date": "06.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 51193.81,
+                "date": "06.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 6852.61,
+                "date": "06.03.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -3657.39,
+                "date": "07.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 76170.84,
+                "date": "07.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 9844.6,
+                "date": "07.03.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -1561.24,
+                "date": "10.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 55088.93,
+                "date": "10.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 56558.15,
+                "date": "10.03.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 82580.59,
+                "date": "11.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -10473.32,
+                "date": "11.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -4246.04,
+                "date": "12.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 96234.23,
+                "date": "12.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 28285.51,
+                "date": "12.03.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -2637.51,
+                "date": "13.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 42373.85,
+                "date": "13.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 2605.93,
+                "date": "13.03.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -1797.23,
+                "date": "14.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 56129.7,
+                "date": "14.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 103928.04,
+                "date": "14.03.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 9973.28,
+                "date": "14.03.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 111187.59,
+                "date": "17.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -8463.95,
+                "date": "17.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 28743,
+                "date": "17.03.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 19206.62,
+                "date": "17.03.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -7883.74,
+                "date": "18.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 231972.84,
+                "date": "18.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 98864.18,
+                "date": "19.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -2232.84,
+                "date": "19.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 18884.89,
+                "date": "19.03.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 55625.15,
+                "date": "20.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -1833.67,
+                "date": "20.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 56944.65,
+                "date": "21.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 113119.55,
+                "date": "24.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -5203.57,
+                "date": "24.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 81799.16,
+                "date": "25.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -9024.05,
+                "date": "25.03.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 17083.28,
+                "date": "25.03.2025",
+                "contract_type": 1960
+              }
+            ],
+            "additionals": [],
+            "total_amount_of_accruals": 1835953.65,
+            "total_amount_of_payments": 1749330.38,
+            "debt": 86623.27
+          },
+          "adjustment": {
+            "accruals": [],
+            "payments": [
+              {
+                "payment": 16718.17,
+                "date": "24.12.2025",
+                "contract_type": 8901
+              },
+              {
+                "payment": 50000,
+                "date": "13.01.2026",
+                "contract_type": 8901
+              },
+              {
+                "payment": 50000,
+                "date": "14.01.2026",
+                "contract_type": 8901
+              },
+              {
+                "payment": 22592.06,
+                "date": "15.01.2026",
+                "contract_type": 8901
+              }
+            ],
+            "additionals": [
+              {
+                "accrual": 139310.23,
+                "period": "12.2024"
+              }
+            ],
+            "total_amount_of_accruals": 139310.23,
+            "total_amount_of_payments": 139310.23,
+            "debt": 0
+          }
+        },
+        "Март 2025": {
+          "accrual": {
+            "accruals": [
+              {
+                "accrual": 1835953.65,
+                "period": "03.2025"
+              }
+            ],
+            "payments": [
+              {
+                "payment": 83239.17,
+                "date": "01.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -3956.07,
+                "date": "01.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 6080.48,
+                "date": "01.04.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -1005.3,
+                "date": "02.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 46221.04,
+                "date": "02.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 19339.3,
+                "date": "03.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 1730.93,
+                "date": "03.04.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 38599.81,
+                "date": "04.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 17501.49,
+                "date": "04.04.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 53836.03,
+                "date": "07.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -7096.57,
+                "date": "07.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 48901.26,
+                "date": "07.04.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 106444.86,
+                "date": "08.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -7849.19,
+                "date": "08.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 43013.78,
+                "date": "08.04.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 49030.49,
+                "date": "09.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -1271.01,
+                "date": "09.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 51964.02,
+                "date": "09.04.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 2059,
+                "date": "09.04.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -501.93,
+                "date": "10.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 26405.23,
+                "date": "10.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 4035,
+                "date": "10.04.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 9201.16,
+                "date": "10.04.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 43917.98,
+                "date": "11.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -6817.96,
+                "date": "11.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 9426.36,
+                "date": "11.04.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -617.34,
+                "date": "14.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 37174.9,
+                "date": "14.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 7438.14,
+                "date": "14.04.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 215289.06,
+                "date": "15.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 13447.85,
+                "date": "15.04.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 57365.65,
+                "date": "16.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 12354,
+                "date": "16.04.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 7978.63,
+                "date": "16.04.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 114553.31,
+                "date": "17.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 86554.84,
+                "date": "18.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 9651.56,
+                "date": "18.04.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 61541.44,
+                "date": "21.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 23582,
+                "date": "21.04.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 145290.04,
+                "date": "22.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 64831.68,
+                "date": "23.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 1158.19,
+                "date": "23.04.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 67997.06,
+                "date": "24.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 39836.12,
+                "date": "25.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -1133.44,
+                "date": "25.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 49966.2,
+                "date": "28.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -907.23,
+                "date": "28.04.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 6273.52,
+                "date": "28.04.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 152722.07,
+                "date": "29.04.2025",
+                "contract_type": 1961
+              }
+            ],
+            "additionals": [],
+            "total_amount_of_accruals": 1835953.65,
+            "total_amount_of_payments": 1804797.61,
+            "debt": 31156.04
+          },
+          "adjustment": {
+            "accruals": [],
+            "payments": [
+              {
+                "payment": 27407.94,
+                "date": "15.01.2026",
+                "contract_type": 8901
+              },
+              {
+                "payment": 50000,
+                "date": "21.01.2026",
+                "contract_type": 8901
+              },
+              {
+                "payment": 50000,
+                "date": "22.01.2026",
+                "contract_type": 8901
+              },
+              {
+                "payment": 11902.29,
+                "date": "23.01.2026",
+                "contract_type": 8901
+              }
+            ],
+            "additionals": [
+              {
+                "accrual": 139310.23,
+                "period": "12.2024"
+              }
+            ],
+            "total_amount_of_accruals": 139310.23,
+            "total_amount_of_payments": 139310.23,
+            "debt": 0
+          }
+        },
+        "Апрель 2025": {
+          "accrual": {
+            "accruals": [
+              {
+                "accrual": 1835953.65,
+                "period": "04.2025"
+              }
+            ],
+            "payments": [
+              {
+                "payment": 32958.64,
+                "date": "05.05.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 107880.79,
+                "date": "06.05.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -904.83,
+                "date": "06.05.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 31470.52,
+                "date": "06.05.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 63662.13,
+                "date": "07.05.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 37962.81,
+                "date": "07.05.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 34801.81,
+                "date": "12.05.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 51964.02,
+                "date": "12.05.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 20525.66,
+                "date": "12.05.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 148677.22,
+                "date": "13.05.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 64601.14,
+                "date": "13.05.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 34977.41,
+                "date": "14.05.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 12354,
+                "date": "14.05.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 78425.54,
+                "date": "15.05.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 23549.82,
+                "date": "15.05.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 111945.73,
+                "date": "16.05.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 12013.6,
+                "date": "16.05.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 122361.05,
+                "date": "19.05.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 158496.44,
+                "date": "20.05.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 68312.67,
+                "date": "21.05.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 83004.36,
+                "date": "22.05.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 6852.61,
+                "date": "22.05.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 59483.93,
+                "date": "23.05.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 81652.22,
+                "date": "23.05.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 65133.14,
+                "date": "26.05.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 27699.99,
+                "date": "26.05.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 137520.36,
+                "date": "27.05.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 44075.09,
+                "date": "28.05.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 33512.61,
+                "date": "29.05.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 24574.24,
+                "date": "30.05.2025",
+                "contract_type": 1961
+              }
+            ],
+            "additionals": [],
+            "total_amount_of_accruals": 1835953.65,
+            "total_amount_of_payments": 1779544.72,
+            "debt": 56408.93
+          },
+          "adjustment": {
+            "accruals": [],
+            "payments": [
+              {
+                "payment": 38097.71,
+                "date": "23.01.2026",
+                "contract_type": 8901
+              },
+              {
+                "payment": 50000,
+                "date": "27.01.2026",
+                "contract_type": 8901
+              },
+              {
+                "payment": 18878.38,
+                "date": "29.01.2026",
+                "contract_type": 1961
+              },
+              {
+                "payment": 17885.21,
+                "date": "30.01.2026",
+                "contract_type": 8901
+              },
+              {
+                "payment": 14448.93,
+                "date": "30.01.2026",
+                "contract_type": 1961
+              }
+            ],
+            "additionals": [
+              {
+                "accrual": 139310.23,
+                "period": "12.2024"
+              }
+            ],
+            "total_amount_of_accruals": 139310.23,
+            "total_amount_of_payments": 139310.23,
+            "debt": 0
+          }
+        },
+        "Май 2025": {
+          "accrual": {
+            "accruals": [
+              {
+                "accrual": 1835953.65,
+                "period": "05.2025"
+              }
+            ],
+            "payments": [
+              {
+                "payment": 32055.87,
+                "date": "02.06.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 23614.16,
+                "date": "02.06.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 70424.99,
+                "date": "03.06.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 38895.81,
+                "date": "03.06.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 27156.77,
+                "date": "04.06.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 53604.78,
+                "date": "04.06.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 29228.5,
+                "date": "05.06.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 51964.02,
+                "date": "05.06.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 18498.82,
+                "date": "05.06.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 41525.1,
+                "date": "06.06.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 25737.51,
+                "date": "06.06.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 72825.19,
+                "date": "09.06.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 6080.48,
+                "date": "09.06.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 102897.55,
+                "date": "10.06.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 7978.63,
+                "date": "10.06.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 56101.43,
+                "date": "11.06.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 1994.65,
+                "date": "11.06.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 14799.06,
+                "date": "11.06.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 45637.91,
+                "date": "16.06.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 19206.62,
+                "date": "16.06.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 312934.83,
+                "date": "17.06.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 12354,
+                "date": "17.06.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 60148.59,
+                "date": "18.06.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 74210.11,
+                "date": "19.06.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 4035,
+                "date": "19.06.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 14831.23,
+                "date": "19.06.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 71612.14,
+                "date": "20.06.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 68744.41,
+                "date": "23.06.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 151020.22,
+                "date": "24.06.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 5083.15,
+                "date": "24.06.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 80599.4,
+                "date": "25.06.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 32428.51,
+                "date": "26.06.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 61928.22,
+                "date": "27.06.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 37240.31,
+                "date": "30.06.2025",
+                "contract_type": 1961
+              }
+            ],
+            "additionals": [],
+            "total_amount_of_accruals": 1835953.65,
+            "total_amount_of_payments": 1727397.97,
+            "debt": 108555.68
+          },
+          "adjustment": {
+            "accruals": [],
+            "payments": [
+              {
+                "payment": 32114.79,
+                "date": "30.01.2026",
+                "contract_type": 8901
+              },
+              {
+                "payment": 14355.35,
+                "date": "30.01.2026",
+                "contract_type": 1959
+              },
+              {
+                "payment": 7289.82,
+                "date": "30.01.2026",
+                "contract_type": 1960
+              }
+            ],
+            "additionals": [
+              {
+                "accrual": 139310.23,
+                "period": "12.2024"
+              }
+            ],
+            "total_amount_of_accruals": 139310.23,
+            "total_amount_of_payments": 53759.96,
+            "debt": 85550.27
+          }
+        },
+        "Июнь 2025": {
+          "accrual": {
+            "accruals": [
+              {
+                "accrual": 1835953.65,
+                "period": "06.2025"
+              }
+            ],
+            "payments": [
+              {
+                "payment": 78210.85,
+                "date": "01.07.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 1158.19,
+                "date": "01.07.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 40681.04,
+                "date": "02.07.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 36294.46,
+                "date": "03.07.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 38332.07,
+                "date": "04.07.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 27474.78,
+                "date": "04.07.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 34659.19,
+                "date": "07.07.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 109734.24,
+                "date": "07.07.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 119450.94,
+                "date": "08.07.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 4278.86,
+                "date": "08.07.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 62058.51,
+                "date": "09.07.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 12354,
+                "date": "09.07.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 9973.28,
+                "date": "09.07.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 29355.22,
+                "date": "10.07.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 13512.19,
+                "date": "10.07.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 31748,
+                "date": "11.07.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 51964.02,
+                "date": "11.07.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 17501.51,
+                "date": "11.07.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 24109.87,
+                "date": "14.07.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 2059,
+                "date": "14.07.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 247530.63,
+                "date": "15.07.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 4035,
+                "date": "15.07.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 3699.77,
+                "date": "15.07.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 56951.65,
+                "date": "16.07.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 132759.19,
+                "date": "17.07.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 88400.99,
+                "date": "18.07.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 4568.41,
+                "date": "18.07.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 66615.84,
+                "date": "21.07.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 7882.12,
+                "date": "21.07.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 167435,
+                "date": "22.07.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 82191.57,
+                "date": "23.07.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 16858.07,
+                "date": "23.07.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 69432.64,
+                "date": "24.07.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 56939.17,
+                "date": "25.07.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 5726.59,
+                "date": "25.07.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 42268.56,
+                "date": "28.07.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 8975.99,
+                "date": "28.07.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 28772.24,
+                "date": "29.07.2025",
+                "contract_type": 1961
+              }
+            ],
+            "additionals": [],
+            "total_amount_of_accruals": 1835953.65,
+            "total_amount_of_payments": 1835953.65,
+            "debt": 0
+          },
+          "adjustment": {
+            "accruals": [],
+            "payments": [],
+            "additionals": [
+              {
+                "accrual": 139310.23,
+                "period": "12.2024"
+              }
+            ],
+            "total_amount_of_accruals": 139310.23,
+            "total_amount_of_payments": 0,
+            "debt": 139310.23
+          }
+        },
+        "Июль 2025": {
+          "accrual": {
+            "accruals": [
+              {
+                "accrual": 2139574.47,
+                "period": "07.2025"
+              }
+            ],
+            "payments": [
+              {
+                "payment": 39232.56,
+                "date": "01.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 13944.13,
+                "date": "01.08.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 38553.52,
+                "date": "04.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 27184.66,
+                "date": "04.08.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 97553.99,
+                "date": "05.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 25271.39,
+                "date": "05.08.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 36172.95,
+                "date": "06.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 17877.01,
+                "date": "06.08.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 64448.14,
+                "date": "07.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 30804.18,
+                "date": "07.08.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 68660.01,
+                "date": "08.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 48273.02,
+                "date": "11.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 60382.19,
+                "date": "11.08.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 102854.6,
+                "date": "12.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 14355.35,
+                "date": "12.08.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 26998.53,
+                "date": "12.08.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 48081.29,
+                "date": "13.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 4688.66,
+                "date": "13.08.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 32065.13,
+                "date": "13.08.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 130511.99,
+                "date": "14.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 81526.14,
+                "date": "15.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 74199.63,
+                "date": "18.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 21383.48,
+                "date": "18.08.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 237908.91,
+                "date": "19.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 17196.52,
+                "date": "19.08.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 59886.09,
+                "date": "20.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 18243.25,
+                "date": "20.08.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 52522.19,
+                "date": "21.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 20832.39,
+                "date": "21.08.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 162713.85,
+                "date": "22.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -50930.22,
+                "date": "22.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 107427.84,
+                "date": "25.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -53713.92,
+                "date": "25.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -163444.13,
+                "date": "26.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 326888.26,
+                "date": "26.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 4635.58,
+                "date": "26.08.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": -2317.79,
+                "date": "26.08.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 3081.22,
+                "date": "26.08.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -1540.61,
+                "date": "26.08.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -78847.5,
+                "date": "27.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 157695,
+                "date": "27.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -47920.28,
+                "date": "28.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 95840.56,
+                "date": "28.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 117314.6,
+                "date": "28.08.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -58657.3,
+                "date": "28.08.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 33683.96,
+                "date": "29.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -16841.98,
+                "date": "29.08.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 11630.7,
+                "date": "29.08.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -5815.35,
+                "date": "29.08.2025",
+                "contract_type": 1960
+              }
+            ],
+            "additionals": [],
+            "total_amount_of_accruals": 2139574.47,
+            "total_amount_of_payments": 2052494.39,
+            "debt": 87080.08
+          },
+          "adjustment": {
+            "accruals": [],
+            "payments": [],
+            "additionals": [
+              {
+                "accrual": 139310.23,
+                "period": "12.2024"
+              }
+            ],
+            "total_amount_of_accruals": 139310.23,
+            "total_amount_of_payments": 0,
+            "debt": 139310.23
+          }
+        },
+        "Август 2025": {
+          "accrual": {
+            "accruals": [
+              {
+                "accrual": 2133375.61,
+                "period": "08.2025"
+              }
+            ],
+            "payments": [
+              {
+                "payment": 101108.48,
+                "date": "01.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -50554.24,
+                "date": "01.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 128637.12,
+                "date": "02.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -64318.56,
+                "date": "02.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 91854.76,
+                "date": "03.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -45927.38,
+                "date": "03.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 56748.5,
+                "date": "03.09.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -28374.25,
+                "date": "03.09.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 87982.72,
+                "date": "04.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -43991.36,
+                "date": "04.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -25234,
+                "date": "04.09.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 50468,
+                "date": "04.09.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -30848.68,
+                "date": "05.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 61697.36,
+                "date": "05.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 28710.7,
+                "date": "05.09.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": -14355.35,
+                "date": "05.09.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": -15372.18,
+                "date": "05.09.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 30744.36,
+                "date": "05.09.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -45221.84,
+                "date": "08.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 90443.68,
+                "date": "08.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -60382.19,
+                "date": "08.09.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 120764.38,
+                "date": "08.09.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": -145455.24,
+                "date": "09.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 290910.48,
+                "date": "09.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 106020.22,
+                "date": "09.09.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -53010.11,
+                "date": "09.09.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -49096.58,
+                "date": "10.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 98193.16,
+                "date": "10.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -26205.98,
+                "date": "10.09.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 52411.96,
+                "date": "10.09.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -41187.83,
+                "date": "11.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 82375.66,
+                "date": "11.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 75816.24,
+                "date": "12.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -37908.12,
+                "date": "12.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 9377.32,
+                "date": "12.09.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": -4688.66,
+                "date": "12.09.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 15925.46,
+                "date": "12.09.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -7962.73,
+                "date": "12.09.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 50497.1,
+                "date": "15.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -25248.55,
+                "date": "15.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -5981.4,
+                "date": "15.09.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 11962.8,
+                "date": "15.09.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 405506.82,
+                "date": "16.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -202753.41,
+                "date": "16.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 223251.04,
+                "date": "17.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -111625.52,
+                "date": "17.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 11813.26,
+                "date": "17.09.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -5906.63,
+                "date": "17.09.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 233135.78,
+                "date": "18.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -116567.89,
+                "date": "18.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -80097.29,
+                "date": "19.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 160194.58,
+                "date": "19.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 115416.68,
+                "date": "22.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -57708.34,
+                "date": "22.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -18243.25,
+                "date": "22.09.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 36486.5,
+                "date": "22.09.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -207288.29,
+                "date": "23.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 414576.58,
+                "date": "23.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -45966.46,
+                "date": "24.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 91932.92,
+                "date": "24.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -30505.12,
+                "date": "24.09.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 61010.24,
+                "date": "24.09.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -67133.76,
+                "date": "25.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 134267.52,
+                "date": "25.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 118084.22,
+                "date": "26.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -59042.11,
+                "date": "26.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -72673.05,
+                "date": "29.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 145346.1,
+                "date": "29.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -9159.01,
+                "date": "29.09.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 18318.02,
+                "date": "29.09.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 195005.7,
+                "date": "30.09.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -97502.85,
+                "date": "30.09.2025",
+                "contract_type": 1961
+              }
+            ],
+            "additionals": [],
+            "total_amount_of_accruals": 2133375.61,
+            "total_amount_of_payments": 2003498.21,
+            "debt": 129877.4
+          },
+          "adjustment": {
+            "accruals": [],
+            "payments": [],
+            "additionals": [
+              {
+                "accrual": 139310.23,
+                "period": "12.2024"
+              }
+            ],
+            "total_amount_of_accruals": 139310.23,
+            "total_amount_of_payments": 0,
+            "debt": 139310.23
+          }
+        },
+        "Сентябрь 2025": {
+          "accrual": {
+            "accruals": [
+              {
+                "accrual": 2133375.61,
+                "period": "09.2025"
+              }
+            ],
+            "payments": [
+              {
+                "payment": 85430.82,
+                "date": "01.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -42715.41,
+                "date": "01.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 59322.18,
+                "date": "02.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -29661.09,
+                "date": "02.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -26280.76,
+                "date": "02.10.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 52561.52,
+                "date": "02.10.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -53954.13,
+                "date": "03.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 107908.26,
+                "date": "03.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -14205.82,
+                "date": "03.10.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 28411.64,
+                "date": "03.10.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -21823.11,
+                "date": "06.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 43646.22,
+                "date": "06.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -14355.35,
+                "date": "06.10.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 28710.7,
+                "date": "06.10.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": -15962.84,
+                "date": "06.10.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 31925.68,
+                "date": "06.10.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 179018.58,
+                "date": "07.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -60382.19,
+                "date": "07.10.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 120764.38,
+                "date": "07.10.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 64987.86,
+                "date": "07.10.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -32493.93,
+                "date": "07.10.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 191123.04,
+                "date": "08.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -95561.52,
+                "date": "08.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -45645.53,
+                "date": "08.10.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 91291.06,
+                "date": "08.10.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -42048.72,
+                "date": "09.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 84097.44,
+                "date": "09.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -21233.95,
+                "date": "09.10.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 42467.9,
+                "date": "09.10.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -45240.7,
+                "date": "10.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 90481.4,
+                "date": "10.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -5308.49,
+                "date": "10.10.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 10616.98,
+                "date": "10.10.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -34939.07,
+                "date": "13.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 69878.14,
+                "date": "13.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 9377.32,
+                "date": "13.10.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": -4688.66,
+                "date": "13.10.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 311130.1,
+                "date": "14.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -155565.05,
+                "date": "14.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -4635.58,
+                "date": "14.10.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 9271.16,
+                "date": "14.10.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": -1682.27,
+                "date": "14.10.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 3364.54,
+                "date": "14.10.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -119240.35,
+                "date": "15.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 238480.7,
+                "date": "15.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 16149.76,
+                "date": "15.10.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -8074.88,
+                "date": "15.10.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -72480.38,
+                "date": "16.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 144960.76,
+                "date": "16.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 223228.22,
+                "date": "17.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -60436.37,
+                "date": "17.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -10691.75,
+                "date": "17.10.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 21383.5,
+                "date": "17.10.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -65426.46,
+                "date": "20.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 130852.92,
+                "date": "20.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 64972.88,
+                "date": "20.10.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -32486.44,
+                "date": "20.10.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 303723.16,
+                "date": "21.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -151861.58,
+                "date": "21.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 187558.08,
+                "date": "22.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -93779.04,
+                "date": "22.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 151217.82,
+                "date": "23.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -75608.91,
+                "date": "23.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 142646.54,
+                "date": "24.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -71323.27,
+                "date": "24.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -32433.56,
+                "date": "27.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 64867.12,
+                "date": "27.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 168839.43,
+                "date": "28.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -46298.43,
+                "date": "29.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 92596.86,
+                "date": "29.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 78409.28,
+                "date": "30.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -39204.64,
+                "date": "30.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 70863.78,
+                "date": "31.10.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -35431.89,
+                "date": "31.10.2025",
+                "contract_type": 1961
+              }
+            ],
+            "additionals": [],
+            "total_amount_of_accruals": 2133375.61,
+            "total_amount_of_payments": 2133375.61,
+            "debt": 0
+          },
+          "adjustment": {
+            "accruals": [],
+            "payments": [],
+            "additionals": [
+              {
+                "accrual": 139310.23,
+                "period": "12.2024"
+              }
+            ],
+            "total_amount_of_accruals": 139310.23,
+            "total_amount_of_payments": 0,
+            "debt": 139310.23
+          }
+        },
+        "Октябрь 2025": {
+          "accrual": {
+            "accruals": [
+              {
+                "accrual": 2133375.61,
+                "period": "10.2025"
+              }
+            ],
+            "payments": [
+              {
+                "payment": 21876.24,
+                "date": "01.11.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 26613.04,
+                "date": "01.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -13306.52,
+                "date": "01.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 26759.97,
+                "date": "05.11.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 18318.02,
+                "date": "05.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -9159.01,
+                "date": "05.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 120742.55,
+                "date": "06.11.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 31850.94,
+                "date": "06.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -15925.47,
+                "date": "06.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 92445.98,
+                "date": "07.11.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 28710.7,
+                "date": "07.11.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": -14355.35,
+                "date": "07.11.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 117833.48,
+                "date": "07.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -58916.74,
+                "date": "07.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 46504.65,
+                "date": "10.11.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -27870.3,
+                "date": "10.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 66450.3,
+                "date": "10.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 92541.87,
+                "date": "11.11.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 85877.9,
+                "date": "11.11.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": -25495.71,
+                "date": "11.11.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 7865.54,
+                "date": "11.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -3932.77,
+                "date": "11.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 67469.8,
+                "date": "12.11.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -13906.75,
+                "date": "12.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 27813.5,
+                "date": "12.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 39612.86,
+                "date": "13.11.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -19806.43,
+                "date": "13.11.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 9944.06,
+                "date": "13.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -4972.03,
+                "date": "13.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 61607.17,
+                "date": "14.11.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -4688.66,
+                "date": "14.11.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 9377.32,
+                "date": "14.11.2025",
+                "contract_type": 1959
+              },
+              {
+                "payment": 19514.3,
+                "date": "14.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -9757.15,
+                "date": "14.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 138585.49,
+                "date": "17.11.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 227584.28,
+                "date": "18.11.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 31252.8,
+                "date": "18.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -15626.4,
+                "date": "18.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 98322.71,
+                "date": "19.11.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -2392.56,
+                "date": "19.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 4785.12,
+                "date": "19.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 63978.86,
+                "date": "20.11.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -18243.25,
+                "date": "20.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 36486.5,
+                "date": "20.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 74415.01,
+                "date": "21.11.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 11813.26,
+                "date": "21.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -5906.63,
+                "date": "21.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 107883.34,
+                "date": "24.11.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 128034.26,
+                "date": "25.11.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": -31656.07,
+                "date": "25.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 63312.14,
+                "date": "25.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 71540.83,
+                "date": "26.11.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 1239.68,
+                "date": "26.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -619.84,
+                "date": "26.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": 78985.33,
+                "date": "27.11.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 54114.21,
+                "date": "28.11.2025",
+                "contract_type": 1961
+              },
+              {
+                "payment": 34467.8,
+                "date": "28.11.2025",
+                "contract_type": 1960
+              },
+              {
+                "payment": -17233.9,
+                "date": "28.11.2025",
+                "contract_type": 1960
+              }
+            ],
+            "additionals": [],
+            "total_amount_of_accruals": 2133375.61,
+            "total_amount_of_payments": 1932760.27,
+            "debt": 200615.34
+          },
+          "adjustment": {
+            "accruals": [],
+            "payments": [],
+            "additionals": [
+              {
+                "accrual": 139310.23,
+                "period": "12.2024"
+              }
+            ],
+            "total_amount_of_accruals": 139310.23,
+            "total_amount_of_payments": 0,
+            "debt": 139310.23
+          }
+        }
+      },
+      "contract_number": "№ 01.002023 ТЭ от 01.05.2012",
+      "contract_type": "отработала заглушка, введите данные вручную",
+      "contract_point": "отработала заглушка, введите данные вручную",
+      "overdue_day": "отработала заглушка, введите данные вручную",
+      "contract_text": "отработала заглушка, введите данные вручную",
+      "claim_info": [
+        {
+          "claim_date": "заглушка претензии, введите данные вручную",
+          "claim_number": "заглушка претензии, введите данные вручную"
+        }
+      ]
+    }
+  ],
+  "results_of_name_parser": {
+    "defendant_info": {
+      "inn": "7703660437",
+      "full_name": "",
+      "short_name": "",
+      "address": "",
+      "kpp": "",
+      "ogrn": ""
+    }
+  },
+  "path_to_save": "/Users/mikhail7975/projects/NeuroLumber/LegalDocInspector/tmp/legaldoc-storage/fef90807-aa1d-48c9-9727-2e0fe3e1a522",
+  "application_date": "20.04.2026",
+  "parse_warnings": [
+    "Ошибка разбора выписки ЕГРЮЛ: Не установлена ни одна из библиотек для работы с PDF: PyPDF2, PyMuPDF или docling. Установите хотя бы одну: pip install PyPDF2 или pip install pymupdf"
+  ]
+}

@@ -1,0 +1,91 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "BFF: Uvicorn (debug)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "app.main:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8000",
+        "--reload"
+      ],
+      "cwd": "${workspaceFolder}/services/bff-orchestrator",
+      "python": "${workspaceFolder}/services/bff-orchestrator/.venv/bin/python",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/services/bff-orchestrator/src",
+        "LEGACY_REPO_ROOT": "${workspaceFolder}",
+        "STORAGE_ROOT": "${workspaceFolder}/tmp/legaldoc-storage",
+        "CELERY_BROKER_URL": "amqp://guest:guest@127.0.0.1:5672//"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "backend",
+        "order": 1
+      }
+    },
+    {
+      "name": "BFF: Celery worker (debug)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "celery",
+      "args": ["-A", "app.workers.celery_app", "worker", "--loglevel=INFO"],
+      "cwd": "${workspaceFolder}/services/bff-orchestrator",
+      "python": "${workspaceFolder}/services/bff-orchestrator/.venv/bin/python",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/services/bff-orchestrator/src",
+        "LEGACY_REPO_ROOT": "${workspaceFolder}",
+        "STORAGE_ROOT": "${workspaceFolder}/tmp/legaldoc-storage",
+        "CELERY_BROKER_URL": "amqp://guest:guest@127.0.0.1:5672//"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "backend",
+        "order": 2
+      }
+    },
+    {
+      "name": "Pytest: test_generate_documents",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "test/test_doc_creator/test_generate_documents.py",
+        "-v",
+        "-s"
+      ],
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}/services/bff-orchestrator/.venv/bin/python",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/services/bff-orchestrator/src"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "tests",
+        "order": 1
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "BFF: API + Celery (debug)",
+      "configurations": ["BFF: Uvicorn (debug)", "BFF: Celery worker (debug)"],
+      "stopAll": true,
+      "presentation": {
+        "hidden": false,
+        "group": "backend",
+        "order": 3
+      }
+    }
+  ]
+}

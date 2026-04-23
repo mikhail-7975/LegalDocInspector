@@ -1,0 +1,46 @@
+# MVP stack: RabbitMQ, API (uvicorn), Celery worker, optional SPA via nginx.
+# Build context: repository root (parent of infra/).
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  api:
+    build:
+      context: ..
+      dockerfile: services/bff-orchestrator/Dockerfile
+    environment:
+      LEGACY_REPO_ROOT: /workspace
+      STORAGE_ROOT: /data/storage
+      CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
+      SESSION_SECRET: dev-secret-change-me
+      CORS_ORIGINS: http://localhost:8080,http://localhost:5173
+    volumes:
+      - ..:/workspace:ro
+      - legaldoc_storage:/data/storage
+    ports:
+      - "8000:8000"
+    depends_on:
+      - rabbitmq
+
+  worker:
+    build:
+      context: ..
+      dockerfile: services/bff-orchestrator/Dockerfile
+    command: celery -A app.workers.celery_app worker --loglevel=INFO
+    working_dir: /app
+    environment:
+      LEGACY_REPO_ROOT: /workspace
+      STORAGE_ROOT: /data/storage
+      CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
+    volumes:
+      - ..:/workspace:ro
+      - legaldoc_storage:/data/storage
+    depends_on:
+      - rabbitmq
+
+volumes:
+  legaldoc_storage: {}

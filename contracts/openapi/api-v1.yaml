@@ -1,0 +1,79 @@
+openapi: 3.0.3
+info:
+  title: Legal Doc Claim BFF API
+  version: "0.1.0"
+servers:
+  - url: /api/v1
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+  /auth/login:
+    post:
+      summary: Login (session cookie)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username: { type: string }
+                password: { type: string }
+      responses:
+        "200": { description: OK }
+  /packages:
+    post:
+      summary: Create empty package
+      security: [{ cookieAuth: [] }]
+      responses:
+        "200": { description: Created }
+  /packages/{packageId}/upload:
+    post:
+      summary: Multipart upload (same field names as legacy Flask /parse)
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: path
+          name: packageId
+          required: true
+          schema: { type: string, format: uuid }
+  /packages/{packageId}/extract:
+    post:
+      summary: Start Celery extraction
+      security: [{ cookieAuth: [] }]
+  /packages/{packageId}/extraction:
+    get:
+      summary: Extraction status (poll)
+      security: [{ cookieAuth: [] }]
+  /packages/{packageId}/form:
+    get:
+      summary: Parse result + form draft
+      security: [{ cookieAuth: [] }]
+    put:
+      summary: Save form
+      security: [{ cookieAuth: [] }]
+  /packages/{packageId}/calculate:
+    post:
+      summary: Run penalty calculation
+      security: [{ cookieAuth: [] }]
+  /packages/{packageId}/documents/generate:
+    post:
+      summary: Generate DOCX (isk + calculation)
+      security: [{ cookieAuth: [] }]
+  /packages/{packageId}/documents/isk:
+    get:
+      summary: Download isk
+      security: [{ cookieAuth: [] }]
+  /packages/{packageId}/documents/calculation:
+    get:
+      summary: Download calculation
+      security: [{ cookieAuth: [] }]
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session

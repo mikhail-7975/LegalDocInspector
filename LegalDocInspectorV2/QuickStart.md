@@ -2,7 +2,7 @@
 
 Краткая инструкция по запуску целевого стека по [`technical_specification/FullSpecification.md`](technical_specification/FullSpecification.md) и [`ProjectStructure.md`](ProjectStructure.md): **React (SPA)**, **Python API (оркестратор)**, **Celery**, **RabbitMQ**, **reverse proxy**, файловое хранилище по `packageId`, зависимость от легаси [`LegalDocInspector`](../LegalDocInspector/) и `data/templates/`.
 
-> Пока в репозитории нет готового `infra/docker-compose.yml` и приложений в `apps/web`, `services/bff-orchestrator` — шаги ниже **ориентир** для будущей сборки; пути и имена сервисов подставьте из фактического `docker-compose.yml` и README монорепозитория.
+> В репозитории есть рабочий каркас: `infra/docker-compose.yml`, `services/bff-orchestrator/`, `apps/web/`. Пути к Python и переменные окружения уточняйте в [`README.md`](../README.md) и `services/bff-orchestrator/README.md`.
 
 ---
 
@@ -39,8 +39,8 @@
 ### A.2. Запуск
 
 ```bash
-cd /путь/к/репозиторию/legal-doc-claim-service
-cp infra/.env.example infra/.env   # если есть; отредактировать STORAGE_ROOT и прочее
+cd /путь/к/репозиторию/LegalDocInspector
+cp infra/.env.example infra/.env   # при необходимости; отредактировать STORAGE_ROOT и прочее
 docker compose -f infra/docker-compose.yml up --build
 ```
 
@@ -72,14 +72,15 @@ docker compose -f infra/docker-compose.yml down
 
 ```bash
 cd services/bff-orchestrator
-python3 -m venv .venv
+python3.12 -m venv .venv   # нужен Python 3.10+ (легаси-калькулятор)
 source .venv/bin/activate
 pip install -U pip
-pip install -r requirements.txt   # или: pip install -e ".[dev]"
+pip install -r requirements.txt
+# Для полного контура PDF/OCR: pip install -r ../../requirements.txt
 export STORAGE_ROOT=/var/tmp/legaldoc-storage
 export CELERY_BROKER_URL=amqp://guest:guest@127.0.0.1:5672//
-export PYTHONPATH="/path/to/LegalDocInspector:${PYTHONPATH}"
-uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+export PYTHONPATH="../../:src"
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 5. В **втором терминале** — worker Celery:
@@ -87,8 +88,8 @@ uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 ```bash
 cd services/bff-orchestrator
 source .venv/bin/activate
-export STORAGE_ROOT=... CELERY_BROKER_URL=... PYTHONPATH=...
-celery -A src.workers.celery_app worker --loglevel=INFO
+export STORAGE_ROOT=... CELERY_BROKER_URL=... PYTHONPATH=../../:src
+celery -A app.workers.celery_app worker --loglevel=INFO
 ```
 
 6. Frontend:
@@ -99,7 +100,7 @@ npm ci
 npm run dev
 ```
 
-Настройте прокси dev-сервера (Vite/Webpack) на `http://127.0.0.1:8000` для `/api` или используйте CORS по политике проекта.
+Прокси `vite.config.ts` перенаправляет `/api` на `http://127.0.0.1:8000`; при смене порта API обновите прокси.
 
 ---
 
@@ -138,7 +139,7 @@ uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 Во **втором окне** с активированным тем же `venv`:
 
 ```powershell
-celery -A src.workers.celery_app worker --loglevel=INFO
+celery -A app.workers.celery_app worker --loglevel=INFO
 ```
 
 4. Frontend:

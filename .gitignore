@@ -175,8 +175,10 @@ cython_debug/
 .qodo
 *.ipynb
 *lock*
+!apps/web/package-lock.json
 .huggingface/
 
 data/documents*
 
 experiments/*
+*node_modules*
