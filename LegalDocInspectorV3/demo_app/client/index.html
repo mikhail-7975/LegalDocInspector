@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LegalDocInspector V3 Client</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <section class="panel panel-parse">
+        <div class="panel-header">
+          <h2>Parse</h2>
+          <button id="send-parse-btn" type="button">Отправить</button>
+        </div>
+        <label class="field">
+          <span>package_id</span>
+          <input id="package-id-input" type="text" placeholder="авто-создание при первом parse" />
+        </label>
+        <label class="field">
+          <span>JSON для parse</span>
+          <textarea id="parse-json" spellcheck="false"></textarea>
+        </label>
+      </section>
+
+      <section class="panel panel-generate">
+        <div class="panel-header">
+          <h2>Generate</h2>
+          <button id="send-generate-btn" type="button">Отправить</button>
+        </div>
+        <label class="field">
+          <span>JSON для generate</span>
+          <textarea id="generate-json" spellcheck="false"></textarea>
+        </label>
+      </section>
+
+      <section class="panel panel-messages">
+        <div class="panel-header">
+          <h2>Messages</h2>
+          <div id="status-pill" class="status">idle</div>
+        </div>
+        <div id="messages-list" class="messages-list"></div>
+      </section>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

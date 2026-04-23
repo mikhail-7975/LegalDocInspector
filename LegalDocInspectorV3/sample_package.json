@@ -1,0 +1,24 @@
+{
+  "application_date": "2026-04-23",
+  "plaintiff_name": "ООО Ромашка",
+  "defendant_name": "ТСЖ Север",
+  "claim_amount": 123456.78,
+  "files": [
+    {
+      "file_name": "contract.pdf",
+      "file_type": "application/pdf",
+      "file_size": 120034
+    },
+    {
+      "file_name": "claim.pdf",
+      "file_type": "application/pdf",
+      "file_size": 54012
+    },
+    {
+      "file_name": "certificate.xlsx",
+      "file_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "file_size": 40011
+    }
+  ],
+  "notes": "Демо-пакет"
+}
