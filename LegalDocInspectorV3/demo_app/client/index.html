@@ -7,7 +7,8 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="layout">
+    <div class="layout" id="app-layout">
+      <div class="layout-main">
       <section class="panel panel-parse">
         <div class="panel-header">
           <h2>Parse</h2>
@@ -28,19 +29,170 @@
           <h2>Generate</h2>
           <button id="send-generate-btn" type="button">Отправить</button>
         </div>
-        <label class="field">
-          <span>JSON для generate</span>
+
+        <div class="generate-form">
+          <div class="party-block">
+            <h3 class="party-block__title">Истец (plaintiff_info)</h3>
+            <div class="party-fields">
+              <label class="field field-inline">
+                <span>ИНН</span>
+                <input
+                  type="text"
+                  id="pi-inn"
+                  class="input-text"
+                  inputmode="numeric"
+                  autocomplete="off"
+                />
+              </label>
+              <label class="field field-inline">
+                <span>ОГРН</span>
+                <input type="text" id="pi-ogrn" class="input-text" autocomplete="off" />
+              </label>
+              <label class="field field-full">
+                <span>Полное наименование (full_name)</span>
+                <textarea id="pi-full_name" class="input-text" rows="2" spellcheck="false"></textarea>
+              </label>
+              <label class="field field-full">
+                <span>Сокращённое наименование (short_name)</span>
+                <input type="text" id="pi-short_name" class="input-text" />
+              </label>
+              <label class="field field-full">
+                <span>Адрес (addres)</span>
+                <textarea id="pi-addres" class="input-text" rows="2" spellcheck="false"></textarea>
+              </label>
+              <label class="field field-full">
+                <span>Адрес для корреспонденции (correspondency_addres)</span>
+                <textarea
+                  id="pi-correspondency_addres"
+                  class="input-text"
+                  rows="2"
+                  spellcheck="false"
+                ></textarea>
+              </label>
+            </div>
+          </div>
+
+          <div class="party-block">
+            <h3 class="party-block__title">Ответчик (defendant_info)</h3>
+            <div class="party-fields">
+              <label class="field field-inline">
+                <span>ИНН</span>
+                <input
+                  type="text"
+                  id="di-inn"
+                  class="input-text"
+                  inputmode="numeric"
+                  autocomplete="off"
+                />
+              </label>
+              <label class="field field-inline">
+                <span>ОГРН</span>
+                <input type="text" id="di-ogrn" class="input-text" autocomplete="off" />
+              </label>
+              <label class="field field-full">
+                <span>Полное наименование (full_name)</span>
+                <textarea id="di-full_name" class="input-text" rows="2" spellcheck="false"></textarea>
+              </label>
+              <label class="field field-full">
+                <span>Сокращённое наименование (short_name)</span>
+                <input type="text" id="di-short_name" class="input-text" />
+              </label>
+              <label class="field field-full">
+                <span>Адрес (addres)</span>
+                <textarea id="di-addres" class="input-text" rows="2" spellcheck="false"></textarea>
+              </label>
+            </div>
+          </div>
+
+          <div class="contracts-block">
+            <div class="contracts-toolbar">
+              <span class="contracts-title">Договоры</span>
+              <button id="add-contract-btn" type="button" class="btn-secondary">
+                Добавить договор
+              </button>
+            </div>
+            <div id="contracts-list"></div>
+          </div>
+        </div>
+
+        <label class="field field-json">
+          <span>JSON для generate (обновляется из формы при отправке)</span>
           <textarea id="generate-json" spellcheck="false"></textarea>
         </label>
       </section>
+      </div>
 
-      <section class="panel panel-messages">
-        <div class="panel-header">
-          <h2>Messages</h2>
-          <div id="status-pill" class="status">idle</div>
+      <template id="tpl-contract-row">
+        <div class="contract-row" data-contract-row>
+          <div class="contract-row__head">
+            <span class="contract-row__title">Договор</span>
+            <button type="button" class="btn-remove-contract btn-secondary">Удалить</button>
+          </div>
+          <div class="contract-fields">
+            <label class="field field-inline">
+              <span>Тип договора</span>
+              <select class="contract-type input-text">
+                <option>ТЭ</option>
+                <option>ГВС</option>
+                <option>СОИ</option>
+                <option>ФОТЭ</option>
+              </select>
+            </label>
+            <label class="field field-inline">
+              <span>День оплаты</span>
+              <input
+                type="text"
+                class="contract-day input-text"
+                inputmode="numeric"
+                placeholder="число месяца"
+              />
+            </label>
+            <label class="field field-inline">
+              <span>Пункт договора</span>
+              <input type="text" class="contract-point input-text" placeholder="например 4.5" />
+            </label>
+            <label class="field field-claim">
+              <span>Информация о претензии</span>
+              <textarea
+                class="contract-claim input-text"
+                rows="2"
+                placeholder="Номер и дата претензии, краткое описание"
+                spellcheck="false"
+              ></textarea>
+            </label>
+          </div>
         </div>
-        <div id="messages-list" class="messages-list"></div>
-      </section>
+      </template>
+
+      <aside class="messages-column">
+        <section class="panel panel-messages">
+          <div class="panel-header">
+            <h2>Messages</h2>
+            <div class="panel-header-actions">
+              <div id="status-pill" class="status">idle</div>
+              <button
+                type="button"
+                id="hide-messages-btn"
+                class="btn-secondary btn-compact"
+                title="Скрыть панель вправо"
+              >
+                Скрыть
+              </button>
+            </div>
+          </div>
+          <div id="messages-list" class="messages-list"></div>
+        </section>
+      </aside>
+
+      <button
+        type="button"
+        id="reveal-messages-btn"
+        class="messages-reveal"
+        hidden
+        title="Показать сообщения"
+      >
+        Messages
+      </button>
     </div>
 
     <script src="./app.js"></script>

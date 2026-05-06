@@ -11,11 +11,51 @@ body {
 }
 
 .layout {
+  position: relative;
   height: calc(100vh - 24px);
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 12px;
+  --messages-width: 25%;
+}
+
+.layout-main {
+  flex: 1 1 auto;
+  min-width: 0;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   grid-template-rows: 1fr 1fr;
   gap: 12px;
+}
+
+.messages-column {
+  flex: 0 0 var(--messages-width);
+  min-width: 0;
+  max-width: var(--messages-width);
+  overflow: hidden;
+  transition:
+    flex-basis 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s ease;
+}
+
+.messages-column .panel-messages {
+  width: 100%;
+  min-width: 0;
+  transform: translateX(0);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.layout--messages-hidden .messages-column {
+  flex-basis: 0;
+  max-width: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.layout--messages-hidden .messages-column .panel-messages {
+  transform: translateX(100%);
 }
 
 .panel {
@@ -29,18 +69,19 @@ body {
 }
 
 .panel-parse {
-  grid-column: 1 / 2;
   grid-row: 1 / 2;
+  min-height: 0;
 }
 
 .panel-generate {
-  grid-column: 1 / 2;
   grid-row: 2 / 3;
+  overflow: auto;
+  min-height: 0;
 }
 
 .panel-messages {
-  grid-column: 2 / 3;
-  grid-row: 1 / 3;
+  height: 100%;
+  min-height: 0;
 }
 
 .panel-header {
@@ -48,6 +89,20 @@ body {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 10px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+button.btn-compact {
+  padding: 6px 10px;
+  font-size: 12px;
 }
 
 h2 {
@@ -67,6 +122,14 @@ button {
 
 button:hover {
   background: #1d59c7;
+}
+
+button.btn-secondary {
+  background: #6b7a90;
+}
+
+button.btn-secondary:hover {
+  background: #5a687a;
 }
 
 .status {
@@ -90,7 +153,8 @@ button:hover {
 }
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   border: 1px solid #c8d2df;
   border-radius: 8px;
@@ -98,11 +162,127 @@ textarea {
   font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
+.input-text,
+.input-text::placeholder {
+  font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
 textarea {
   flex: 1;
   min-height: 120px;
   resize: none;
   white-space: pre;
+}
+
+.field-json textarea {
+  min-height: 100px;
+  font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.generate-form {
+  margin-bottom: 8px;
+}
+
+.party-block {
+  border: 1px solid #e0e6f0;
+  border-radius: 8px;
+  padding: 10px 10px 4px;
+  background: #fbfcff;
+  margin-bottom: 10px;
+}
+
+.party-block__title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2a3441;
+}
+
+.party-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+}
+
+.field-full {
+  grid-column: 1 / -1;
+  margin-bottom: 8px;
+}
+
+.party-fields .field-inline {
+  margin-bottom: 8px;
+}
+
+.contracts-block {
+  border: 1px solid #e0e6f0;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fbfcff;
+  margin-bottom: 8px;
+}
+
+.contracts-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.contracts-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2a3441;
+}
+
+.contract-row {
+  border: 1px solid #d9e0ea;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 8px;
+  background: #fff;
+}
+
+.contract-row:last-child {
+  margin-bottom: 0;
+}
+
+.contract-row__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.contract-row__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #5b6777;
+}
+
+.btn-remove-contract {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.contract-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+}
+
+.field-claim {
+  grid-column: 1 / -1;
+}
+
+.field-inline {
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .contract-fields,
+  .party-fields {
+    grid-template-columns: 1fr;
+  }
 }
 
 .messages-list {
@@ -134,4 +314,34 @@ textarea {
   font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.layout--messages-hidden {
+  gap: 0;
+}
+
+.messages-reveal {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  z-index: 20;
+  transform: translateY(-50%);
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  padding: 12px 8px;
+  border-radius: 8px 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: -2px 0 8px rgba(27, 31, 36, 0.12);
+  border: 1px solid #d9e0ea;
+  border-right: 0;
+  background: #fff;
+  color: #3d4b5c;
+  cursor: pointer;
+}
+
+.messages-reveal:hover {
+  background: #f0f4fa;
+  color: #1b1f24;
 }

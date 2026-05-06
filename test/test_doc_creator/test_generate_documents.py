@@ -20,7 +20,7 @@ CREATE_DOC_INPUT = (
     / "create_doc_input.json"
 )
 
-CREATE_DOC_INPUT = Path("tmp/legaldoc-storage/fef90807-aa1d-48c9-9727-2e0fe3e1a522/create_doc_input.json")
+# CREATE_DOC_INPUT = Path("tmp/legaldoc-storage/fef90807-aa1d-48c9-9727-2e0fe3e1a522/create_doc_input.json")
 
 
 @pytest.fixture

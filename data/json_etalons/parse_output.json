@@ -1,0 +1,204 @@
+{
+    "table_parser_result": [
+        [
+            {
+                "Январь 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 698675.46,
+                                "period": "01.2025"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 698675.46,
+                        "total_amount_of_payments": 0,
+                        "debt": 698675.46
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [
+                            {
+                                "accrual": 15352.49,
+                                "period": "12.2024"
+                            }
+                        ],
+                        "total_amount_of_accruals": 15352.49,
+                        "total_amount_of_payments": 0,
+                        "debt": 15352.49
+                    }
+                },
+                "Февраль 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 683622.74,
+                                "period": "02.2025"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 683622.74,
+                        "total_amount_of_payments": 0,
+                        "debt": 683622.74
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [
+                            {
+                                "accrual": 15352.49,
+                                "period": "12.2024"
+                            }
+                        ],
+                        "total_amount_of_accruals": 15352.49,
+                        "total_amount_of_payments": 0,
+                        "debt": 15352.49
+                    }
+                },
+                "Март 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 793420.94,
+                                "period": "03.2025"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 793420.94,
+                        "total_amount_of_payments": 0,
+                        "debt": 793420.94
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [
+                            {
+                                "accrual": 15352.49,
+                                "period": "12.2024"
+                            }
+                        ],
+                        "total_amount_of_accruals": 15352.49,
+                        "total_amount_of_payments": 0,
+                        "debt": 15352.49
+                    }
+                },
+                "Апрель 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 621955.17,
+                                "period": "04.2025"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 621955.17,
+                        "total_amount_of_payments": 0,
+                        "debt": 621955.17
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [
+                            {
+                                "accrual": 15352.49,
+                                "period": "12.2024"
+                            }
+                        ],
+                        "total_amount_of_accruals": 15352.49,
+                        "total_amount_of_payments": 0,
+                        "debt": 15352.49
+                    }
+                },
+                "Май 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 515910.51,
+                                "period": "05.2025"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 515910.51,
+                        "total_amount_of_payments": 0,
+                        "debt": 515910.51
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [
+                            {
+                                "accrual": 15352.49,
+                                "period": "12.2024"
+                            }
+                        ],
+                        "total_amount_of_accruals": 15352.49,
+                        "total_amount_of_payments": 0,
+                        "debt": 15352.49
+                    }
+                },
+                "Июнь 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 713425.01,
+                                "period": "06.2025"
+                            }
+                        ],
+                        "payments": [
+                            {
+                                "payment": 6703.44,
+                                "date": "18.07.2025",
+                                "contract_type": 8901
+                            }
+                        ],
+                        "additionals": [],
+                        "total_amount_of_accruals": 713425.01,
+                        "total_amount_of_payments": 6703.44,
+                        "debt": 706721.57
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [
+                            {
+                                "accrual": 15352.49,
+                                "period": "12.2024"
+                            }
+                        ],
+                        "total_amount_of_accruals": 15352.49,
+                        "total_amount_of_payments": 0,
+                        "debt": 15352.49
+                    }
+                }
+            },
+            "№ 01.010151-ТЭ от 01.04.2020",
+            "ТЭ",
+            "4.5",
+            "18",
+            "4.5. Исполнитель В срок до 18-го числа месяца, следующего за расчетным, производит оплату стоимости тепловой энергии, теплоносителя, указанной в счете: Датой оплаты считается дата поступления денежных средств на расчетный счет Теплоснабжающей организации:",
+            [
+                {
+                    "claim_date": "21.07.2025",
+                    "claim_number": "567381"
+                }
+            ]
+        ]
+    ],
+    "results_of_name_parser": {
+        "defendant_info": {
+            "inn": "7704065007",
+            "full_name": "ЖСК №3 РАБОТНИКОВ МИДСССР",
+            "short_name": "ЖСК №3 РАБОТНИКОВ МИДСССР",
+            "address": "121099, Г.МОСКВА, Б-Р НОВИНСКИЙ, Д. 15",
+            "kpp": "770401001",
+            "ogrn": "1037700251874"
+        }
+    },
+    "path_to_save": "/home/neurolumber/Nikolay/LegalDocInspector/data/documents_from_request_2026-03-20_192947.462668"
+}
