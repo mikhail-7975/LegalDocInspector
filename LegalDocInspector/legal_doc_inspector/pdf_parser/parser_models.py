@@ -1,5 +1,7 @@
 import datetime
 import logging
+import os
+import shutil
 import time
 from pathlib import Path
 import torch
@@ -20,12 +22,10 @@ from docling.pipeline.threaded_standard_pdf_pipeline import ThreadedStandardPdfP
 from docling.utils.profiling import ProfilingItem
 from docling.datamodel.pipeline_options import (
     PdfPipelineOptions,
-    TesseractOcrOptions,
     TesseractCliOcrOptions,
-    EasyOcrOptions,
     OcrMacOptions,
     RapidOcrOptions,
-    OcrAutoOptions
+    OcrAutoOptions,
 )
 from rapidfuzz import fuzz
 
@@ -34,6 +34,9 @@ import re
 import gc
 
 from configs.config import AppConfig
+
+_DOCLING_ACCEL_THREADS = min(4, os.cpu_count() or 4)
+torch.set_num_threads(_DOCLING_ACCEL_THREADS)
 
 _log = logging.getLogger(__name__)
 
@@ -44,22 +47,67 @@ SKIP_LINES_AFTER_MATCH = 5
 logging.getLogger("docling").setLevel(logging.WARNING)
 _log.setLevel(logging.INFO)
 
+
+def _docling_pipeline_options_low_memory(*, use_cuda: bool) -> ThreadedPdfPipelineOptions:
+    """Меньше RAM: layout без таблиц, батчи по 1, мало потоков, images_scale=0.5."""
+    return ThreadedPdfPipelineOptions(
+        accelerator_options=AcceleratorOptions(
+            device=AcceleratorDevice.CUDA if use_cuda else AcceleratorDevice.CPU,
+            num_threads=_DOCLING_ACCEL_THREADS,
+        ),
+        images_scale=0.5,
+        ocr_batch_size=1,
+        layout_batch_size=1,
+        table_batch_size=1,
+        do_ocr=True,
+        do_table_structure=False,
+    )
+
+
+def _resolve_tesseract_cmd() -> str:
+    """
+    Path or name of the tesseract executable for TesseractCliOcrOptions.
+    Set TESSERACT_CMD to an absolute path if tesseract is not on PATH (typical on Windows).
+    """
+    explicit = (os.environ.get("TESSERACT_CMD") or "").strip()
+    if explicit:
+        return explicit
+    found = shutil.which("tesseract")
+    if found:
+        return found
+    for candidate in (
+        r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+        r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+    ):
+        p = Path(candidate)
+        if p.is_file():
+            return str(p.resolve())
+    return "tesseract"
+
+
+def _tesseract_cli_ocr_options() -> TesseractCliOcrOptions:
+    cmd = _resolve_tesseract_cmd()
+    if not (Path(cmd).is_file() or shutil.which(cmd)):
+        raise RuntimeError(
+            "Tesseract executable not found. Install Tesseract for Windows (e.g. UB Mannheim build), "
+            "add its folder to PATH, or set the environment variable TESSERACT_CMD to the full path "
+            r'of tesseract.exe (for example C:\Program Files\Tesseract-OCR\tesseract.exe).'
+        )
+    _log.debug("Using Tesseract CLI: %s", cmd)
+    return TesseractCliOcrOptions(
+        lang=["rus"],
+        force_full_page_ocr=False,
+        tesseract_cmd=cmd,
+    )
+
+
 class PDFClaimParser:
     def __init__(self) -> None:
-        pipeline_options = ThreadedPdfPipelineOptions(
-            accelerator_options=AcceleratorOptions(
-                device=AcceleratorDevice.CUDA if torch.cuda.is_available() else AcceleratorDevice.CPU,
-                num_threads=64
-
-            ),
-            ocr_batch_size=4,
-            layout_batch_size=16,
-            table_batch_size=4,
-            do_ocr=True,
-            do_table_structure= True
+        pipeline_options = _docling_pipeline_options_low_memory(
+            use_cuda=torch.cuda.is_available()
         )
 
-        # pipeline_options.ocr_options = EasyOcrOptions(lang=['ru'], force_full_page_ocr=True) # лучший вариант
+        # pipeline_options.ocr_options = _tesseract_cli_ocr_options()
         # pipeline_options.ocr_options = PdfPipelineOptions()
 
         self.doc_converter = DocumentConverter(
@@ -77,21 +125,11 @@ class PDFClaimParser:
         _log.info(f"Pipeline initialized in {init_runtime:.2f} seconds.")
 
     def _parse_doc_with_ocr(self, path_to_file: str | Path) -> DoclingDocument:
-        pipeline_options = ThreadedPdfPipelineOptions(
-            accelerator_options=AcceleratorOptions(
-                device=AcceleratorDevice.CUDA if torch.cuda.is_available() else AcceleratorDevice.CPU,
-                num_threads=64
-
-            ),
-            ocr_batch_size=4,
-            layout_batch_size=16,
-            table_batch_size=4,
-            do_ocr=True,
-            do_table_structure= True
+        pipeline_options = _docling_pipeline_options_low_memory(
+            use_cuda=torch.cuda.is_available()
         )
 
-        pipeline_options.ocr_options = EasyOcrOptions(lang=['ru'], force_full_page_ocr=True) # лучший вариант
-        # pipeline_options.ocr_options = PdfPipelineOptions()
+        pipeline_options.ocr_options = _tesseract_cli_ocr_options()
 
         doc_converter_ocr = DocumentConverter(
             format_options={
@@ -238,19 +276,11 @@ class PDFClaimParser:
 class PDFContractParser:
 
     def __init__(self, device='cuda') -> None:
-        pipeline_options = ThreadedPdfPipelineOptions(
-            accelerator_options=AcceleratorOptions(
-                device=AcceleratorDevice.CUDA if (torch.cuda.is_available() and device=='cuda') else AcceleratorDevice.CPU,
-                num_threads=64
-            ),
-            ocr_batch_size=4,
-            layout_batch_size=16,
-            table_batch_size=4,
-            do_ocr=True,
-            do_table_structure= True
+        pipeline_options = _docling_pipeline_options_low_memory(
+            use_cuda=torch.cuda.is_available() and device == "cuda"
         )
 
-        pipeline_options.ocr_options = EasyOcrOptions(lang=['ru'], force_full_page_ocr=True) # лучший вариант
+        pipeline_options.ocr_options = _tesseract_cli_ocr_options()
 
         self.doc_converter = DocumentConverter(
             format_options={
@@ -336,17 +366,32 @@ class PDFContractParser:
                     return 'ФОТЭ'
             
         return "не удалось определить тип договора"
-    
+
+    def _convert_contract_pdf_chunked(self, path_to_file: Path) -> DoclingDocument:
+        """Страницы 1–15: три последовательных прохода по 5 страниц, затем объединение документов."""
+        page_ranges = ((1, 5), (6, 10), (11, 15))
+        documents: list[DoclingDocument] = []
+        for page_start, page_end in page_ranges:
+            _log.info(f"Converting contract PDF pages {page_start}-{page_end}: {path_to_file}")
+            conv_result = self.doc_converter.convert(
+                path_to_file, page_range=(page_start, page_end)
+            )
+            if conv_result.status != ConversionStatus.SUCCESS:
+                raise RuntimeError(
+                    f"Conversion failed for {path_to_file}, pages {page_start}-{page_end}"
+                )
+            documents.append(conv_result.document)
+            torch.cuda.empty_cache()
+        return DoclingDocument.concatenate(documents)
+
     def _parse_contract_text(self, path_to_file: str| Path) -> DoclingDocument:
         if isinstance(path_to_file, str):
             path_to_file = Path(path_to_file)
         start_time = time.time()
-        _log.info(f"Starting conversion of document: {path_to_file}")
-        conv_result = self.doc_converter.convert(path_to_file, page_range=(1,30))
-        if conv_result.status != ConversionStatus.SUCCESS:
-            raise RuntimeError(f"Conversion failed for {path_to_file}")
+        _log.info(f"Starting chunked conversion of document: {path_to_file}")
+        merged = self._convert_contract_pdf_chunked(path_to_file)
         _log.info(f"Document converted in {time.time() - start_time:.2f} seconds.")
-        return conv_result.document
+        return merged
     
 
     def _find_point_of_overdue_date(self, parsed_html_text:str, keywords:dict, excluded_words:list):
