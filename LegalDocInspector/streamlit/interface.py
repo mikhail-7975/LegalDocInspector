@@ -157,6 +157,69 @@ def get_contract_form(contract_number:str):
                                                                                       value=st.session_state.contracts[contract_number]['contract_point_parsed'] if st.session_state.contracts[contract_number]['contract_point'] is None else st.session_state.contracts[contract_number]['contract_point']   )
 
 
+def _contract_field_from_session(contract_number: str, field: str):
+    """Актуальное значение поля договора: contracts + виджет Streamlit по key."""
+    contract = st.session_state.contracts.get(contract_number) or {}
+    value = contract.get(field)
+    if value is not None and str(value).strip() != "":
+        return value
+    if field == "contract_point":
+        widget_val = st.session_state.get(f"c_p{contract_number}")
+        if widget_val is not None and str(widget_val).strip():
+            return widget_val
+        parsed = contract.get("contract_point_parsed")
+        if parsed is not None and str(parsed).strip():
+            return parsed
+    if field == "day_of_penalty":
+        widget_val = st.session_state.get(f"day_of_penalty{contract_number}")
+        if widget_val is not None:
+            return widget_val
+    if field == "contract_type":
+        widget_val = st.session_state.get(f"c_t{contract_number}")
+        if widget_val is not None and str(widget_val).strip():
+            return widget_val
+        parsed = contract.get("contract_type_parsed")
+        if parsed is not None and str(parsed).strip():
+            return parsed
+    return value
+
+
+def build_calculate_penalty_request(parse_result: dict) -> dict:
+    """Тело POST /calculate_penalty с актуальными пунктом договора и днём просрочки."""
+    request_json = {
+        "company_type": st.session_state.form_data["company_type"],
+        "end_date": st.session_state.form_data["end_date"],
+        "parsing_results": [],
+    }
+    for contract_info in parse_result["table_parser_result"]:
+        contract_number = contract_info[1]
+        parsing_result = {
+            "parsed_info": contract_info[0],
+            "contract_number": contract_number,
+            "contract_point": _contract_field_from_session(contract_number, "contract_point"),
+            "day_of_penalty": _contract_field_from_session(contract_number, "day_of_penalty"),
+            "contract_type": _contract_field_from_session(contract_number, "contract_type"),
+        }
+        request_json["parsing_results"].append(parsing_result)
+    return request_json
+
+
+def run_calculate_penalty(parse_result: dict):
+    """Вызов /calculate_penalty. Возвращает (ok, response_json, error_text)."""
+    request_json = build_calculate_penalty_request(parse_result)
+    try:
+        response = requests.post(
+            "http://localhost:5001/calculate_penalty",
+            json=request_json,
+            timeout=120,
+        )
+    except requests.RequestException as exc:
+        return False, None, str(exc)
+    if response.status_code == 200:
+        return True, response.json(), None
+    return False, None, f"{response.status_code}\n{response.text}"
+
+
 st.title("Загрузка и обработка документов (Нейросети включены)")
 
 
@@ -455,44 +518,20 @@ if st.session_state.form_data['flag']:
     st.markdown("### Данные о договорах")
     for contract_num, value in st.session_state.contracts.items():
         get_contract_form(contract_number=contract_num)
-    calculator_list = {}
     if st.button("Произвести расчёты по загруженным наборам документов"):
-        request_json  = {}
-        request_json['company_type'] = st.session_state.form_data['company_type']
-        request_json['end_date'] = st.session_state.form_data['end_date']
-        request_json['parsing_results'] = []
-        for contract_info in result['table_parser_result']:
-            parsed_info  = contract_info[0]
-            contract_number = contract_info[1]
-            overdue_date_info = contract_info[2]
-            service_type_info = contract_info[3]
-            claim_info = contract_info[4]
-            parsing_result = {}
-            parsing_result['parsed_info'] = parsed_info
-            parsing_result['contract_point'] = st.session_state.contracts[contract_number]['contract_point']
-            parsing_result['day_of_penalty'] = st.session_state.contracts[contract_number]['day_of_penalty']
-            parsing_result['contract_type'] = st.session_state.contracts[contract_number]['contract_type']
-            parsing_result['contract_number'] = contract_number
-            request_json['parsing_results'].append(parsing_result)
-
         with st.spinner(text="Ваш запрос обрабатывается, пожалуйста, подождите"):
-            response = requests.post("http://localhost:5001/calculate_penalty",
-                                    json=request_json
-                                    )
-        if response.status_code == 200:
-            flag = True
-            st.session_state.form_data['flag2'] = flag
-            st.session_state.form_data['result2'] = response.json()
-            # st.json(response.json())
-
-
+            ok, calc_json, err = run_calculate_penalty(result)
+        if ok:
+            st.session_state.form_data["flag2"] = True
+            st.session_state.form_data["result2"] = calc_json
         else:
-            st.error(f"Ошибка: {response.status_code}")
-            st.text(response.text)
+            st.error("Ошибка при расчёте пени")
+            st.text(err or "Неизвестная ошибка")
 
     # st.json(st.session_state.form_data)
 
 if st.session_state.form_data['flag2']:
+    _parse_result = st.session_state.form_data.get("result") or {}
     st.success('Расчёты успешно произведены !')
     # st.json(st.session_state.form_data['result2'])
 
@@ -509,7 +548,7 @@ if st.session_state.form_data['flag2']:
     st.session_state.form_data['lawsuit_info']['claims'] = []
 #     applications = {}
     #TODO: может быть несколько претензий в файле
-    for contract_info in result['table_parser_result']:
+    for contract_info in _parse_result.get("table_parser_result", []):
         claim_info = contract_info[6]
         for claim_item in claim_info:
             st.session_state.form_data['lawsuit_info']['claims'].append(f"№ {claim_item['claim_number']} от {claim_item['claim_date']}")
@@ -538,19 +577,6 @@ if st.session_state.form_data['flag2']:
     st.markdown(f"### ФИО ответственного лица, подписывающего иск")
     st.session_state.form_data['responsitive_name'] = st.text_input("Введите имя ответственного лица", value="Самошкина А.Е." if st.session_state.form_data['responsitive_name'] is None else st.session_state.form_data['responsitive_name'] )
 
-    request_json = st.session_state.form_data['result2']['claim_data']
-    request_json['plaintiff_info'] = st.session_state.form_data['plaintiff_info']
-    request_json['defendant_info'] = st.session_state.form_data['defendant_info']
-    request_json['lawsuit_info'] = st.session_state.form_data['lawsuit_info']
-    request_json['responsitive_name'] = st.session_state.form_data['responsitive_name']
-
-    doc_creator_json = {}
-    doc_creator_json['claim_data'] = request_json
-    doc_creator_json['calculator_list'] = st.session_state.form_data['result2']['calculator_list']
-    doc_creator_json['path_to_save'] = st.session_state.form_data['path_to_save']
-
-    # st.json(doc_creator_json)
-    # print(doc_creator_json)
     st.markdown(f"### подтверждение данных и создание документов")
     if st.button(label="Нажмите, чтобы подтвердить правильность данных"):
         st.session_state.form_data['forms_changed'] = False
@@ -573,34 +599,57 @@ if st.session_state.form_data['flag2']:
                 + ", ".join(_missing_pl)
                 + "."
             )
+        elif not _parse_result.get("table_parser_result"):
+            st.error("Нет данных парсинга документов. Повторите загрузку и расчёт.")
         else:
-            first_response = requests.post(
-                "http://localhost:5001/create_doc",
-                json=doc_creator_json,
-            )
-
-            if first_response.status_code == 200:
-                lawsuit = BytesIO(first_response.content)
-                st.session_state.form_data['lawsuit'] = lawsuit
-
+            with st.spinner(
+                "Пересчёт пени с актуальными пунктами договоров и создание документов…"
+            ):
+                ok, calc_json, err = run_calculate_penalty(_parse_result)
+            if not ok:
+                st.error("Не удалось пересчитать пени перед созданием документов")
+                st.text(err or "Неизвестная ошибка")
             else:
-                st.error(f"Ошибка: {first_response.status_code}")
-                st.text(first_response.text)
+                st.session_state.form_data["result2"] = calc_json
+                request_json = dict(calc_json["claim_data"])
+                request_json["plaintiff_info"] = st.session_state.form_data["plaintiff_info"]
+                request_json["defendant_info"] = st.session_state.form_data["defendant_info"]
+                request_json["lawsuit_info"] = st.session_state.form_data["lawsuit_info"]
+                request_json["responsitive_name"] = st.session_state.form_data["responsitive_name"]
 
-            second_response = requests.post(
-                "http://localhost:5001/create_calculating_table",
-                json=doc_creator_json,
-            )
+                doc_creator_json = {
+                    "claim_data": request_json,
+                    "calculator_list": calc_json["calculator_list"],
+                    "path_to_save": st.session_state.form_data["path_to_save"],
+                }
 
-            if second_response.status_code == 200:
-                lawsuit_table = BytesIO(second_response.content)
-                st.session_state.form_data['lawsuite_table'] = lawsuit_table
-                st.session_state.form_data['flag3'] = True
+                first_response = requests.post(
+                    "http://localhost:5001/create_doc",
+                    json=doc_creator_json,
+                )
 
-            elif second_response.status_code == 404:
-                st.error("Ошибка, проверьте, все ли поля заполнены корректно")
-            else:
-                st.error("Ошибка, проверьте, все ли поля заполнены корректно")
+                if first_response.status_code == 200:
+                    lawsuit = BytesIO(first_response.content)
+                    st.session_state.form_data['lawsuit'] = lawsuit
+
+                else:
+                    st.error(f"Ошибка: {first_response.status_code}")
+                    st.text(first_response.text)
+
+                second_response = requests.post(
+                    "http://localhost:5001/create_calculating_table",
+                    json=doc_creator_json,
+                )
+
+                if second_response.status_code == 200:
+                    lawsuit_table = BytesIO(second_response.content)
+                    st.session_state.form_data['lawsuite_table'] = lawsuit_table
+                    st.session_state.form_data['flag3'] = True
+
+                elif second_response.status_code == 404:
+                    st.error("Ошибка, проверьте, все ли поля заполнены корректно")
+                else:
+                    st.error("Ошибка, проверьте, все ли поля заполнены корректно")
 
 if st.session_state.form_data['flag3'] and st.session_state.form_data['forms_changed']==False:
     col1, col2, = st.columns(2)
