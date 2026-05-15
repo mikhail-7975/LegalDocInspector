@@ -146,6 +146,24 @@ def parse_egrul_certificate(pdf_path: str | Path) -> tuple[Dict[str, str], str]:
     return replace_quotes(full_name), replace_quotes(short_name), clean_address(address), kpp, ogrn, text_content
 
 
+def plaintiff_tuple_from_egrul_pdf(pdf_path: str | Path) -> tuple[str, str, str, str, str]:
+    """
+    Те же 5 полей, что у parse_html (itsoft): полное и сокращённое наименование, адрес, КПП, ОГРН.
+    Использует уже загруженную выписку ЕГРЮЛ (PDF), как в /parse.
+    """
+    full_name, short_name, address, kpp, ogrn, _ = parse_egrul_certificate(pdf_path)
+    if not (full_name or short_name):
+        raise ValueError(
+            "Не удалось извлечь наименование организации из PDF выписки ЕГРЮЛ. "
+            "Убедитесь, что файл — выписка из ЕГРЮЛ и текст в PDF доступен для извлечения."
+        )
+    if not short_name and full_name:
+        short_name = full_name
+    if not full_name and short_name:
+        full_name = short_name
+    return full_name, short_name, address or "", kpp or "", ogrn or ""
+
+
 def get_table_info(res_list:str, pattern) -> str:
 
     for df in res_list:

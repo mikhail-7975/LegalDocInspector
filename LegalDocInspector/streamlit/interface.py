@@ -1,7 +1,7 @@
 import requests
 # from datetime import datetime
 from io import BytesIO
-# from pathlib import Path
+from pathlib import Path
 # from urllib.parse import quote
 # from collections import defaultdict
 # from uuid import uuid4
@@ -9,7 +9,13 @@ import streamlit as st
 # import pandas as pd
 #   from docx import Document
 
-from LegalDocInspector.legal_doc_inspector.utils.parse_info_by_inn import parse_html
+from LegalDocInspector.legal_doc_inspector.utils.parse_info_by_inn import (
+    EgrulItsoftParseError,
+    parse_html,
+)
+from LegalDocInspector.legal_doc_inspector.utils.parse_egrul_sertificate import (
+    plaintiff_tuple_from_egrul_pdf,
+)
 from LegalDocInspector.legal_doc_inspector.utils.calculate_tax import calculate_state_duty
 
 if 'form_data' not in st.session_state:
@@ -24,8 +30,6 @@ if 'form_data' not in st.session_state:
         'flag':False,
         'flag2':False,
         'flag3':False,
-        'plaintiff_correct':True,
-        'plaintiff_uncorrect':False,
         'forms_changed': False,
         'num_complects': 1,
         'responsitive_name': None
@@ -43,6 +47,24 @@ if "egrul_certificate" not in st.session_state:
 
 def on_change_handler():
     st.session_state.form_data['forms_changed'] = True
+
+
+def _parser_penalty_day_value(raw) -> int | None:
+    """День месяца 1..31 из ответа парсера или None, если не распознан."""
+    if raw is None:
+        return None
+    try:
+        d = int(str(raw).strip())
+    except (TypeError, ValueError):
+        return None
+    if 1 <= d <= 31:
+        return d
+    return None
+
+
+def _parser_penalty_day_recognized(raw) -> bool:
+    return _parser_penalty_day_value(raw) is not None
+
 
 def get_documents_complect_form(form_id:int, day_of_penalty: int | None = None, contract_uploaded_file = None, claim_uploaded_file = None, debt_certificate_file = None):
     st.markdown(f"### Набор {form_id}")
@@ -104,14 +126,30 @@ def get_contract_form(contract_number:str):
     col1, col2 = st.columns(2)
     # st.json(st.session_state.contracts[contract_number])
     with col1:
-        st.session_state.contracts[contract_number]['day_of_penalty'] = st.number_input(label="Выберите число месяца, которое является последним днём оплаты счёта",
-                                        value=int(st.session_state.contracts[contract_number]['overdue_date_parsed']) if st.session_state.contracts[contract_number]['day_of_penalty'] is None else st.session_state.contracts[contract_number]['day_of_penalty'] ,
-                                        min_value=1,
-                                        max_value=31,
-                                        key='day_of_penalty'+str(contract_number),
-                                        on_change=on_change_handler)
+        contract = st.session_state.contracts[contract_number]
+        recognized = contract.get('overdue_date_recognized')
+        if recognized is None:
+            recognized = _parser_penalty_day_recognized(contract.get('overdue_date_parsed'))
+            contract['overdue_date_recognized'] = recognized
+        if not recognized:
+            st.warning(
+                "День месяца (последний день оплаты счёта) из договора не распознан автоматически. "
+                "Введите его вручную в поле ниже (число от 1 до 31)."
+            )
+        parsed_day = _parser_penalty_day_value(contract.get('overdue_date_parsed'))
+        if contract['day_of_penalty'] is None:
+            default_day = parsed_day if parsed_day is not None else 18
+        else:
+            default_day = int(contract['day_of_penalty'])
 
-
+        st.session_state.contracts[contract_number]['day_of_penalty'] = st.number_input(
+            label="Выберите число месяца, которое является последним днём оплаты счёта",
+            value=default_day,
+            min_value=1,
+            max_value=31,
+            key='day_of_penalty'+str(contract_number),
+            on_change=on_change_handler,
+        )
     with col2:
         st.session_state.contracts[contract_number]['contract_point']  = st.text_input(label="напишите номер пункта договора, в котором говорится о дне начала просрочки ",
                                                                                       key="c_p"+str(contract_number),
@@ -260,6 +298,7 @@ if st.session_state.form_data['flag']:
                 'contract_type_parsed': contract_type,
                 'contract_point_parsed': contract_point,
                 'overdue_date_parsed': overdue_date,
+                'overdue_date_recognized': _parser_penalty_day_recognized(overdue_date),
                 'contract_text_parsed' : contract_text,
                 'contract_point' : None,
                 'day_of_penalty' : None,
@@ -293,41 +332,114 @@ if st.session_state.form_data['flag']:
 
 
     st.markdown("### Данные об Истце")
-    # plaintiff_info['inn'] = st.text_input(label='ИНН Истца', value=f"{plaintiff_info_parsed['plaintiff_inn']}", on_change= on_change_handler)
-    plaintiff_info['inn'] = st.text_input(label='ИНН Истца', value=f"7720518494", on_change= on_change_handler)
+    _DEFAULT_PLAINTIFF_INN = "7720518494"
+    _DEFAULT_PLAINTIFF_CORR = (
+        "121596, г. Москва, ул. Горбунова, д. 2, стр. 3, офис В613"
+    )
+    for _wk, _dv in (
+        ("_plaintiff_w_inn", _DEFAULT_PLAINTIFF_INN),
+        ("_plaintiff_w_full_name", ""),
+        ("_plaintiff_w_short_name", ""),
+        ("_plaintiff_w_addres", ""),
+        ("_plaintiff_w_ogrn", ""),
+        ("_plaintiff_w_correspondency", _DEFAULT_PLAINTIFF_CORR),
+    ):
+        st.session_state.setdefault(_wk, _dv)
 
-    if st.session_state.form_data['plaintiff_correct']:
-        try:
-            plaintiff_full_name, plaintiff_short_name, plaintiff_address, plaintiff_kpp, plaintiff_ogrn = parse_html(plaintiff_info['inn'])
+    _seed_marker = (
+        str(result.get("path_to_save") or ""),
+        str(result.get("egrul_certificate_filename") or ""),
+    )
+    if st.session_state.get("_plaintiff_seed_marker") != _seed_marker:
+        st.session_state["_plaintiff_seed_marker"] = _seed_marker
+        _sugg = result.get("plaintiff_info_suggested_from_egrul_pdf") or {}
+        if _sugg.get("full_name"):
+            st.session_state["_plaintiff_w_full_name"] = str(_sugg["full_name"]).strip()
+        if _sugg.get("short_name"):
+            st.session_state["_plaintiff_w_short_name"] = str(_sugg["short_name"]).strip()
+        if _sugg.get("addres"):
+            st.session_state["_plaintiff_w_addres"] = str(_sugg["addres"]).strip()
+        if _sugg.get("ogrn"):
+            st.session_state["_plaintiff_w_ogrn"] = str(_sugg["ogrn"]).strip()
 
-            plaintiff_info['full_name'] = st.text_input(label="Название Истца", value=f"{plaintiff_full_name.upper()}", key="full_name_1", on_change= on_change_handler)
-            plaintiff_info['short_name'] = st.text_input(label="Название Истца(аббревиатура)", value=f"{plaintiff_short_name}", key="short_name_1", on_change= on_change_handler)
-            plaintiff_info['addres'] = st.text_input(label="Адрес Истца", value=f"{plaintiff_address}", key="addres_1", on_change= on_change_handler)
-            plaintiff_info['correspondency_addres'] = st.text_input(label='Адрес для направления корреспонденции', value="121596, г. Москва, ул. Горбунова, д. 2, стр. 3, офис В613", key="cor_addr1", on_change= on_change_handler)
-            plaintiff_info['ogrn'] = st.text_input(label='ОГРН Истца', value=f"{plaintiff_ogrn}", key="ogrn_1", on_change= on_change_handler)
-        except Exception as e:
-            st.error(e)
-            st.session_state.form_data['plaintiff_correct'] = False
-            st.markdown("К сожалению, не получилось получить данные об истце, проверьте ИНН, пожалуйста")
+    _path_save = st.session_state.form_data.get("path_to_save") or result.get("path_to_save")
+    _egrul_fn = result.get("egrul_certificate_filename")
+    _egrul_path = (
+        Path(_path_save) / _egrul_fn if _path_save and _egrul_fn else None
+    )
 
-    if st.button(label="Обновить данные об истце") or st.session_state.form_data['plaintiff_uncorrect'] == True:
-        st.session_state.form_data['plaintiff_correct'] = False
-        try:
-            plaintiff_full_name, plaintiff_short_name, plaintiff_address, plaintiff_kpp, plaintiff_ogrn = parse_html(plaintiff_info['inn'])
+    if st.session_state.get("_plaintiff_parse_error"):
+        st.error(st.session_state["_plaintiff_parse_error"])
 
-            plaintiff_info['full_name'] = st.text_input(label="Название Истца", value=f"{plaintiff_full_name.upper()}", key="full_name_2", on_change= on_change_handler)
-            plaintiff_info['short_name'] = st.text_input(label="Название Истца(аббревиатура)", value=f"{plaintiff_short_name}", key="short_name_2", on_change= on_change_handler)
-            plaintiff_info['addres'] = st.text_input(label="Адрес Истца", value=f"{plaintiff_address}", key="addr_2", on_change= on_change_handler)
-            plaintiff_info['correspondency_addres'] = st.text_input(label='Адрес для направления корреспонденции', value="121596, г. Москва, ул. Горбунова, д. 2, стр. 3, офис В613", key="coraddr_2", on_change= on_change_handler)
-            plaintiff_info['ogrn'] = st.text_input(label='ОГРН Истца', value=f"{plaintiff_ogrn}", key="ogrn_2", on_change= on_change_handler)
-            if st.session_state.form_data['plaintiff_uncorrect'] ==False:
-                st.session_state.form_data['plaintiff_uncorrect'] = True
-                st.rerun()
+    _col_it, _col_pdf = st.columns(2)
+    with _col_it:
+        if st.button("Заполнить из itsoft по ИНН", key="plaintiff_btn_itsoft"):
+            _inn_try = str(st.session_state.get("_plaintiff_w_inn", _DEFAULT_PLAINTIFF_INN)).strip()
+            try:
+                _fn, _sn, _ad, _kpp, _og = parse_html(_inn_try)
+                st.session_state["_plaintiff_w_full_name"] = _fn.upper()
+                st.session_state["_plaintiff_w_short_name"] = _sn
+                st.session_state["_plaintiff_w_addres"] = _ad
+                st.session_state["_plaintiff_w_ogrn"] = _og
+                st.session_state["_plaintiff_parse_error"] = None
+            except EgrulItsoftParseError as _e:
+                st.session_state["_plaintiff_parse_error"] = str(_e)
+            except Exception as _e:
+                st.session_state["_plaintiff_parse_error"] = (
+                    f"Не удалось разобрать страницу ЕГРЮЛ (itsoft): {_e}"
+                )
+            st.rerun()
+    with _col_pdf:
+        if st.button("Заполнить из PDF выписки ЕГРЮЛ", key="plaintiff_btn_egrul_pdf"):
+            if _egrul_path is None or not _egrul_path.is_file():
+                st.session_state["_plaintiff_parse_error"] = (
+                    "Нет сохранённой выписки на сервере: повторите загрузку и «Отправить на сервер», "
+                    "или заполните поля вручную."
+                )
+            else:
+                try:
+                    _fn, _sn, _ad, _kpp, _og = plaintiff_tuple_from_egrul_pdf(_egrul_path)
+                    st.session_state["_plaintiff_w_full_name"] = _fn.upper()
+                    st.session_state["_plaintiff_w_short_name"] = _sn
+                    st.session_state["_plaintiff_w_addres"] = _ad
+                    st.session_state["_plaintiff_w_ogrn"] = _og
+                    st.session_state["_plaintiff_parse_error"] = None
+                except Exception as _e:
+                    st.session_state["_plaintiff_parse_error"] = str(_e)
+            st.rerun()
 
+    plaintiff_info["inn"] = st.text_input(
+        label="ИНН истца",
+        key="_plaintiff_w_inn",
+        on_change=on_change_handler,
+    )
+    plaintiff_info["full_name"] = st.text_input(
+        label="Полное наименование истца",
+        key="_plaintiff_w_full_name",
+        on_change=on_change_handler,
+    )
+    plaintiff_info["short_name"] = st.text_input(
+        label="Сокращённое наименование (аббревиатура)",
+        key="_plaintiff_w_short_name",
+        on_change=on_change_handler,
+    )
+    plaintiff_info["addres"] = st.text_input(
+        label="Адрес истца",
+        key="_plaintiff_w_addres",
+        on_change=on_change_handler,
+    )
+    plaintiff_info["ogrn"] = st.text_input(
+        label="ОГРН истца",
+        key="_plaintiff_w_ogrn",
+        on_change=on_change_handler,
+    )
+    plaintiff_info["correspondency_addres"] = st.text_input(
+        label="Адрес для направления корреспонденции",
+        key="_plaintiff_w_correspondency",
+        on_change=on_change_handler,
+    )
 
-        except Exception as e:
-            st.error(e)
-            st.markdown("К сожалению, не получилось получить данные об истце, проверьте ИНН, пожалуйста")
+    st.session_state.form_data["plaintiff_info"] = plaintiff_info
 
 
     st.markdown("### Данные об ответчике")
@@ -441,24 +553,44 @@ if st.session_state.form_data['flag2']:
     # print(doc_creator_json)
     st.markdown(f"### подтверждение данных и создание документов")
     if st.button(label="Нажмите, чтобы подтвердить правильность данных"):
-            st.session_state.form_data['forms_changed'] = False
-            first_response = requests.post("http://localhost:5001/create_doc",
-                                json=doc_creator_json
-                                )
+        st.session_state.form_data['forms_changed'] = False
+        _pi = st.session_state.form_data.get('plaintiff_info') or {}
+        _plaintiff_labels = {
+            'full_name': 'полное наименование истца',
+            'short_name': 'сокращённое наименование истца',
+            'addres': 'адрес истца',
+            'ogrn': 'ОГРН истца',
+            'inn': 'ИНН истца',
+        }
+        _missing_pl = [
+            _plaintiff_labels[k]
+            for k in _plaintiff_labels
+            if not str(_pi.get(k, '')).strip()
+        ]
+        if _missing_pl:
+            st.error(
+                "Заполните данные об истце перед созданием документов: "
+                + ", ".join(_missing_pl)
+                + "."
+            )
+        else:
+            first_response = requests.post(
+                "http://localhost:5001/create_doc",
+                json=doc_creator_json,
+            )
 
             if first_response.status_code == 200:
                 lawsuit = BytesIO(first_response.content)
                 st.session_state.form_data['lawsuit'] = lawsuit
 
-
-
             else:
                 st.error(f"Ошибка: {first_response.status_code}")
                 st.text(first_response.text)
 
-            second_response = requests.post("http://localhost:5001/create_calculating_table",
-                                     json=doc_creator_json
-                            )
+            second_response = requests.post(
+                "http://localhost:5001/create_calculating_table",
+                json=doc_creator_json,
+            )
 
             if second_response.status_code == 200:
                 lawsuit_table = BytesIO(second_response.content)
@@ -467,12 +599,8 @@ if st.session_state.form_data['flag2']:
 
             elif second_response.status_code == 404:
                 st.error("Ошибка, проверьте, все ли поля заполнены корректно")
-                # st.json(second_response.json())
             else:
                 st.error("Ошибка, проверьте, все ли поля заполнены корректно")
-
-                # st.error(f"Ошибка: {second_response.status_code}")
-                # st.text(second_response.text)
 
 if st.session_state.form_data['flag3'] and st.session_state.form_data['forms_changed']==False:
     col1, col2, = st.columns(2)
