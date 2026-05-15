@@ -157,14 +157,6 @@ def parse():
         result_json['results_of_name_parser']['defendant_info']['ogrn'] = ogrn
         result_json['path_to_save'] = str(folder.resolve())
         result_json['egrul_certificate_filename'] = egrul_certificate_file_path.name
-        # Подсказка для истца из той же выписки (Streamlit может подставить вручную / кнопкой «из PDF»)
-        result_json['plaintiff_info_suggested_from_egrul_pdf'] = {
-            'full_name': (full_name or '').upper(),
-            'short_name': short_name or '',
-            'addres': address or '',
-            'kpp': kpp or '',
-            'ogrn': ogrn or '',
-        }
 
         # result_json['result_of_llm_parsers'] = pdf_pars_dict
 

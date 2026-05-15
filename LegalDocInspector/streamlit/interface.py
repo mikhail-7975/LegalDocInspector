@@ -396,15 +396,23 @@ if st.session_state.form_data['flag']:
 
     st.markdown("### Данные об Истце")
     _DEFAULT_PLAINTIFF_INN = "7720518494"
+    _DEFAULT_PLAINTIFF_FULL_NAME = (
+        "ПУБЛИЧНОЕ АКЦИОНЕРНОЕ ОБЩЕСТВО «МОСКОВСКАЯ ОБЪЕДИНЕННАЯ ЭНЕРГЕТИЧЕСКАЯ КОМПАНИЯ»"
+    )
+    _DEFAULT_PLAINTIFF_SHORT_NAME = 'ПАО "МОЭК"'
+    _DEFAULT_PLAINTIFF_OGRN = "1047796974092"
+    _DEFAULT_PLAINTIFF_ADDRES = (
+        "119526, г. Москва, проспект Вернадского, д. 101, к. 3, эт/каб 20/2017"
+    )
     _DEFAULT_PLAINTIFF_CORR = (
         "121596, г. Москва, ул. Горбунова, д. 2, стр. 3, офис В613"
     )
     for _wk, _dv in (
         ("_plaintiff_w_inn", _DEFAULT_PLAINTIFF_INN),
-        ("_plaintiff_w_full_name", ""),
-        ("_plaintiff_w_short_name", ""),
-        ("_plaintiff_w_addres", ""),
-        ("_plaintiff_w_ogrn", ""),
+        ("_plaintiff_w_full_name", _DEFAULT_PLAINTIFF_FULL_NAME),
+        ("_plaintiff_w_short_name", _DEFAULT_PLAINTIFF_SHORT_NAME),
+        ("_plaintiff_w_addres", _DEFAULT_PLAINTIFF_ADDRES),
+        ("_plaintiff_w_ogrn", _DEFAULT_PLAINTIFF_OGRN),
         ("_plaintiff_w_correspondency", _DEFAULT_PLAINTIFF_CORR),
     ):
         st.session_state.setdefault(_wk, _dv)
@@ -415,15 +423,12 @@ if st.session_state.form_data['flag']:
     )
     if st.session_state.get("_plaintiff_seed_marker") != _seed_marker:
         st.session_state["_plaintiff_seed_marker"] = _seed_marker
-        _sugg = result.get("plaintiff_info_suggested_from_egrul_pdf") or {}
-        if _sugg.get("full_name"):
-            st.session_state["_plaintiff_w_full_name"] = str(_sugg["full_name"]).strip()
-        if _sugg.get("short_name"):
-            st.session_state["_plaintiff_w_short_name"] = str(_sugg["short_name"]).strip()
-        if _sugg.get("addres"):
-            st.session_state["_plaintiff_w_addres"] = str(_sugg["addres"]).strip()
-        if _sugg.get("ogrn"):
-            st.session_state["_plaintiff_w_ogrn"] = str(_sugg["ogrn"]).strip()
+        st.session_state["_plaintiff_w_inn"] = _DEFAULT_PLAINTIFF_INN
+        st.session_state["_plaintiff_w_full_name"] = _DEFAULT_PLAINTIFF_FULL_NAME
+        st.session_state["_plaintiff_w_short_name"] = _DEFAULT_PLAINTIFF_SHORT_NAME
+        st.session_state["_plaintiff_w_addres"] = _DEFAULT_PLAINTIFF_ADDRES
+        st.session_state["_plaintiff_w_ogrn"] = _DEFAULT_PLAINTIFF_OGRN
+        st.session_state["_plaintiff_w_correspondency"] = _DEFAULT_PLAINTIFF_CORR
 
     _path_save = st.session_state.form_data.get("path_to_save") or result.get("path_to_save")
     _egrul_fn = result.get("egrul_certificate_filename")
