@@ -4,8 +4,10 @@ from LegalDocInspector.legal_doc_inspector.exel_parser import TableParser
 from LegalDocInspector.legal_doc_inspector.doc_creator.calculation_claim_generator import CalculationClaimGenerator
 from LegalDocInspector.legal_doc_inspector.doc_creator.claim_generator import ClaimGenerator
 from LegalDocInspector.legal_doc_inspector.pdf_parser.parser_models import PDFClaimParser, PDFContractParser
+from LegalDocInspector.legal_doc_inspector.docling_frozen_bootstrap import ensure_docling_plugins
 
 def create_app():
+    ensure_docling_plugins()
     app = Flask(__name__)
     contract_parser = PDFContractParser()
     claim_parser = PDFClaimParser()

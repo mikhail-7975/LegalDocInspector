@@ -47,7 +47,8 @@ def extract_text_from_pdf(pdf_path: str | Path) -> tuple[str,str]:
             layout_batch_size=16,
             table_batch_size=4,
             do_ocr=False,  # Отключаем OCR для текстовых PDF
-            do_table_structure=True
+            do_table_structure=True,
+            do_picture_description=False,
         )
         
         doc_converter = DocumentConverter(

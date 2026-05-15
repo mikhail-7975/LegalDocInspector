@@ -33,14 +33,17 @@ def project_root() -> Path:
 
 def _streamlit_interface_path(root: Path) -> Path:
     rel = Path("LegalDocInspector") / "streamlit" / "interface.py"
-    direct = root / rel
-    if direct.is_file():
-        return direct
+    candidates = [root / rel]
     if _is_frozen():
-        bundled = Path(getattr(sys, "_MEIPASS", root)) / rel
-        if bundled.is_file():
-            return bundled
-    return direct
+        meipass = getattr(sys, "_MEIPASS", None)
+        if meipass:
+            candidates.append(Path(meipass) / rel)
+        internal = root / "_internal" / rel
+        candidates.append(internal)
+    for path in candidates:
+        if path.is_file():
+            return path
+    return candidates[0]
 
 
 def _backend_cmd(root: Path) -> list[str]:
@@ -49,16 +52,50 @@ def _backend_cmd(root: Path) -> list[str]:
     return [sys.executable, str(root / "run.py")]
 
 
+def _configure_streamlit_env() -> None:
+    """Отключить dev-режим (Node :3000) — UI отдаётся с :8501."""
+    os.environ["STREAMLIT_GLOBAL_DEVELOPMENT_MODE"] = "false"
+    os.environ["STREAMLIT_SERVER_PORT"] = str(STREAMLIT_PORT)
+    os.environ["STREAMLIT_SERVER_ADDRESS"] = "127.0.0.1"
+    os.environ.setdefault("STREAMLIT_BROWSER_GATHER_USAGE_STATS", "false")
+    # torch/transformers в frozen exe ломают local_sources_watcher при сканировании __path__.
+    os.environ["STREAMLIT_SERVER_FILE_WATCHER_TYPE"] = "none"
+    os.environ.setdefault("TRANSFORMERS_NO_ADVISORY_WARNINGS", "1")
+
+
+def _streamlit_argv(interface: Path) -> list[str]:
+    return [
+        "streamlit",
+        "run",
+        str(interface),
+        f"--server.port={STREAMLIT_PORT}",
+        "--server.address=127.0.0.1",
+        "--server.headless=true",
+        "--server.fileWatcherType=none",
+        "--server.runOnSave=false",
+        "--browser.gatherUsageStats=false",
+        "--global.developmentMode=false",
+    ]
+
+
 def _streamlit_cmd(root: Path) -> list[str]:
     if _is_frozen():
         return [sys.executable, "--streamlit"]
     interface = _streamlit_interface_path(root)
-    return [sys.executable, "-m", "streamlit", "run", str(interface)]
+    return [sys.executable, "-m", *_streamlit_argv(interface)]
 
 
-def _start_process(cmd: list[str], *, cwd: Path) -> subprocess.Popen[bytes]:
+def _start_process(
+    cmd: list[str], *, cwd: Path, streamlit: bool = False
+) -> subprocess.Popen[bytes]:
     env = os.environ.copy()
     env.setdefault("PYTHONUNBUFFERED", "1")
+    if streamlit:
+        env["STREAMLIT_GLOBAL_DEVELOPMENT_MODE"] = "false"
+        env["STREAMLIT_SERVER_PORT"] = str(STREAMLIT_PORT)
+        env["STREAMLIT_SERVER_ADDRESS"] = "127.0.0.1"
+        env["STREAMLIT_SERVER_FILE_WATCHER_TYPE"] = "none"
+        env.setdefault("TRANSFORMERS_NO_ADVISORY_WARNINGS", "1")
     return subprocess.Popen(cmd, cwd=cwd, env=env)
 
 
@@ -78,6 +115,11 @@ def _run_backend() -> int:
     os.chdir(root)
     if str(root) not in sys.path:
         sys.path.insert(0, str(root))
+    from LegalDocInspector.legal_doc_inspector.docling_frozen_bootstrap import (
+        ensure_docling_plugins,
+    )
+
+    ensure_docling_plugins()
     from LegalDocInspector.backend import create_app
 
     app = create_app()
@@ -95,15 +137,12 @@ def _run_streamlit() -> int:
         print(f"Не найден Streamlit UI: {interface}", file=sys.stderr)
         return 1
 
+    _configure_streamlit_env()
+
     import streamlit.web.cli as stcli
 
-    sys.argv = [
-        "streamlit",
-        "run",
-        str(interface),
-        "--server.headless=true",
-        "--browser.gatherUsageStats=false",
-    ]
+    sys.argv = _streamlit_argv(interface)
+    print(f"Streamlit UI: http://127.0.0.1:{STREAMLIT_PORT}")
     stcli.main()
     return 0
 
@@ -121,7 +160,7 @@ def main() -> int:
 
     backend = _start_process(_backend_cmd(root), cwd=root)
     time.sleep(0.5)
-    streamlit = _start_process(_streamlit_cmd(root), cwd=root)
+    streamlit = _start_process(_streamlit_cmd(root), cwd=root, streamlit=True)
 
     processes: list[tuple[str, subprocess.Popen[bytes]]] = [
         ("бэкенд", backend),

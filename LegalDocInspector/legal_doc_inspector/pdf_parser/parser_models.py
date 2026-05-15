@@ -61,6 +61,7 @@ def _docling_pipeline_options_low_memory(*, use_cuda: bool) -> ThreadedPdfPipeli
         table_batch_size=1,
         do_ocr=True,
         do_table_structure=False,
+        do_picture_description=False,
     )
 
 

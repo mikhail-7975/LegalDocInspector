@@ -13,9 +13,6 @@ from LegalDocInspector.legal_doc_inspector.utils.parse_info_by_inn import (
     EgrulItsoftParseError,
     parse_html,
 )
-from LegalDocInspector.legal_doc_inspector.utils.parse_egrul_sertificate import (
-    plaintiff_tuple_from_egrul_pdf,
-)
 from LegalDocInspector.legal_doc_inspector.utils.calculate_tax import calculate_state_duty
 
 if 'form_data' not in st.session_state:
@@ -466,6 +463,10 @@ if st.session_state.form_data['flag']:
                 )
             else:
                 try:
+                    from LegalDocInspector.legal_doc_inspector.utils.parse_egrul_sertificate import (
+                        plaintiff_tuple_from_egrul_pdf,
+                    )
+
                     _fn, _sn, _ad, _kpp, _og = plaintiff_tuple_from_egrul_pdf(_egrul_path)
                     st.session_state["_plaintiff_w_full_name"] = _fn.upper()
                     st.session_state["_plaintiff_w_short_name"] = _sn
