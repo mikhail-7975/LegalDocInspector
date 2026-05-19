@@ -12,6 +12,20 @@ import pandas as pd
 _log = logging.getLogger(__name__)
 
 
+def _get_pdf_page_count(pdf_path: Path) -> int:
+    """Возвращает число страниц в PDF (pypdfium2)."""
+    import pypdfium2 as pdfium
+
+    pdf = pdfium.PdfDocument(str(pdf_path))
+    try:
+        page_count = len(pdf)
+    finally:
+        pdf.close()
+    if page_count < 1:
+        raise RuntimeError(f"PDF без страниц: {pdf_path}")
+    return page_count
+
+
 def extract_text_from_pdf(pdf_path: str | Path) -> tuple[str,str]:
     """
     Извлекает текст из текстового PDF документа без использования OCR.
@@ -37,7 +51,8 @@ def extract_text_from_pdf(pdf_path: str | Path) -> tuple[str,str]:
         from docling.datamodel.pipeline_options import ThreadedPdfPipelineOptions
         from docling.document_converter import DocumentConverter, PdfFormatOption
         from docling.pipeline.threaded_standard_pdf_pipeline import ThreadedStandardPdfPipeline
-        
+        from docling_core.types.doc.document import DoclingDocument
+
         pipeline_options = ThreadedPdfPipelineOptions(
             accelerator_options=AcceleratorOptions(
                 device=AcceleratorDevice.CUDA if torch.cuda.is_available() else AcceleratorDevice.CPU,
@@ -61,20 +76,52 @@ def extract_text_from_pdf(pdf_path: str | Path) -> tuple[str,str]:
         )
         
         doc_converter.initialize_pipeline(InputFormat.PDF)
-        conv_result = doc_converter.convert(pdf_path)
-        
-        if conv_result.status != ConversionStatus.SUCCESS:
-            raise RuntimeError(f"Ошибка конвертации документа: {pdf_path}")
-        
-        document = conv_result.document
-        data = list(document.export_to_dict().values())
-        if len(data) >= 8:
-            text_blocks = data[7]
-            for block in text_blocks:
+
+        page_count = _get_pdf_page_count(pdf_path)
+        _log.info(
+            "Начало посраничной конвертации PDF (без OCR): %s, страниц: %s",
+            pdf_path,
+            page_count,
+        )
+
+        documents: list[DoclingDocument] = []
+        for page_no in range(1, page_count + 1):
+            _log.info(
+                "Конвертация страницы %s/%s (без OCR): %s",
+                page_no,
+                page_count,
+                pdf_path,
+            )
+            conv_result = doc_converter.convert(
+                pdf_path, page_range=(page_no, page_no)
+            )
+            if conv_result.status != ConversionStatus.SUCCESS:
+                raise RuntimeError(
+                    f"Ошибка конвертации страницы {page_no}/{page_count} "
+                    f"(статус {conv_result.status}): {pdf_path}"
+                )
+            documents.append(conv_result.document)
+
+        _log.info(
+            "Посраничная конвертация завершена: %s/%s страниц, файл %s",
+            len(documents),
+            page_count,
+            pdf_path,
+        )
+        if not documents:
+            _log.error(f"Не удалось извлечь текст из PDF: {e}")
+            return "", ""
+
+        document = DoclingDocument.concatenate(documents)
+
+        text_content = document.export_to_text().strip()
+        if not text_content:
+            for block in document.export_to_dict().get("texts") or []:
                 if isinstance(block, dict):
-                    text = block.get("text", "")
+                    text = (block.get("text") or block.get("orig") or "").strip()
                     if text:
                         text_content += text + "\n\n"
+            text_content = text_content.strip()
         
         _log.info("Текст успешно извлечен из PDF с помощью docling (без OCR)")
         return text_content.strip(), document.export_to_markdown()
@@ -85,7 +132,8 @@ def extract_text_from_pdf(pdf_path: str | Path) -> tuple[str,str]:
             "Установите хотя бы одну: pip install PyPDF2 или pip install pymupdf"
         )
     except Exception as e:
-        raise RuntimeError(f"Не удалось извлечь текст из PDF: {e}")
+        _log.error(f"Не удалось извлечь текст из PDF: {e}")
+        return "", ""
 
 
 def parse_egrul_certificate(pdf_path: str | Path) -> tuple[Dict[str, str], str]:

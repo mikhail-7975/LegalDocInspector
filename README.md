@@ -34,6 +34,16 @@ python scripts/build_exe.py
 
 Запуск: `dist\LegalDocInspector\LegalDocInspector.exe` (нужен Tesseract OCR в PATH). Сборка может занять много времени и места на диске из‑за torch/docling. После `build_exe.py` рядом с exe: `data\`, `configs\`, `.streamlit\`, `LegalDocInspector\streamlit\`.
 
+### Установщик Legaldoc-setup.exe (Windows)
+
+Требуется [Inno Setup 6](https://jrsoftware.org/isinfo.php). Установщик Tesseract положите в `installer\vendor\` или `dist\` (см. `installer\vendor\README.txt`).
+
+```
+python scripts/build_installer.py --force-kill --clean
+```
+
+Результат: `installer\Output\Legaldoc-setup.exe` (сначала ставит Tesseract, затем копирует приложение). Только пересборка setup без PyInstaller: `python scripts/build_installer.py --skip-exe`.
+
 ### Запуск бекенда
 
 ```

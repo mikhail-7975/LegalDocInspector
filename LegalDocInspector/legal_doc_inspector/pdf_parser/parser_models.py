@@ -349,7 +349,7 @@ class PDFContractParser:
                     valid_values.append(text_elem.lower())
         
         soi_keywords = ['целей содержания общего имущества', 'сои', 'cои']
-        te_keywords = ['договор теплоснабжения', 'на снабжение тепловой']
+        te_keywords = ['договор теплоснабжения', 'на снабжение тепловой', 'контракт теплоснабжения']
         gvs_keywords = ['договор поставки горячей воды', 'горячей воды', 'гвс', 'горячего водоснабжения']
         fote_keywords = ['акт проверки', 'фотэ']
         for valid_elem in valid_values[:20]:
@@ -385,11 +385,67 @@ class PDFContractParser:
             torch.cuda.empty_cache()
         return DoclingDocument.concatenate(documents)
 
+    def _convert_contract_pdf_chunked_no_ocr(self, path_to_file: Path) -> Optional[DoclingDocument]:
+        """Страницы 1–15 без OCR: по одной странице, затем слияние; None, если текст пуст."""
+        _log.info(f"Starting conversion of document (text layer, no OCR): {path_to_file}")
+
+        pipeline_options = _docling_pipeline_options_low_memory(
+            use_cuda=torch.cuda.is_available()
+        )
+        pipeline_options.do_ocr = False
+
+        doc_converter_no_ocr = DocumentConverter(
+            format_options={
+                InputFormat.PDF: PdfFormatOption(
+                    pipeline_cls=ThreadedStandardPdfPipeline,
+                    pipeline_options=pipeline_options,
+                )
+            }
+        )
+        doc_converter_no_ocr.initialize_pipeline(InputFormat.PDF)
+
+        documents: list[DoclingDocument] = []
+        for page_no in range(1, 16):
+            _log.info(
+                f"Converting contract PDF page {page_no} (no OCR): {path_to_file}"
+            )
+            conv_result = doc_converter_no_ocr.convert(
+                path_to_file, page_range=(page_no, page_no)
+            )
+            if conv_result.status != ConversionStatus.SUCCESS:
+                break
+            documents.append(conv_result.document)
+            torch.cuda.empty_cache()
+
+        del doc_converter_no_ocr
+
+        if not documents:
+            return None
+
+        merged = DoclingDocument.concatenate(documents)
+        if merged.export_to_text().strip():
+            return merged
+        for block in merged.export_to_dict().get("texts") or []:
+            if isinstance(block, dict) and (
+                (block.get("text") or "").strip()
+                or (block.get("orig") or "").strip()
+            ):
+                return merged
+        return None
+
     def _parse_contract_text(self, path_to_file: str| Path) -> DoclingDocument:
         if isinstance(path_to_file, str):
             path_to_file = Path(path_to_file)
         start_time = time.time()
-        _log.info(f"Starting chunked conversion of document: {path_to_file}")
+
+        merged_no_ocr = self._convert_contract_pdf_chunked_no_ocr(path_to_file)
+        if merged_no_ocr is not None:
+            _log.info(
+                f"Document converted without OCR in {time.time() - start_time:.2f} seconds."
+            )
+            return merged_no_ocr
+
+        _log.info("Text layer not found or empty, falling back to OCR (chunked conversion).")
         merged = self._convert_contract_pdf_chunked(path_to_file)
         _log.info(f"Document converted in {time.time() - start_time:.2f} seconds.")
         return merged
@@ -405,7 +461,7 @@ class PDFContractParser:
             overdue_day = self._find_day_overdue_suggestions(result_text)
             return contract_point, overdue_day, result_text
         else:
-            return "К сожалению, не удалось распознать часть текста", None, None
+            return "Не удалось найти пункт", None, None
     #FIXME нужно брать информацию из шапки договора
     def _find_point_of_service_type(self, parsed_html_text:str, keywords:dict, excluded_words:list):
         service_type_key_words_list_weighted = keywords

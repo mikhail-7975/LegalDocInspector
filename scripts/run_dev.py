@@ -120,6 +120,9 @@ def _run_backend() -> int:
     )
 
     ensure_docling_plugins()
+    from LegalDocInspector.logging_config import configure_console_logging
+
+    configure_console_logging()
     from LegalDocInspector.backend import create_app
 
     app = create_app()
