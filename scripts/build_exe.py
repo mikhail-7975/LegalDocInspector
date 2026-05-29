@@ -17,8 +17,12 @@
 Перед сборкой каталог dist/LegalDocInspector освобождается автоматически.
 Если папка занята — сборка идёт в dist/LegalDocInspector_<timestamp>.
 
+Перед PyInstaller скачиваются модели docling (нужен интернет):
+    vendor/docling-models/ → dist/LegalDocInspector/models/
+
 Результат:
     dist/LegalDocInspector/LegalDocInspector.exe
+    dist/LegalDocInspector/models/
     dist/LegalDocInspector/data/
     dist/LegalDocInspector/configs/
 """
@@ -40,6 +44,9 @@ DEFAULT_COLLECT_NAME = "LegalDocInspector"
 EXE_NAME = "LegalDocInspector.exe"
 
 BUNDLE_DIRS = ("data", "configs")
+VENDOR_MODELS_SRC = ROOT / "vendor" / "docling-models"
+DIST_MODELS_DIR_NAME = "models"
+PREFETCH_SCRIPT = Path(__file__).resolve().parent / "prefetch_docling_models.py"
 STREAMLIT_UI_SRC = ROOT / "LegalDocInspector" / "streamlit"
 STREAMLIT_CONFIG_SRC = ROOT / ".streamlit"
 STREAMLIT_CONFIG_DST_NAME = ".streamlit"
@@ -144,6 +151,26 @@ def _release_dist_directory(*, force_kill: bool) -> bool:
         return False
 
 
+def _prefetch_docling_models(*, force: bool, minimal: bool) -> None:
+    if not PREFETCH_SCRIPT.is_file():
+        raise SystemExit(f"Скрипт предзагрузки не найден: {PREFETCH_SCRIPT}")
+
+    cmd = [
+        sys.executable,
+        str(PREFETCH_SCRIPT),
+        "--output-dir",
+        str(VENDOR_MODELS_SRC),
+    ]
+    if force:
+        cmd.append("--force")
+    if minimal:
+        cmd.append("--minimal")
+
+    print("Предзагрузка моделей docling (нужен интернет)...")
+    print("  ", " ".join(cmd))
+    subprocess.check_call(cmd, cwd=ROOT)
+
+
 def _run_pyinstaller(*, clean: bool) -> None:
     env = os.environ.copy()
     env["LDI_COLLECT_NAME"] = COLLECT_NAME
@@ -191,12 +218,23 @@ def _copy_runtime_assets() -> None:
     else:
         print(f"Предупреждение: нет {STREAMLIT_CONFIG_SRC}")
 
+    models_src = VENDOR_MODELS_SRC
+    models_dst = DIST_DIR / DIST_MODELS_DIR_NAME
+    if not models_src.is_dir():
+        raise SystemExit(
+            f"Каталог моделей не найден: {models_src}\n"
+            "  Выполните: python scripts/prefetch_docling_models.py"
+        )
+    print(f"Копирование {models_src} -> {models_dst}")
+    shutil.copytree(models_src, models_dst, dirs_exist_ok=True)
+
     readme = DIST_DIR / "README.txt"
     readme.write_text(
         "LegalDocInspector\n\n"
         "Запуск: LegalDocInspector.exe\n"
         "  Бэкенд:    http://localhost:5001\n"
         "  Streamlit: http://localhost:8501\n\n"
+        "Модели docling: папка models/ (интернет при сборке не нужен).\n"
         "Нужен установленный Tesseract OCR (rus) в PATH или TESSERACT_CMD.\n"
         "Остановка: Ctrl+C в консоли.\n",
         encoding="utf-8",
@@ -220,6 +258,21 @@ def main() -> int:
         action="store_true",
         help="не переименовывать/удалять dist/LegalDocInspector перед сборкой",
     )
+    parser.add_argument(
+        "--skip-models",
+        action="store_true",
+        help="не скачивать модели (должен существовать vendor/docling-models)",
+    )
+    parser.add_argument(
+        "--models-minimal",
+        action="store_true",
+        help="скачать только layout и tableformer (быстрее, меньше dist)",
+    )
+    parser.add_argument(
+        "--models-force",
+        action="store_true",
+        help="перекачать модели даже если vendor/docling-models уже заполнен",
+    )
     args = parser.parse_args()
 
     _ensure_pyinstaller()
@@ -228,13 +281,24 @@ def main() -> int:
     if not args.no_release_dist:
         _release_dist_directory(force_kill=args.force_kill)
 
+    if not args.skip_models:
+        _prefetch_docling_models(
+            force=args.models_force,
+            minimal=args.models_minimal,
+        )
+    elif not VENDOR_MODELS_SRC.is_dir():
+        raise SystemExit(
+            f"--skip-models: нет каталога {VENDOR_MODELS_SRC}\n"
+            "  Сначала: python scripts/prefetch_docling_models.py"
+        )
+
     _run_pyinstaller(clean=args.clean)
     _copy_runtime_assets()
 
     print()
     print("Сборка завершена.")
     print(f"  Запуск: {EXE}")
-    print("  Рядом: data/, configs/, .streamlit/, LegalDocInspector/streamlit/.")
+    print("  Рядом: models/, data/, configs/, .streamlit/, LegalDocInspector/streamlit/.")
     if COLLECT_NAME != DEFAULT_COLLECT_NAME:
         print(
             f"\n  Внимание: сборка в dist\\{COLLECT_NAME} (старый dist\\{DEFAULT_COLLECT_NAME} был занят)."

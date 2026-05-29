@@ -34,6 +34,9 @@ import re
 import gc
 
 from configs.config import AppConfig
+from LegalDocInspector.legal_doc_inspector.docling_artifacts import (
+    resolve_docling_artifacts_path,
+)
 
 _DOCLING_ACCEL_THREADS = min(4, os.cpu_count() or 4)
 torch.set_num_threads(_DOCLING_ACCEL_THREADS)
@@ -50,7 +53,7 @@ _log.setLevel(logging.INFO)
 
 def _docling_pipeline_options_low_memory(*, use_cuda: bool) -> ThreadedPdfPipelineOptions:
     """Меньше RAM: layout без таблиц, батчи по 1, мало потоков, images_scale=0.5."""
-    return ThreadedPdfPipelineOptions(
+    options = ThreadedPdfPipelineOptions(
         accelerator_options=AcceleratorOptions(
             device=AcceleratorDevice.CUDA if use_cuda else AcceleratorDevice.CPU,
             num_threads=_DOCLING_ACCEL_THREADS,
@@ -63,6 +66,11 @@ def _docling_pipeline_options_low_memory(*, use_cuda: bool) -> ThreadedPdfPipeli
         do_table_structure=False,
         do_picture_description=False,
     )
+    artifacts_path = resolve_docling_artifacts_path()
+    if artifacts_path is not None:
+        options.artifacts_path = str(artifacts_path)
+        _log.debug("Docling artifacts_path=%s", artifacts_path)
+    return options
 
 
 def _resolve_tesseract_cmd() -> str:
@@ -84,6 +92,20 @@ def _resolve_tesseract_cmd() -> str:
         if p.is_file():
             return str(p.resolve())
     return "tesseract"
+
+
+def _get_pdf_page_count(pdf_path: Path) -> int:
+    """Число страниц в PDF (pypdfium2)."""
+    import pypdfium2 as pdfium
+
+    pdf = pdfium.PdfDocument(str(pdf_path))
+    try:
+        page_count = len(pdf)
+    finally:
+        pdf.close()
+    if page_count < 1:
+        raise RuntimeError(f"PDF без страниц: {pdf_path}")
+    return page_count
 
 
 def _tesseract_cli_ocr_options() -> TesseractCliOcrOptions:
@@ -108,7 +130,7 @@ class PDFClaimParser:
             use_cuda=torch.cuda.is_available()
         )
 
-        # pipeline_options.ocr_options = _tesseract_cli_ocr_options()
+        pipeline_options.ocr_options = _tesseract_cli_ocr_options()
         # pipeline_options.ocr_options = PdfPipelineOptions()
 
         self.doc_converter = DocumentConverter(
@@ -369,25 +391,42 @@ class PDFContractParser:
         return "не удалось определить тип договора"
 
     def _convert_contract_pdf_chunked(self, path_to_file: Path) -> DoclingDocument:
-        """Страницы 1–15: три последовательных прохода по 5 страниц, затем объединение документов."""
-        page_ranges = ((1, 5), (6, 10), (11, 15))
+        """OCR: по одной странице от 1 до числа страниц PDF, затем объединение."""
+        page_count = _get_pdf_page_count(path_to_file)
+        _log.info(
+            "Contract PDF has %s page(s), converting with OCR one-by-one: %s",
+            page_count,
+            path_to_file,
+        )
         documents: list[DoclingDocument] = []
-        for page_start, page_end in page_ranges:
-            _log.info(f"Converting contract PDF pages {page_start}-{page_end}: {path_to_file}")
+        for page_no in range(1, page_count + 1):
+            _log.info(
+                "Converting contract PDF page %s/%s (OCR): %s",
+                page_no,
+                page_count,
+                path_to_file,
+            )
             conv_result = self.doc_converter.convert(
-                path_to_file, page_range=(page_start, page_end)
+                path_to_file, page_range=(page_no, page_no)
             )
             if conv_result.status != ConversionStatus.SUCCESS:
                 raise RuntimeError(
-                    f"Conversion failed for {path_to_file}, pages {page_start}-{page_end}"
+                    f"Conversion failed for {path_to_file}, "
+                    f"page {page_no}/{page_count}"
                 )
             documents.append(conv_result.document)
             torch.cuda.empty_cache()
+            gc.collect()
         return DoclingDocument.concatenate(documents)
 
     def _convert_contract_pdf_chunked_no_ocr(self, path_to_file: Path) -> Optional[DoclingDocument]:
-        """Страницы 1–15 без OCR: по одной странице, затем слияние; None, если текст пуст."""
-        _log.info(f"Starting conversion of document (text layer, no OCR): {path_to_file}")
+        """Без OCR: по одной странице до конца PDF, затем слияние; None, если текст пуст."""
+        page_count = _get_pdf_page_count(path_to_file)
+        _log.info(
+            "Starting conversion (text layer, no OCR), %s page(s): %s",
+            page_count,
+            path_to_file,
+        )
 
         pipeline_options = _docling_pipeline_options_low_memory(
             use_cuda=torch.cuda.is_available()
@@ -405,9 +444,12 @@ class PDFContractParser:
         doc_converter_no_ocr.initialize_pipeline(InputFormat.PDF)
 
         documents: list[DoclingDocument] = []
-        for page_no in range(1, 16):
+        for page_no in range(1, page_count + 1):
             _log.info(
-                f"Converting contract PDF page {page_no} (no OCR): {path_to_file}"
+                "Converting contract PDF page %s/%s (no OCR): %s",
+                page_no,
+                page_count,
+                path_to_file,
             )
             conv_result = doc_converter_no_ocr.convert(
                 path_to_file, page_range=(page_no, page_no)
@@ -416,6 +458,7 @@ class PDFContractParser:
                 break
             documents.append(conv_result.document)
             torch.cuda.empty_cache()
+            gc.collect()
 
         del doc_converter_no_ocr
 

@@ -115,10 +115,14 @@ def _run_backend() -> int:
     os.chdir(root)
     if str(root) not in sys.path:
         sys.path.insert(0, str(root))
+    from LegalDocInspector.legal_doc_inspector.docling_artifacts import (
+        configure_docling_artifacts_env,
+    )
     from LegalDocInspector.legal_doc_inspector.docling_frozen_bootstrap import (
         ensure_docling_plugins,
     )
 
+    configure_docling_artifacts_env()
     ensure_docling_plugins()
     from LegalDocInspector.logging_config import configure_console_logging
 

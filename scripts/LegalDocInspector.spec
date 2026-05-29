@@ -33,6 +33,7 @@ datas: list = [
 ]
 binaries: list = []
 hiddenimports: list = [
+    "LegalDocInspector.legal_doc_inspector.docling_artifacts",
     "LegalDocInspector.legal_doc_inspector.docling_frozen_bootstrap",
     "LegalDocInspector.backend",
     "LegalDocInspector.backend.routes",
@@ -56,6 +57,7 @@ hiddenimports: list = [
     "docling",
     "docling_core",
     "docling_parse",
+    "latex2mathml",
     "docling.models.plugins.defaults",
     "docling.models.stages.picture_description.picture_description_vlm_engine_model",
     "docling.models.stages.picture_description.picture_description_vlm_model",
@@ -67,7 +69,14 @@ hiddenimports: list = [
 ]
 
 # collect_all только для пакетов с данными/плагинами; не для pandas/torch
-for pkg in ("streamlit", "flask", "docling", "docling_core", "docling_parse"):
+for pkg in (
+    "streamlit",
+    "flask",
+    "docling",
+    "docling_core",
+    "docling_parse",
+    "latex2mathml",
+):
     try:
         tmp = collect_all(pkg)
         datas += tmp[0]

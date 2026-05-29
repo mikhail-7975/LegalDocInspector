@@ -178,6 +178,7 @@ cython_debug/
 *.ipynb
 *lock*
 .huggingface/
+vendor/docling-models/
 
 data/documents*
 
