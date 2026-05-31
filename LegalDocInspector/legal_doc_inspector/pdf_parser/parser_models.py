@@ -37,6 +37,16 @@ from configs.config import AppConfig
 from LegalDocInspector.legal_doc_inspector.docling_artifacts import (
     resolve_docling_artifacts_path,
 )
+from LegalDocInspector.legal_doc_inspector.pdf_parser.docling_safe_convert import (
+    concatenate_documents,
+    convert_pdf_pages,
+    documents_export_to_html,
+    documents_have_text,
+    extract_text_pairs_from_documents,
+    get_pdf_page_count,
+    is_allocation_error,
+    release_memory,
+)
 
 _DOCLING_ACCEL_THREADS = min(4, os.cpu_count() or 4)
 torch.set_num_threads(_DOCLING_ACCEL_THREADS)
@@ -94,18 +104,7 @@ def _resolve_tesseract_cmd() -> str:
     return "tesseract"
 
 
-def _get_pdf_page_count(pdf_path: Path) -> int:
-    """Число страниц в PDF (pypdfium2)."""
-    import pypdfium2 as pdfium
-
-    pdf = pdfium.PdfDocument(str(pdf_path))
-    try:
-        page_count = len(pdf)
-    finally:
-        pdf.close()
-    if page_count < 1:
-        raise RuntimeError(f"PDF без страниц: {pdf_path}")
-    return page_count
+_get_pdf_page_count = get_pdf_page_count
 
 
 def _tesseract_cli_ocr_options() -> TesseractCliOcrOptions:
@@ -147,11 +146,40 @@ class PDFClaimParser:
         init_runtime = time.time() - start_time
         _log.info(f"Pipeline initialized in {init_runtime:.2f} seconds.")
 
-    def _parse_doc_with_ocr(self, path_to_file: str | Path) -> DoclingDocument:
+    def _collect_claim_text_pairs(
+        self,
+        path_to_file: Path,
+        doc_converter: DocumentConverter,
+        *,
+        log_prefix: str,
+    ) -> list[tuple[int, str]]:
+        documents, pages_ok, last_error = convert_pdf_pages(
+            doc_converter,
+            path_to_file,
+            log_prefix=log_prefix,
+        )
+        if last_error and not documents:
+            if is_allocation_error(last_error):
+                return []
+            raise RuntimeError(
+                f"Conversion failed for {path_to_file}: {last_error}"
+            ) from last_error
+        pairs = extract_text_pairs_from_documents(
+            documents,
+            extract_text_with_page=self._extract_text_with_page,
+        )
+        _log.info(
+            "Claim text pairs from %s page(s): %s blocks (%s)",
+            pages_ok,
+            len(pairs),
+            path_to_file,
+        )
+        return pairs
+
+    def _parse_doc_with_ocr(self, path_to_file: str | Path) -> list[tuple[int, str]]:
         pipeline_options = _docling_pipeline_options_low_memory(
             use_cuda=torch.cuda.is_available()
         )
-
         pipeline_options.ocr_options = _tesseract_cli_ocr_options()
 
         doc_converter_ocr = DocumentConverter(
@@ -166,28 +194,18 @@ class PDFClaimParser:
         if isinstance(path_to_file, str):
             path_to_file = Path(path_to_file)
         start_time = time.time()
-        _log.info(f"Starting conversion of document - ocr attempt: {path_to_file}")
-        conv_result = doc_converter_ocr.convert(path_to_file)
-        if conv_result.status != ConversionStatus.SUCCESS:
-            raise RuntimeError(f"Conversion failed for {path_to_file}")
-        _log.info(f"Document converted in {time.time() - start_time:.2f} seconds.")
-
+        _log.info("Starting conversion of document - ocr attempt: %s", path_to_file)
+        pairs = self._collect_claim_text_pairs(
+            path_to_file,
+            doc_converter_ocr,
+            log_prefix="claim-OCR",
+        )
+        _log.info(
+            "Document converted (ocr) in %.2f seconds.",
+            time.time() - start_time,
+        )
         del doc_converter_ocr
-        return conv_result.document
-
-
-
-
-    def _parse_claim_text(self, path_to_file: str | Path) -> DoclingDocument:
-        if isinstance(path_to_file, str):
-            path_to_file = Path(path_to_file)
-        start_time = time.time()
-        _log.info(f"Starting conversion of document: {path_to_file}")
-        conv_result = self.doc_converter.convert(path_to_file)
-        if conv_result.status != ConversionStatus.SUCCESS:
-            raise RuntimeError(f"Conversion failed for {path_to_file}")
-        _log.info(f"Document converted in {time.time() - start_time:.2f} seconds.")
-        return conv_result.document
+        return pairs
     
     def _extract_text_with_page(self, data: list) -> list[tuple[int, str]]:
         """
@@ -214,17 +232,26 @@ class PDFClaimParser:
         return result
     
     def analyse_claim(self, path_to_file: str|Path):
-        document = self._parse_claim_text(path_to_file)
-        data = list(document.export_to_dict().values())
+        if isinstance(path_to_file, str):
+            path_to_file = Path(path_to_file)
+        start_time = time.time()
+        _log.info("Starting conversion of document: %s", path_to_file)
 
-        text_pairs = self._extract_text_with_page(data)
+        text_pairs = self._collect_claim_text_pairs(
+            path_to_file,
+            self.doc_converter,
+            log_prefix="claim",
+        )
+        _log.info(
+            "Document converted in %.2f seconds.",
+            time.time() - start_time,
+        )
+
         claims = self._parse_claim_number_and_date(text_pairs)
-        if len(claims)==0 :
-            document = self._parse_doc_with_ocr(path_to_file)
-            data = list(document.export_to_dict().values())
-            text_pairs = self._extract_text_with_page(data)
+        if len(claims) == 0:
+            text_pairs = self._parse_doc_with_ocr(path_to_file)
             claims = self._parse_claim_number_and_date(text_pairs)
-        torch.cuda.empty_cache()
+        release_memory()
         claims = self._standartize_claims(claims)
         if len(claims) == 0:
             claims = [{"claim-date": "Не удалось распознать дату", "claim_number" : "Не удалось распознать номер"}]
@@ -336,8 +363,10 @@ class PDFContractParser:
         tuple (тип договора, пункт договора, день, текст)
         
         """
-        conv_result = self._parse_contract_text(path_to_file)
-        conv_result_html = conv_result.export_to_html()
+        if isinstance(path_to_file, str):
+            path_to_file = Path(path_to_file)
+        contract_documents = self._parse_contract_documents(path_to_file)
+        conv_result_html = documents_export_to_html(contract_documents)
         # print(conv_result_html)
         type_of_service = self._find_type_of_contract(conv_result_html)
         if type_of_service not in ['ФОТЭ', 'не удалось определить тип договора']:
@@ -353,7 +382,7 @@ class PDFContractParser:
         # type_of_service = self._find_point_of_service_type(conv_result_html,
         #                                                    keywords=config.service_type_keywords,
         #                                                    excluded_words=config.service_type_excluded)
-        torch.cuda.empty_cache()
+        release_memory()
         return type_of_service, point_of_contract, overdue_day, result_text
     
     def _find_type_of_contract(self, parsed_html):
@@ -390,37 +419,38 @@ class PDFContractParser:
             
         return "не удалось определить тип договора"
 
-    def _convert_contract_pdf_chunked(self, path_to_file: Path) -> DoclingDocument:
-        """OCR: по одной странице от 1 до числа страниц PDF, затем объединение."""
+    def _convert_contract_pdf_chunked(self, path_to_file: Path) -> list[DoclingDocument]:
+        """OCR: постранично; при OOM возвращает обработанные страницы."""
         page_count = _get_pdf_page_count(path_to_file)
         _log.info(
             "Contract PDF has %s page(s), converting with OCR one-by-one: %s",
             page_count,
             path_to_file,
         )
-        documents: list[DoclingDocument] = []
-        for page_no in range(1, page_count + 1):
-            _log.info(
-                "Converting contract PDF page %s/%s (OCR): %s",
-                page_no,
-                page_count,
-                path_to_file,
-            )
-            conv_result = self.doc_converter.convert(
-                path_to_file, page_range=(page_no, page_no)
-            )
-            if conv_result.status != ConversionStatus.SUCCESS:
-                raise RuntimeError(
-                    f"Conversion failed for {path_to_file}, "
-                    f"page {page_no}/{page_count}"
-                )
-            documents.append(conv_result.document)
-            torch.cuda.empty_cache()
-            gc.collect()
-        return DoclingDocument.concatenate(documents)
+        documents, pages_ok, last_error = convert_pdf_pages(
+            self.doc_converter,
+            path_to_file,
+            page_count=page_count,
+            log_prefix="contract-OCR",
+        )
+        if last_error and not documents:
+            if is_allocation_error(last_error):
+                return []
+            raise RuntimeError(
+                f"Conversion failed for {path_to_file}: {last_error}"
+            ) from last_error
+        _log.info(
+            "Contract OCR: %s/%s page(s) converted: %s",
+            pages_ok,
+            page_count,
+            path_to_file,
+        )
+        return documents
 
-    def _convert_contract_pdf_chunked_no_ocr(self, path_to_file: Path) -> Optional[DoclingDocument]:
-        """Без OCR: по одной странице до конца PDF, затем слияние; None, если текст пуст."""
+    def _convert_contract_pdf_chunked_no_ocr(
+        self, path_to_file: Path
+    ) -> list[DoclingDocument]:
+        """Без OCR: постранично; пустой список, если текста нет."""
         page_count = _get_pdf_page_count(path_to_file)
         _log.info(
             "Starting conversion (text layer, no OCR), %s page(s): %s",
@@ -443,56 +473,68 @@ class PDFContractParser:
         )
         doc_converter_no_ocr.initialize_pipeline(InputFormat.PDF)
 
-        documents: list[DoclingDocument] = []
-        for page_no in range(1, page_count + 1):
-            _log.info(
-                "Converting contract PDF page %s/%s (no OCR): %s",
-                page_no,
-                page_count,
-                path_to_file,
-            )
-            conv_result = doc_converter_no_ocr.convert(
-                path_to_file, page_range=(page_no, page_no)
-            )
-            if conv_result.status != ConversionStatus.SUCCESS:
-                break
-            documents.append(conv_result.document)
-            torch.cuda.empty_cache()
-            gc.collect()
-
+        documents, pages_ok, last_error = convert_pdf_pages(
+            doc_converter_no_ocr,
+            path_to_file,
+            page_count=page_count,
+            log_prefix="contract-no-OCR",
+        )
         del doc_converter_no_ocr
 
+        if last_error and not documents:
+            if is_allocation_error(last_error):
+                return []
+            _log.warning(
+                "Contract no-OCR stopped at page %s/%s: %s",
+                pages_ok + 1,
+                page_count,
+                last_error,
+            )
+
         if not documents:
-            return None
+            return []
 
-        merged = DoclingDocument.concatenate(documents)
-        if merged.export_to_text().strip():
-            return merged
-        for block in merged.export_to_dict().get("texts") or []:
-            if isinstance(block, dict) and (
-                (block.get("text") or "").strip()
-                or (block.get("orig") or "").strip()
-            ):
-                return merged
-        return None
+        if documents_have_text(documents):
+            return documents
 
-    def _parse_contract_text(self, path_to_file: str| Path) -> DoclingDocument:
-        if isinstance(path_to_file, str):
-            path_to_file = Path(path_to_file)
+        return []
+
+    def _parse_contract_documents(self, path_to_file: Path) -> list[DoclingDocument]:
         start_time = time.time()
 
-        merged_no_ocr = self._convert_contract_pdf_chunked_no_ocr(path_to_file)
-        if merged_no_ocr is not None:
+        documents = self._convert_contract_pdf_chunked_no_ocr(path_to_file)
+        if documents:
             _log.info(
-                f"Document converted without OCR in {time.time() - start_time:.2f} seconds."
+                "Document converted without OCR in %.2f seconds (%s page chunk(s)).",
+                time.time() - start_time,
+                len(documents),
             )
-            return merged_no_ocr
+            return documents
 
-        _log.info("Text layer not found or empty, falling back to OCR (chunked conversion).")
-        merged = self._convert_contract_pdf_chunked(path_to_file)
-        _log.info(f"Document converted in {time.time() - start_time:.2f} seconds.")
-        return merged
-    
+        _log.info(
+            "Text layer not found or empty, falling back to OCR (chunked conversion)."
+        )
+        documents = self._convert_contract_pdf_chunked(path_to_file)
+        if not documents:
+            raise RuntimeError(f"No pages converted for contract PDF: {path_to_file}")
+        _log.info(
+            "Document converted in %.2f seconds (%s page chunk(s)).",
+            time.time() - start_time,
+            len(documents),
+        )
+        return documents
+
+    def _parse_contract_text(self, path_to_file: str | Path) -> DoclingDocument:
+        """Совместимость с тестами: объединённый DoclingDocument или первый фрагмент."""
+        if isinstance(path_to_file, str):
+            path_to_file = Path(path_to_file)
+        documents = self._parse_contract_documents(path_to_file)
+        merged, _ = concatenate_documents(documents)
+        if merged is not None:
+            return merged
+        if documents:
+            return documents[0]
+        raise RuntimeError(f"No pages converted for contract PDF: {path_to_file}")
 
     def _find_point_of_overdue_date(self, parsed_html_text:str, keywords:dict, excluded_words:list):
         point_overdue_key_words_list_weighted = keywords

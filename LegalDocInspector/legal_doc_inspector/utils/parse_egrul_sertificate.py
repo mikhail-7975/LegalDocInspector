@@ -12,20 +12,6 @@ import pandas as pd
 _log = logging.getLogger(__name__)
 
 
-def _get_pdf_page_count(pdf_path: Path) -> int:
-    """Возвращает число страниц в PDF (pypdfium2)."""
-    import pypdfium2 as pdfium
-
-    pdf = pdfium.PdfDocument(str(pdf_path))
-    try:
-        page_count = len(pdf)
-    finally:
-        pdf.close()
-    if page_count < 1:
-        raise RuntimeError(f"PDF без страниц: {pdf_path}")
-    return page_count
-
-
 def extract_text_from_pdf(pdf_path: str | Path) -> tuple[str,str]:
     """
     Извлекает текст из текстового PDF документа без использования OCR.
@@ -46,26 +32,27 @@ def extract_text_from_pdf(pdf_path: str | Path) -> tuple[str,str]:
     # Резервный метод: используем docling без OCR (для текстовых PDF)
     try:
         import torch
-        from docling.datamodel.accelerator_options import AcceleratorDevice, AcceleratorOptions
-        from docling.datamodel.base_models import ConversionStatus, InputFormat
-        from docling.datamodel.pipeline_options import ThreadedPdfPipelineOptions
+        from docling.datamodel.base_models import InputFormat
         from docling.document_converter import DocumentConverter, PdfFormatOption
         from docling.pipeline.threaded_standard_pdf_pipeline import ThreadedStandardPdfPipeline
-        from docling_core.types.doc.document import DoclingDocument
 
-        pipeline_options = ThreadedPdfPipelineOptions(
-            accelerator_options=AcceleratorOptions(
-                device=AcceleratorDevice.CUDA if torch.cuda.is_available() else AcceleratorDevice.CPU,
-                num_threads=64
-            ),
-            ocr_batch_size=4,
-            layout_batch_size=16,
-            table_batch_size=4,
-            do_ocr=False,  # Отключаем OCR для текстовых PDF
-            do_table_structure=True,
-            do_picture_description=False,
+        from LegalDocInspector.legal_doc_inspector.pdf_parser.docling_safe_convert import (
+            convert_pdf_pages,
+            documents_export_to_markdown,
+            documents_export_to_text,
+            get_pdf_page_count,
+            is_allocation_error,
         )
-        
+        from LegalDocInspector.legal_doc_inspector.pdf_parser.parser_models import (
+            _docling_pipeline_options_low_memory,
+        )
+
+        pipeline_options = _docling_pipeline_options_low_memory(
+            use_cuda=torch.cuda.is_available()
+        )
+        pipeline_options.do_ocr = False
+        pipeline_options.do_table_structure = True
+
         doc_converter = DocumentConverter(
             format_options={
                 InputFormat.PDF: PdfFormatOption(
@@ -74,57 +61,52 @@ def extract_text_from_pdf(pdf_path: str | Path) -> tuple[str,str]:
                 )
             }
         )
-        
+
         doc_converter.initialize_pipeline(InputFormat.PDF)
 
-        page_count = _get_pdf_page_count(pdf_path)
+        page_count = get_pdf_page_count(pdf_path)
         _log.info(
             "Начало посраничной конвертации PDF (без OCR): %s, страниц: %s",
             pdf_path,
             page_count,
         )
 
-        documents: list[DoclingDocument] = []
-        for page_no in range(1, page_count + 1):
-            _log.info(
-                "Конвертация страницы %s/%s (без OCR): %s",
-                page_no,
-                page_count,
-                pdf_path,
-            )
-            conv_result = doc_converter.convert(
-                pdf_path, page_range=(page_no, page_no)
-            )
-            if conv_result.status != ConversionStatus.SUCCESS:
-                raise RuntimeError(
-                    f"Ошибка конвертации страницы {page_no}/{page_count} "
-                    f"(статус {conv_result.status}): {pdf_path}"
-                )
-            documents.append(conv_result.document)
+        documents, pages_ok, last_error = convert_pdf_pages(
+            doc_converter,
+            pdf_path,
+            page_count=page_count,
+            log_prefix="egrul",
+        )
 
         _log.info(
             "Посраничная конвертация завершена: %s/%s страниц, файл %s",
-            len(documents),
+            pages_ok,
             page_count,
             pdf_path,
         )
         if not documents:
-            _log.error(f"Не удалось извлечь текст из PDF: {e}")
+            if last_error and is_allocation_error(last_error):
+                _log.error("Не удалось извлечь текст из PDF (OOM): %s", last_error)
+            else:
+                _log.error(
+                    "Не удалось извлечь текст из PDF: %s",
+                    last_error or "нет страниц",
+                )
             return "", ""
 
-        document = DoclingDocument.concatenate(documents)
+        text_content = documents_export_to_text(documents)
+        markdown_content = documents_export_to_markdown(documents)
 
-        text_content = document.export_to_text().strip()
-        if not text_content:
-            for block in document.export_to_dict().get("texts") or []:
-                if isinstance(block, dict):
-                    text = (block.get("text") or block.get("orig") or "").strip()
-                    if text:
-                        text_content += text + "\n\n"
-            text_content = text_content.strip()
-        
+        if last_error and is_allocation_error(last_error):
+            _log.warning(
+                "ЕГРЮЛ: частичный текст после OOM (%s/%s страниц): %s",
+                pages_ok,
+                page_count,
+                pdf_path,
+            )
+
         _log.info("Текст успешно извлечен из PDF с помощью docling (без OCR)")
-        return text_content.strip(), document.export_to_markdown()
+        return text_content.strip(), markdown_content
     
     except ImportError:
         raise ImportError(
