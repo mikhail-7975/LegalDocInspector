@@ -311,6 +311,16 @@ class DocxRedactor:
         target_run.font.color.rgb = source_run.font.color.rgb if source_run.font.color else None
 
 
+    def paragraph_text_set_bold(self, target_paragraph: Paragraph):
+        for run in target_paragraph.runs:
+            # run.bold = True
+            self.run_text_set_bold(run)
+
+
+    def run_text_set_bold(self, target_run: Run):
+        target_run.bold = True
+
+
     def delete_paragraph(self, index: int) -> None:
         """
         Удаляет параграф из документа по заданному индексу.

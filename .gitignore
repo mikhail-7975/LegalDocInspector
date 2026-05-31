@@ -11,6 +11,8 @@ __pycache__/
 build/
 develop-eggs/
 dist/
+installer/payload/
+installer/Output/
 downloads/
 eggs/
 .eggs/
@@ -30,7 +32,7 @@ MANIFEST
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
-*.spec
+# *.spec
 
 # Installer logs
 pip-log.txt
@@ -176,19 +178,11 @@ cython_debug/
 *.ipynb
 *lock*
 .huggingface/
+vendor/docling-models/
 
-experiments/parser_excel/docs/
-experiments/parser_excel/docs1/
-experiments/parser_excel/docs2/
-experiments/parser_excel/docs3/
-experiments/parser_excel/data_for_tests/
-experiments/parser_excel/myevn/
-experiments/parser_excel/test_data/
-experiments/calculator/myenv/
-experiments/app-v1/appenv/
-experiments/data_for_tests/
+data/documents*
 
-experiments/app-v1/documents/
-experiments/app-v1/output/
-experiments/app-v1/appenv/
-experiments/app-v1/DOC2/
+experiments/*
+data/*
+!data/templates/*
+dist*

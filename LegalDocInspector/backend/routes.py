@@ -7,31 +7,31 @@ import zipfile # рабоат с архивами
 from collections import defaultdict # словари
 from datetime import date, datetime # работа с датой
 from pathlib import Path
-
+import traceback
 # from configs.config import AppConfig, load_yaml_config # конфиги
 
 # from ___legal_doc_inspector.doc_parser.table_parser_new import TableParser
-from ___legal_doc_inspector.doc_parser.calculator_adapter import convert_data
-from ___legal_doc_inspector.penalty_calculator.penalty_calculator_new import calculate_penalty
+from LegalDocInspector.legal_doc_inspector.utils.calculator_adapter import convert_data
+from LegalDocInspector.legal_doc_inspector.calculator.penalty_calculator import calculate_penalty
 
-from pathlib import Path
-
+from configs.config import AppConfig
 # import pandas as pd # работа с датафреймами
 import requests # запросы
 from bs4 import BeautifulSoup # раьота с html
 from flask import Flask, Response, g, jsonify, render_template, request, send_file # бекэнд
 from flask import current_app as app
+from flask import session
 
 from werkzeug.utils import secure_filename
 
-from ___legal_doc_inspector.doc_parser.html_parser import parse_html # функция для парсинга html
-from ___legal_doc_inspector.app.utils.parse_info_by_inn import parse_html # класс
-
+from LegalDocInspector.legal_doc_inspector.utils.parse_info_by_inn import parse_html # класс
+from LegalDocInspector.legal_doc_inspector.utils.parse_egrul_sertificate import parse_egrul_certificate
 from LegalDocInspector.legal_doc_inspector.doc_creator.calculation_claim_generator import CalculationClaimGenerator
 from LegalDocInspector.legal_doc_inspector.doc_creator.claim_generator import ClaimGenerator
 
-from .llm_functions import parse_claim, parse_contract
+from LegalDocInspector.legal_doc_inspector.pdf_parser.parser_models import PDFClaimParser, PDFContractParser
 
+# app.secret_key = os.urandom(30).hex()
 @app.route("/")
 def home():
     return "server is working"
@@ -39,160 +39,218 @@ def home():
 
 @app.route("/parse", methods=["POST"])
 def parse():
+    try:
+        table_parser = g.table_parser
+        claim_parser : PDFClaimParser = g.claim_parser
+        contract_parser : PDFContractParser = g.contract_parser
+        current_config:AppConfig = g.config
+        # save_data_folder = Path("/tmp/doc_inspector_data")
+        save_data_folder = current_config.save_data_folder
 
-    table_parser = g.table_parser
+        date_request = request.form.get("date")
+        date_request = date.fromisoformat(date_request).strftime("%d.%m.%Y")
+        complects_count = int(request.form.get('complects_count'))
+        # certificates_count = int(request.form.get("certificates_count"))
 
-    # current_config = g.config
-    save_data_folder = Path("/tmp/doc_inspector_data")
+        folder = Path(
+            save_data_folder, secure_filename(f"documents_from_request_{datetime.now()}")
+        )
+        # session['path_to_save'] = str(folder)
+        print(request.files)
 
-    date_request = request.form.get("date")
-    date_request = date.fromisoformat(date_request).strftime("%d.%m.%Y")
-    complects_count = int(request.form.get('complects_count'))
+        folder.mkdir(exist_ok=True, parents=True)
 
-    folder = Path(
-        save_data_folder, secure_filename(f"documents_from_request_{datetime.now()}")
-    )
-    request.files
+        result_json = dict()
+        parsing_table_results = []
+        uploaded_files = defaultdict(lambda : [])
 
-    folder.mkdir(exist_ok=True, parents=True)
+        # выписка из ЕГРЮЛ
+        print("try to get egrul certificate file")
+        print(request.files.keys())
+        egrul_certificate_file = request.files[f'egrul_certificate_file']
 
-    result_json = dict()
-    parsing_table_results = []
-    uploaded_files = defaultdict(lambda : [])
-    for complect_id in range(1, complects_count+1):
-        complect_folder = Path(folder, f'complect_{complect_id}')
-        complect_folder.mkdir(exist_ok=True, parents=True)
-
-        complect_claim_file = request.files[f"complect_{complect_id}_claim_file"]
-        complect_contract_file = request.files[f'complect_{complect_id}_contract_file']
-        complect_certificate_file = request.files[f'complect_{complect_id}_certificate_file']
-
-        # договор
-        contract_file_path = Path(complect_folder, secure_filename(complect_contract_file.filename))
-        complect_contract_file.save(contract_file_path)
-        uploaded_files['contract_file'].append(str(contract_file_path))
-
-        # претензия
-        claim_file_path = Path(complect_folder, secure_filename(complect_claim_file.filename))
-        complect_claim_file.save(claim_file_path)
-        uploaded_files['claim_file'].append(str(claim_file_path))
-
-        # справка
-        certificate_file_path = Path(complect_folder, secure_filename(complect_certificate_file.filename))
-        complect_certificate_file.save(certificate_file_path)
-        uploaded_files['certificate_file'].append(str(certificate_file_path))
+        egrul_certificate_file_path = Path(folder, secure_filename(egrul_certificate_file.filename))
+        print(f"egrul certificate file path: {egrul_certificate_file_path}")
+        egrul_certificate_file.save(egrul_certificate_file_path)
+        uploaded_files['egrul_certificate_file'].append(str(egrul_certificate_file_path))
 
 
-        table_parser.open(str(certificate_file_path))
-        result = table_parser.parse()
-        defendant_inn = table_parser.parse_defendant_inn()
-        contract_number = table_parser.parse_contract_number()
-        print(contract_number)
-        table_parser.close()
+        for complect_id in range(1, complects_count+1):
+            complect_folder = Path(folder, f'complect_{complect_id}')
+            complect_folder.mkdir(exist_ok=True, parents=True)
 
-        # LLM parser
+            complect_claim_file = request.files[f"complect_{complect_id}_claim_file"]
+            complect_contract_file = request.files[f'complect_{complect_id}_contract_file']
+            # complect_certificate_file = request.files[f'complect_{complect_id}_certificate_file']
 
-        llm_contract_number, service_type_info, overdue_date_info = parse_contract(contract_file_path)
-        print("contract parser done!")
-        plaintiff_inn, claim_number, claim_date = parse_claim(claim_file_path)
-        print("claim parser done!")
+            # договор
+            contract_file_path = Path(complect_folder, secure_filename(complect_contract_file.filename))
+            complect_contract_file.save(contract_file_path)
+            uploaded_files['contract_file'].append(str(contract_file_path))
 
-        # overdue_date_info  = "(заглушка) В следующем фрагменте указан срок, в течение которого Исполнитель должен произвести оплату:\n\n\"5. 5. Исполнитель в срок до 18-го числа месяца, следующего за расчетным, производит оплату стоимости тепловой энергии, теплоносителя, указанной в счете. Датой оплаты считается дата поступления денежных средств на расчетный счет Теплоснабжающей организации.\""
-        # service_type_info = "(заглушка) тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))"
-        claim_info = {"claim_date": claim_date, "claim_number": claim_number}
+            # претензия
+            certificates_count = int(request.form.get(f"{complect_id}_certificates_count"))
+            claim_file_path = Path(complect_folder, secure_filename(complect_claim_file.filename))
+            complect_claim_file.save(claim_file_path)
+            uploaded_files['claim_file'].append(str(claim_file_path))
+            table_parser_results = []
+            
+            
+            # справки
+            for claim_id in range(certificates_count):
+                print(complect_id, claim_id)
+                complect_certificate_file = request.files[f'complect_{complect_id}_certificate_file_{claim_id}']
+                certificate_file_path = Path(complect_folder, secure_filename(complect_certificate_file.filename))
+                complect_certificate_file.save(certificate_file_path)
+                uploaded_files['certificate_file'].append(str(certificate_file_path))
+                table_parser.open(str(certificate_file_path))
+                result = table_parser.parse()
+                defendant_inn = table_parser.parse_defendant_inn()
+                contract_number = table_parser.parse_contract_number()
+                # print(contract_number)
+                table_parser.close()
+                table_parser_results.append(result)
 
-        parsing_table_results.append((result, contract_number, overdue_date_info, service_type_info, claim_info))
+            merged_table_result = {}
+            for table_result in table_parser_results :
+                merged_table_result.update(table_result)
 
-    result_json['table_parser_result'] = parsing_table_results
+            # LLM parser
 
-    result_json['results_of_name_parser'] = {}
-    result_json['results_of_name_parser']['defendant_info'] = {}
-    result_json['results_of_name_parser']['defendant_info']['inn'] = f'{defendant_inn}'
+            # llm_contract_number, service_type_info, overdue_date_info = parse_contract(contract_file_path)
+            # print("contract parser done!")
+            # plaintiff_inn, claim_number, claim_date = parse_claim(claim_file_path)
+            # claim_info = {"claim_date": str(claim_date), "claim_number": str(claim_number)}
+            # print("claim parser done!")
 
-    # Получение данных ответчика по его инн
-    full_name, short_name, address, kpp, ogrn = parse_html(int(defendant_inn))
-    result_json['results_of_name_parser']['defendant_info']['full_name'] = full_name
-    result_json['results_of_name_parser']['defendant_info']['short_name'] = short_name
-    result_json['results_of_name_parser']['defendant_info']['address'] = address
-    result_json['results_of_name_parser']['defendant_info']['kpp'] = kpp
-    result_json['results_of_name_parser']['defendant_info']['ogrn'] = ogrn
+            # overdue_date_info  = "(заглушка) В следующем фрагменте указан срок, в течение которого Исполнитель должен произвести оплату:\n\n\"5. 5. Исполнитель в срок до 18-го числа месяца, следующего за расчетным, производит оплату стоимости тепловой энергии, теплоносителя, указанной в счете. Датой оплаты считается дата поступления денежных средств на расчетный счет Теплоснабжающей организации.\""
+            contract_type, contract_point, overdue_date, contract_text = contract_parser.analyse_contract(contract_file_path, current_config)
+            # service_type_info = "(заглушка) тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))"
+            # claim_info = {"claim_date": '01.01.2000', "claim_number": '123456'}
+            claim_info = claim_parser.analyse_claim(claim_file_path)
 
+            parsing_table_results.append((merged_table_result, contract_number, contract_type, contract_point, overdue_date, contract_text, claim_info))
 
-    # result_json['result_of_llm_parsers'] = pdf_pars_dict
+        result_json['table_parser_result'] = parsing_table_results
 
-    with open(str(Path(folder, "result_parser.json")),"w") as json_file:
-        # json.dump(result_json, json_file)
-        json.dump(result_json, json_file, indent=4, ensure_ascii=False)
+        result_json['results_of_name_parser'] = {}
+        result_json['results_of_name_parser']['defendant_info'] = {}
+        result_json['results_of_name_parser']['defendant_info']['inn'] = f'{defendant_inn}'
 
-    return jsonify(result_json), 200
+        # Получение данных ответчика по его инн
+        try:
+        # full_name, short_name, address, kpp, ogrn = parse_html(int(defendant_inn))
+            full_name, short_name, address, kpp, ogrn, text_content = parse_egrul_certificate(str(egrul_certificate_file_path))
+            if len(short_name) < 1 or short_name is None:
+                short_name = full_name
+            print("EGRUL certificate parsed successfully")
+        except Exception as e:
+            print(e)
+            print("EGRUL certificate parsing failed")
+            return traceback.format_exc(), 500
+            # full_name, short_name, address, kpp, ogrn = parse_html(int(defendant_inn))
+        
+        result_json['results_of_name_parser']['defendant_info']['full_name'] = full_name.upper()
+        result_json['results_of_name_parser']['defendant_info']['short_name'] = short_name
+        result_json['results_of_name_parser']['defendant_info']['address'] = address
+        result_json['results_of_name_parser']['defendant_info']['kpp'] = kpp
+        result_json['results_of_name_parser']['defendant_info']['ogrn'] = ogrn
+        result_json['path_to_save'] = str(folder.resolve())
+        result_json['egrul_certificate_filename'] = egrul_certificate_file_path.name
+
+        # result_json['result_of_llm_parsers'] = pdf_pars_dict
+
+        with open(str(Path(folder, "result_parser.json")),"w") as json_file:
+            # json.dump(result_json, json_file)
+            json.dump(result_json, json_file, indent=4, ensure_ascii=False)
+
+        return jsonify(result_json), 200
+    except Exception as e:
+
+        print(traceback.format_exc())
+
 
 @app.route("/calculate_penalty", methods=["POST"])
 def calc_penalty():
-    data = request.json
-    calculated_results = []
-    last_days_of_penalty = []
-    contract_points = []
-    response = {}
-    for parsing_result in data['parsing_results']:
-        calculated_data = calculate_penalty(
-            parsed_data=parsing_result['parsed_info'],
-            day_of_penalty=parsing_result['day_of_penalty'],
-            company_type=data['company_type'],
-            end_date=data['end_date'],
-        )
-        calculated_data['contract_number'] = parsing_result['contract_number']
-        last_days_of_penalty.append(parsing_result['day_of_penalty'])
-        contract_points.append(parsing_result['contract_point'])
-        calculated_results.append(sort_data_structure(calculated_data))
+    try:
+        data = request.json
+        calculated_results = []
+        last_days_of_penalty = []
+        contract_points = []
+        response = {}
+        for parsing_result in data['parsing_results']:
+            calculated_data = calculate_penalty(
+                parsed_data=parsing_result['parsed_info'],
+                day_of_penalty=parsing_result['day_of_penalty'],
+                company_type=data['company_type'],
+                end_date=data['end_date'],
+            )
+            calculated_data['contract_number'] = parsing_result['contract_number']
+            calculated_data['contract_type'] = parsing_result['contract_type']
+            last_days_of_penalty.append(parsing_result['day_of_penalty'])
+            contract_points.append(parsing_result['contract_point'])
+            calculated_results.append(sort_data_structure(calculated_data))
 
-    converted_data = convert_data(
-        calculated_data_list=calculated_results,
-        last_days_of_penalty=last_days_of_penalty,
-        contract_points=contract_points,
-        company_type=data['company_type'],
-        current_date=data['end_date']
-    )
-    print(converted_data , '\n' , calculated_results)
-    response['claim_data'] = converted_data
-    response['calculator_list']  = calculated_results
-    return jsonify(response), 200
+        converted_data = convert_data(
+            calculated_data_list=calculated_results,
+            last_days_of_penalty=last_days_of_penalty,
+            contract_points=contract_points,
+            company_type=data['company_type'],
+            current_date=data['end_date']
+        )
+        # print(converted_data , '\n' , calculated_results)
+        response['claim_data'] = converted_data
+        response['calculator_list']  = calculated_results
+        return jsonify(response), 200
+    except Exception as e:
+        return traceback.format_exc(), 500
+
 
 @app.route("/create_doc", methods=["POST"])
 def create_doc():
-
-    request_json = request.json
-    calculator_list, claim_data = request_json['calculator_list'], request_json['claim_data']
-    claim_gen:ClaimGenerator = g.claim_generator
-    path_to_save = str(Path('/tmp', 'doc_inspector_data', 'ИСК.docx'))
-    path_to_template = str(Path("/home/mkalinichenko/projects/LegalDocInspector/data/templates/claim.docx"))
-    claim_gen.make_instance(config=claim_data,
-                            template_filename=path_to_template,
-                            output_filename=path_to_save)
-    # lawsuit_creator = LawsuitCreator(dict())
-    # path_to_save = find_parent_dir_with_name(Path(request_json['files_info']['lawsuit_calculating']),'documents_from_request')
-    # with open(Path(path_to_save,'lawsuit_create.json'), "w", encoding='utf-8') as f:
-    #     json.dump(request_json, f , indent=4, ensure_ascii=False)
-    # file = lawsuit_creator.create_lawsuit(request_json, Path(path_to_save,'ИСК.docx'))
-    # # print(file)
-    return send_file(path_to_save, as_attachment=True), 200
+    try:
+        request_json = request.json
+        calculator_list, claim_data, path_to_save = request_json['calculator_list'], request_json['claim_data'], request_json['path_to_save']
+        claim_gen:ClaimGenerator = g.claim_generator
+        # path_to_save = str(Path('/tmp', 'doc_inspector_data', 'ИСК.docx'))
+        path_to_save = str(Path(path_to_save, 'ИСК.docx'))
+        # path_to_template = str(Path("/home/mkalinichenko/projects/LegalDocInspector/data/templates/claim.docx"))
+        config:AppConfig = g.config
+        path_to_template = config.claim_template_path
+        claim_gen.make_instance(config=claim_data,
+                                template_filename=path_to_template,
+                                output_filename=path_to_save)
+        
+        return send_file(path_to_save, as_attachment=True), 200
+    except Exception as e:
+        return traceback.format_exc(), 500
 
 
 @app.route("/create_calculating_table", methods=["POST"])
 def create_table():
-    calc_claim_generator:CalculationClaimGenerator = g.calc_claim_generator
-    request_json = request.json
-    calculator_list, claim_data = request_json['calculator_list'], request_json['claim_data']
-    calculator_list_sorted = [sort_data_structure(calculator_list[i]) for i in range(len(calculator_list))]
-    path_to_save = str(Path('/tmp', 'doc_inspector_data', 'ИСК.docx'))
-    path_to_template = str(Path("/home/mkalinichenko/projects/LegalDocInspector/data/templates/calculation_claim.docx"))
-    calc_claim_generator.make_instance(config=calculator_list_sorted,
-                                       config2=claim_data,
-                                       template_filename=path_to_template,
-                                       output_filename=path_to_save)
-    # if not os.path.exists(path_to_table):
-    #     return jsonify({"error": "Файл не найден"}), 404
+    try:
+        calc_claim_generator:CalculationClaimGenerator = g.calc_claim_generator
+        request_json = request.json
+        calculator_list, claim_data, path_to_save = request_json['calculator_list'], request_json['claim_data'], request_json['path_to_save']
+        calculator_list_sorted = [sort_data_structure(calculator_list[i]) for i in range(len(calculator_list))]
+        # path_to_save = str(Path('/tmp', 'doc_inspector_data', 'расчёт к иску.docx'))
+        path_to_save = str(Path(path_to_save, 'расчёт к иску.docx'))
 
-    return send_file(path_to_save, as_attachment=True), 200
+        config:AppConfig = g.config
+        path_to_template = config.calculation_claim_template_path
+
+        # path_to_template = str(Path("/home/mkalinichenko/projects/LegalDocInspector/data/templates/calculation_claim.docx"))
+        calc_claim_generator.make_instance(config=calculator_list_sorted,
+                                        config2=claim_data,
+                                        template_filename=path_to_template,
+                                        output_filename=path_to_save)
+        # if not os.path.exists(path_to_table):
+        #     return jsonify({"error": "Файл не найден"}), 404
+
+        return send_file(path_to_save, as_attachment=True), 200
+    except Exception as e:
+        print(traceback.format_exc())
+        return 500
 
 
 def get_request_files(
@@ -301,6 +359,7 @@ def sort_data_structure(data:dict) -> dict:
     4. end_of_table2
     5. debt_info
     6. contract_number
+    7. contract_type
     """
 
     # Создаем новый упорядоченный словарь
@@ -342,7 +401,7 @@ def sort_data_structure(data:dict) -> dict:
         sorted_data[month_key] = data[month_key]
 
     # 3-6. Добавляем остальные элементы в нужном порядке
-    elements_order = ['end_of_table1', 'end_of_table2', 'debt_info', 'contract_number']
+    elements_order = ['end_of_table1', 'end_of_table2', 'debt_info', 'contract_number', 'contract_type']
 
     for element in elements_order:
         if element in data:

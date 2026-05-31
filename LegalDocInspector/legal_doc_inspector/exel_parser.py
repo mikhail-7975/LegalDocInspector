@@ -4,6 +4,7 @@
 
 import re
 import pandas as pd
+import json
 
 from LegalDocInspector.legal_doc_inspector.utils.convert_month import convert_month
 
@@ -64,7 +65,8 @@ class TableParser:
         self.pattern_month = r"(январь|февраль|март|апрель|май|июнь|июль|август|сентябрь|октябрь|ноябрь|декабрь)\s+\d{4}"
         self.pattern_date = r"\d{4}"
         self.pattern_adjustment = "доля от размера годовой корректировки платы за тепловую энергию"
-        self.pattern_end = "итого по договору"
+        self.pattern_adjustment_2 = r"(январе|феврале|марте|апреле|мае|июне|июле|августе|сентябре|октябре|ноябре|декабре)\s+\d{4}"
+        self.pattern_end = ["итого по договору", 'итого по периоду']
         self.pattern_period = r"(0?[1-9]|1[0-9])\.\d{4}"
 
 
@@ -96,26 +98,12 @@ class TableParser:
             if row_type == 1:
                 block = 1
                 current_month = self.find_month(row)
-                periods[current_month] = {
-                    "accrual": {
-                        "accruals": [],
-                        "payments": [],
-                        "additionals": [],
-                        "total_amount_of_accruals": None,
-                        "total_amount_of_payments": None,
-                        "debt": None
-                    },
-                    "adjustment": {
-                        "accruals": [],
-                        "payments": [],
-                        "additionals": [],
-                        "total_amount_of_accruals": None,
-                        "total_amount_of_payments": None,
-                        "debt": None
-                    }
-                }
+                self.add_period_if_is_new(current_month, periods)
 
             elif row_type == 2:
+                adjustment_block_text = self.read_text_from_adjustment_block_row(row)
+                current_month = self.transform_month_to_another_form(adjustment_block_text)
+                self.add_period_if_is_new(current_month, periods)
                 block = 2
 
             elif row_type == 3:
@@ -142,7 +130,10 @@ class TableParser:
                 #     periods[current_month]["accrual"][type_operation].append({"period": period, "accrual": accrual})
                 # elif block == 2:
                 #     periods[current_month]["adjustment"][type_operation].append({"period": period, "accrual": accrual})
-                periods[current_month][self.block_type(block)][type_operation].append({"accrual": accrual, "period": period})
+                if self.check_if_is_correcting(row):
+                    periods[current_month]["accrual"]["additionals"].append({"accrual": accrual, "period": period})
+                else:
+                    periods[current_month][self.block_type(block)][type_operation].append({"accrual": accrual, "period": period})
 
             elif row_type == 5:
                 date = self.parse_payment_date(row)
@@ -163,6 +154,17 @@ class TableParser:
 
             row += 1
 
+        # with open("temp_table.json", "w") as file:
+        #     json.dump(periods, file, ensure_ascii=False, indent=4)
+
+        for key, value in periods.copy().items():
+            if value['accrual']['debt'] in [0, None] and value['adjustment']['debt'] in [0, None]:
+                del periods[key]
+        
+        # for month in periods:
+        #     print(f"{month}: {periods[month]}")
+        # with open("parser.json", "w") as file:
+        #     json.dump(periods, file, ensure_ascii=False, indent=4)
         return periods
 
 
@@ -192,14 +194,21 @@ class TableParser:
         5 - строка, содержащая платеж
         6 - строка, содержащая задолженность за весь текущий период (обычно стоит предпоследней перед следующим блоком)
         7 - строка, содержащая сумму всех задолженностей и платежей (обычно стоит последней перед следующим блоком)
+        8 - пустая строка (так бывает)
         """
         first = self.reader.cell(row, 0)
         second = self.reader.cell(row, 1)
         third = self.reader.cell(row, 2)
         fourth = self.reader.cell(row, 3)
-        sixth = self.reader.cell(row, 5)
-        seventh = self.reader.cell(row, 6)
 
+        try:
+            sixth = self.reader.cell(row, 5)
+            seventh = self.reader.cell(row, 6)
+        except IndexError:
+            sixth = None
+            seventh = self.reader.cell(row,4)
+
+        
         if not pd.isna(first):
             if self.find_pattern(self.pattern_month, first):
                 return 1
@@ -207,7 +216,7 @@ class TableParser:
             if self.pattern_adjustment.lower() in first.lower():
                 return 2
 
-            if self.pattern_end.lower() in first.lower():
+            if first.lower() in self.pattern_end :
                 return 3
 
             if self.find_pattern(self.pattern_period, first) and (not pd.isna(second)):
@@ -221,13 +230,56 @@ class TableParser:
 
             if (not pd.isna(second)) and pd.isna(third) and (not pd.isna(fourth)):
                 return 7
-
+            
+            if sum([pd.isna(x) for x in [first,second,third,fourth,sixth,seventh]])==6:
+                return 8
+        
         print(f"Строка row={row} не соответствует ни одному формату, не ясно как её обрабатывать.")
         raise RuntimeError(f"Invalid row: {row}")
 
 
     def find_month(self, row: int):
         return self.find_pattern(self.pattern_month, self.reader.cell(row, 0)).group(0)
+
+
+    def transform_month_to_another_form(self, block_text: str):
+        """
+        Этот метод нужен для того, чтобы получить форму именительного падежа для названия месяца.
+        В блоке "Доля от размера годовой корректировки ... " названия месяцев стоят в предложном
+        патеже. Метод получается на вход паттерн в виде <название_месяца ГГГГ> и меняет 
+        название_месяца с именительного падежа на предложный
+        """
+        month_pairs = (
+            ("декабре", "Декабрь"),
+            ("январе", "Январь"),
+            ("феврале", "Февраль"),
+            
+            ("марте", "Март"),
+            ("апреле", "Апрель"),
+            ("мае", "Май"),
+            
+            ("июне", "Июнь"),
+            ("июле", "Июль"),
+            ("августе", "Август"),
+            
+            ("сентябре", "Сентябрь"),
+            ("октябре", "Октябрь"),
+            ("ноябре", "Ноябрь"),
+        )
+        
+        finding_pattern = self.find_pattern(self.pattern_adjustment_2, block_text)
+        if finding_pattern is None:
+            print(f"Месяц block_text={block_text} не может быть обработан корректно")
+            raise RuntimeError(f"Invalid block_text: {block_text}")
+
+        finded_text = finding_pattern.group(0)
+        for month_pair in month_pairs:
+
+            if month_pair[0] in finded_text:
+                return finded_text.replace(month_pair[0], month_pair[1])
+
+        print(f"Месяц block_text={block_text} не может быть обработан корректно")
+        raise RuntimeError(f"Invalid block_text: {block_text}")
 
 
     # def read_accrual(self, row: int) -> float:
@@ -288,12 +340,18 @@ class TableParser:
 
 
     def parse_debt(self, row):
-        debt = self.reader.cell(row, 6)
+        try:
+            debt = self.reader.cell(row, 6)
+        except IndexError:
+            debt = self.reader.cell(row, 4)
         return None if pd.isna(debt) else debt
 
 
     def parse_payment_contract_type(self, row):
-        contract_type = self.reader.cell(row, 5)
+        try:
+            contract_type = self.reader.cell(row, 5)
+        except IndexError:
+            contract_type = None
         return None if pd.isna(contract_type) else contract_type
 
 
@@ -306,11 +364,11 @@ class TableParser:
 
         Если период платежа не совпадает с месяцем, в котором он записан, то это добор.
         """
-        converted_month = convert_month(month.split()[0])
-        converted_period = period.split(".")[0]
-        if converted_month != converted_period:
-            return True
-        return False
+        complained_month, complained_year = convert_month(month.split()[0]), month.split()[1]
+        converted_month , converted_year= period.split(".")
+        if converted_month == complained_month and converted_year==complained_year:
+            return False
+        return True
 
 
     def money_str_to_float(self, money):
@@ -318,11 +376,66 @@ class TableParser:
 
 
     def parse_contract_number(self):
-        contract_type = self.reader.cell(5, 1)
+        contract_number = self.reader.cell(5, 1)
         contract_date = self.reader.cell(6, 1)
 
-        return None if pd.isna(contract_type) else "№ " + str(contract_type) + ' от ' + str(contract_date)
+        contract_number = " " if pd.isna(contract_number) else contract_number
+        contract_date = " " if pd.isna(contract_date) else " от " + contract_date
+
+        result = "№ " + str(contract_number) + str(contract_date)
+        print(result)
+        return result
+
 
     def parse_defendant_inn(self) -> str | None:
         inn = self.reader.cell(6, 4)
         return None if pd.isna(inn) else str(inn)
+
+
+    def check_if_is_correcting(self, row):
+        try:
+            eighth = self.reader.cell(row, 7)
+        except IndexError:
+            eighth = None
+        checking_pattern = "Годовая корректировка обязательств по оплате до факта начислений"
+        if (not pd.isna(eighth)) and (checking_pattern.lower() in eighth.lower()):
+            return True
+        
+        return False
+
+
+    def check_if_is_new_period(self, period: str, periods: dict):
+        """
+        Этот метод проверяет, если ли месяц period в данных или он еще не встречался
+        """
+        return period not in periods
+
+
+    def add_period_if_is_new(self, period: str, periods: dict):
+        """
+        Если месяц period появляется впервые (его нет в periods), то создаем новый период
+        в структуре periods
+        """
+        if self.check_if_is_new_period(period, periods):
+            periods[period] = {
+                "accrual": {
+                    "accruals": [],
+                    "payments": [],
+                    "additionals": [],
+                    "total_amount_of_accruals": None,
+                    "total_amount_of_payments": None,
+                    "debt": None
+                },
+                "adjustment": {
+                    "accruals": [],
+                    "payments": [],
+                    "additionals": [],
+                    "total_amount_of_accruals": None,
+                    "total_amount_of_payments": None,
+                    "debt": None
+                }
+            }
+
+
+    def read_text_from_adjustment_block_row(self, row: int):
+        return self.reader.cell(row, 0)
