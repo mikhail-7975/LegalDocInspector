@@ -72,22 +72,22 @@ class ClaimGenerator:
 
         to_replace = (
             # строка 2
-            (self.borders("истец полное имя"),      self.config["plaintiff_info"]["full_name"]),
-            (self.borders("истец огрн"),            self.config["plaintiff_info"]["ogrn"]),
-            (self.borders("истец инн"),             self.config["plaintiff_info"]["inn"]),
+            ("ISTECFULLNAME",      self.config["plaintiff_info"]["full_name"]),
+            ("ISTECOGRN",            self.config["plaintiff_info"]["ogrn"]),
+            ("ISTECINN",             self.config["plaintiff_info"]["inn"]),
 
             # Строка 3
-            (self.borders("истец адрес"),           self.config["plaintiff_info"]["addres"]),
+            ("ISTECADRES",           self.config["plaintiff_info"]["addres"]),
 
             # Строка 6
-            (self.borders("ответчик полное имя"),   self.config["defendant_info"]["full_name"]),
-            (self.borders("ответчик огрн"),         self.config["defendant_info"]["ogrn"]),
-            (self.borders("ответчик инн"),          self.config["defendant_info"]["inn"]),
+            ("RESPONDFULLNAME",   self.config["defendant_info"]["full_name"].upper()),
+            ("RESPONDOGRN",         self.config["defendant_info"]["ogrn"]),
+            ("RESPONDINN",          self.config["defendant_info"]["inn"]),
 
             # Строка 7
-            (self.borders("ответчик адрес"),        self.config["defendant_info"]["addres"]),
+            ("RESPONDADRES",        self.config["defendant_info"]["addres"]),
         )
-
+        print(self.config["defendant_info"]["full_name"])
         table = self.redactor.get_table(0)
 
         cell = table.row_cells(2)[1]
@@ -148,7 +148,7 @@ class ClaimGenerator:
     def second_table_fill_common_info(self, table: Table):
         self.redactor.replace_text_in_paragraph(
             table.row_cells(2)[2].paragraphs[0],
-            self.borders("сумма долга"),
+            "DEBTSUM",
             self.config["table_info"]["all_debt"]
         )
 
@@ -156,27 +156,27 @@ class ClaimGenerator:
     def second_table_fill_simple_row(self, table: Table, row_index: int, contract_index: int):
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[0].paragraphs[0],
-            self.borders("номер договора"),
+            "CONTRACTNUMBER",
             self.config["contracts_info"][contract_index][1]
         )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[1].paragraphs[0],
-            self.borders("период"),
+            "PERIOD",
             self.config["contracts_info"][contract_index][2]["contract_periods"]
         )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[2].paragraphs[0],
-            self.borders("задолженность"),
+            "ANOTHERDEBT",
             self.config["contracts_info"][contract_index][2]["accrual_debt"]
         )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[3].paragraphs[0],
-            self.borders("срок оплаты"),
+            "LASTDAY",
             self.config["contracts_info"][contract_index][2]["last_day"]
         )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[4].paragraphs[0],
-            self.borders("пункт"),
+            "POINT",
             self.config["contracts_info"][contract_index][2]["contract_point"]
         )
 
@@ -186,7 +186,7 @@ class ClaimGenerator:
 
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[0].paragraphs[0],
-            self.borders("номер договора"),
+            "CONTRACTNUMBER",
             self.config["contracts_info"][contract_index][1]
         )
 
@@ -196,12 +196,12 @@ class ClaimGenerator:
         self.redactor.clone_paragraph(source_paragraph, new_paragraph)
         self.redactor.replace_text_in_paragraph(
             source_paragraph,
-            self.borders("период"),
+            "PERIOD",
             self.config["contracts_info"][contract_index][2]["contract_periods"]
         )
         self.redactor.replace_text_in_paragraph(
             new_paragraph,
-            self.borders("период"),
+            "PERIOD",
             "текущие начисления"
         )
         self.redactor.paragraph_text_set_bold(new_paragraph)
@@ -211,12 +211,12 @@ class ClaimGenerator:
         self.redactor.clone_paragraph(source_paragraph, new_paragraph)
         self.redactor.replace_text_in_paragraph(
             source_paragraph,
-            self.borders("период"),
+            "PERIOD",
             self.config["contracts_info"][contract_index][2]["contract_periods_correcting"]
         )
         self.redactor.replace_text_in_paragraph(
             new_paragraph,
-            self.borders("период"),
+            "PERIOD",
             "доля от ГК"
         )
         self.redactor.paragraph_text_set_bold(new_paragraph)
@@ -224,23 +224,23 @@ class ClaimGenerator:
         # Ячейка Задолженность
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[2].paragraphs[0],
-            self.borders("задолженность"),
+            "ANOTHERDEBT",
             self.config["contracts_info"][contract_index][2]["accrual_debt"]
         )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index + 1)[2].paragraphs[0],
-            self.borders("задолженность"),
+            "ANOTHERDEBT",
             self.config["contracts_info"][contract_index][2]["correcting_debt"]
         )
 
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[3].paragraphs[0],
-            self.borders("срок оплаты"),
+            "LASTDAY",
             self.config["contracts_info"][contract_index][2]["last_day"]
         )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[4].paragraphs[0],
-            self.borders("пункт"),
+            "POINT",
             self.config["contracts_info"][contract_index][2]["contract_point"]
         )
 
@@ -248,7 +248,7 @@ class ClaimGenerator:
     def second_table_fill_row_with_year_adjustment_only(self, table: Table, row_index: int, contract_index: int):
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[0].paragraphs[0],
-            self.borders("номер договора"),
+            "CONTRACTNUMBER",
             self.config["contracts_info"][contract_index][1]
         )
 
@@ -257,30 +257,30 @@ class ClaimGenerator:
         self.redactor.clone_paragraph(source_paragraph, new_paragraph)
         self.redactor.replace_text_in_paragraph(
             source_paragraph,
-            self.borders("период"),
+            "PERIOD",
             self.config["contracts_info"][contract_index][2]["contract_periods_correcting"]
         )
         self.redactor.replace_text_in_paragraph(
             new_paragraph,
-            self.borders("период"),
+            "PERIOD",
             "доля от ГК"
         )
         self.redactor.paragraph_text_set_bold(new_paragraph)
 
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[2].paragraphs[0],
-            self.borders("задолженность"),
+            "ANOTHERDEBT",
             self.config["contracts_info"][contract_index][2]["correcting_debt"]
         )
 
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[3].paragraphs[0],
-            self.borders("срок оплаты"),
+            "LASTDAY",
             self.config["contracts_info"][contract_index][2]["last_day"]
         )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[4].paragraphs[0],
-            self.borders("пункт"),
+            "POINT",
             self.config["contracts_info"][contract_index][2]["contract_point"]
         )
 
@@ -325,17 +325,17 @@ class ClaimGenerator:
         # table = self.redactor.get_table(1)
         self.redactor.replace_text_in_paragraph(
             table.row_cells(2)[2].paragraphs[0],
-            self.borders("сумма долга"),
+            "DEBTSUM",
             self.config["table_info"]["all_debt"]
         )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(2)[3].paragraphs[0],
-            self.borders("неустойка общая"),
+            "PENALTYALL",
             self.config["table_info"]["all_penalty"]
         )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(2)[4].paragraphs[0],
-            self.borders("цена иска"),
+            "COSTOFLAWSUIT",
             self.config["table_info"]["cost_of_lawsuit"]
         )
 
@@ -348,27 +348,27 @@ class ClaimGenerator:
     def third_table_fill_simple_row(self, table: Table, row_index: int, contract_index: int):
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[0].paragraphs[0],
-            self.borders("номер договора"),
+            "CONTRACTNUMBER",
             self.config["contracts_info"][contract_index][1]
         )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[1].paragraphs[0],
-            self.borders("период"),
+            "PERIOD",
             self.config["contracts_info"][contract_index][2]["contract_periods"]
         )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[2].paragraphs[0],
-            self.borders("задолженность"),
+            "ANOTHERDEBT",
             self.config["contracts_info"][contract_index][2]["accrual_debt"]
         )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[3].paragraphs[0],
-            self.borders("неустойка"),
+            "PENALTYJUST",
             self.config["contracts_info"][contract_index][2]["penalty"]
         )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[4].paragraphs[0],
-            self.borders("неустойка+задолженность"),
+            "PENALTYJUSTPLUSDEBT",
             self.config["contracts_info"][contract_index][2]["debt_penalty"]
         )
 
@@ -378,7 +378,7 @@ class ClaimGenerator:
 
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[0].paragraphs[0],
-            self.borders("номер договора"),
+            "CONTRACTNUMBER",
             self.config["contracts_info"][contract_index][1]
         )
 
@@ -388,12 +388,12 @@ class ClaimGenerator:
         self.redactor.clone_paragraph(source_paragraph, new_paragraph)
         self.redactor.replace_text_in_paragraph(
             source_paragraph,
-            self.borders("период"),
+            "PERIOD",
             self.config["contracts_info"][contract_index][2]["contract_periods"]
         )
         self.redactor.replace_text_in_paragraph(
             new_paragraph,
-            self.borders("период"),
+            "PERIOD",
             "текущие начисления"
         )
         self.redactor.paragraph_text_set_bold(new_paragraph)
@@ -403,12 +403,12 @@ class ClaimGenerator:
         self.redactor.clone_paragraph(source_paragraph, new_paragraph)
         self.redactor.replace_text_in_paragraph(
             source_paragraph,
-            self.borders("период"),
+            "PERIOD",
             self.config["contracts_info"][contract_index][2]["contract_periods_correcting"]
         )
         self.redactor.replace_text_in_paragraph(
             new_paragraph,
-            self.borders("период"),
+            "PERIOD",
             "доля от ГК"
         )
         self.redactor.paragraph_text_set_bold(new_paragraph)
@@ -416,24 +416,24 @@ class ClaimGenerator:
         # Ячейка Задолженность
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[2].paragraphs[0],
-            self.borders("задолженность"),
+            "ANOTHERDEBT",
             self.config["contracts_info"][contract_index][2]["accrual_debt"]
         )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index + 1)[2].paragraphs[0],
-            self.borders("задолженность"),
+            "ANOTHERDEBT",
             self.config["contracts_info"][contract_index][2]["correcting_debt"]
         )
 
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[3].paragraphs[0],
-            self.borders("неустойка"),
+            "PENALTYJUST",
             # "#неустойка#".upper()
             self.config["contracts_info"][contract_index][2]["penalty"]
         )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[4].paragraphs[0],
-            self.borders("неустойка+задолженность"),
+            "PENALTYJUSTPLUSDEBT",
             # "#неустойка+задолженность#".upper()
             self.config["contracts_info"][contract_index][2]["debt_penalty"]
         )
@@ -442,7 +442,7 @@ class ClaimGenerator:
     def third_table_fill_row_with_year_adjustment_only(self, table: Table, row_index: int, contract_index: int):
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[0].paragraphs[0],
-            self.borders("номер договора"),
+            "CONTRACTNUMBER",
             self.config["contracts_info"][contract_index][1]
         )
 
@@ -451,31 +451,31 @@ class ClaimGenerator:
         self.redactor.clone_paragraph(source_paragraph, new_paragraph)
         self.redactor.replace_text_in_paragraph(
             source_paragraph,
-            self.borders("период"),
+            "PERIOD",
             self.config["contracts_info"][contract_index][2]["contract_periods_correcting"]
         )
         self.redactor.replace_text_in_paragraph(
             new_paragraph,
-            self.borders("период"),
+            "PERIOD",
             "доля от ГК"
         )
         self.redactor.paragraph_text_set_bold(new_paragraph)
 
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[2].paragraphs[0],
-            self.borders("задолженность"),
+            "ANOTHERDEBT",
             self.config["contracts_info"][contract_index][2]["correcting_debt"]
         )
 
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[3].paragraphs[0],
-            self.borders("неустойка"),
+            "PENALTYJUST",
             # "#неустойка#".upper()
             self.config["contracts_info"][contract_index][2]["penalty"]
         )
         self.redactor.replace_text_in_paragraph(
             table.row_cells(row_index)[4].paragraphs[0],
-            self.borders("неустойка+задолженность"),
+            "PENALTYJUSTPLUSDEBT",
             # "#неустойка+задолженность#".upper()
             self.config["contracts_info"][contract_index][2]["debt_penalty"]
         )
@@ -536,12 +536,12 @@ class ClaimGenerator:
         info = self.parse_info_for_first_list()
         text = self.create_text_for_first_list(info)
 
-        template_text = "/*список разделов*/"
+        template_text = "RAZDELLIST"
         start = self.redactor.find_paragraph_contains_text(template_text)
 
         self.redactor.replace_text_in_paragraph(
             self.redactor.get_paragraph(start),
-            self.borders("список разделов"),
+            "RAZDELLIST",
             text
         )
 
@@ -557,38 +557,39 @@ class ClaimGenerator:
             point = self.config["contracts_info"][i][2]["contract_point"]
             chapter = point.split(".")[0]
             contract_number = self.config["contracts_info"][i][1]
-
-            if chapter not in parsed_chapters:
-                info["chapters"].append({
-                    "number_of_chapter": chapter,
-                    "number_of_contracts": 1,
-                    "points": [{
-                        "number_of_point": point,
-                        "contracts": [contract_number]
-                    }],
-                })
-                parsed_chapters.append(chapter)
-                parsed_points.append(point)
-
-            elif point not in parsed_points:
-                for chapter_dict in info["chapters"]:
-                    if chapter_dict["number_of_chapter"] == chapter:
-                        chapter_dict["points"].append({
+            contract_type = self.config["contracts_info"][i][-1]
+            if contract_type != 'ФОТЭ':
+                if chapter not in parsed_chapters:
+                    info["chapters"].append({
+                        "number_of_chapter": chapter,
+                        "number_of_contracts": 1,
+                        "points": [{
                             "number_of_point": point,
                             "contracts": [contract_number]
-                        })
-                        chapter_dict["number_of_contracts"] += 1
-                        parsed_points.append(point)
-                        break
+                        }],
+                    })
+                    parsed_chapters.append(chapter)
+                    parsed_points.append(point)
 
-            else:
-                for chapter_dict in info["chapters"]:
-                    if chapter_dict["number_of_chapter"] == chapter:
-                        for point_dict in chapter_dict["points"]:
-                            if point_dict["number_of_point"] == point:
-                                point_dict["contracts"].append(contract_number)
-                                chapter_dict["number_of_contracts"] += 1
-                                break
+                elif point not in parsed_points:
+                    for chapter_dict in info["chapters"]:
+                        if chapter_dict["number_of_chapter"] == chapter:
+                            chapter_dict["points"].append({
+                                "number_of_point": point,
+                                "contracts": [contract_number]
+                            })
+                            chapter_dict["number_of_contracts"] += 1
+                            parsed_points.append(point)
+                            break
+
+                else:
+                    for chapter_dict in info["chapters"]:
+                        if chapter_dict["number_of_chapter"] == chapter:
+                            for point_dict in chapter_dict["points"]:
+                                if point_dict["number_of_point"] == point:
+                                    point_dict["contracts"].append(contract_number)
+                                    chapter_dict["number_of_contracts"] += 1
+                                    break
 
         return info
 
@@ -664,19 +665,19 @@ class ClaimGenerator:
             )
             self.redactor.replace_text_in_paragraph(
                 self.redactor.get_paragraph(start + i),
-                self.borders("пункт"),
+                "POINT",
                 self.config["contracts_info"][i][2]["contract_point"]
             )
             self.redactor.replace_text_in_paragraph(
                 self.redactor.get_paragraph(start + i),
-                self.borders("номер договора"),
+                "CONTRACTNUMBER",
                 self.config["contracts_info"][i][1]
             )
 
 
     def fill_second_list(self):
         rows_n = len(self.config["lawsuit_info"]["claims"]) # Кол-во элементов в списке претензий
-        template_text = f"list{self.borders('номер претензии')};"
+        template_text = f"LISTNUMBERPRETEN;"
         start = self.redactor.find_paragraph_consists_of_text(template_text)   # Индекс первого абзаца списка
 
         for i in range(rows_n):
@@ -696,7 +697,7 @@ class ClaimGenerator:
         rows_n = len(self.config["contracts_info"]) # Кол-во элементов в списке договоров
         template_text = "по Договору 05.403297-ТЭ от 01.08.2017:"
         start = self.redactor.find_paragraph_consists_of_text(template_text)   # Индекс первого абзаца списка
-
+       
         # Список индексов тех параграфов, которые нужно удалить после цикла. Почему их нужно удалять?
         # Эти параграфы - это корректировка обязательств, которая есть не у всех договоров. Поэтому 
         # там где ее нет, параграфы удаляются
@@ -717,25 +718,34 @@ class ClaimGenerator:
 
             # contract_number = list(self.config["table_info"].keys())[i]
             contract_number = self.config["contracts_info"][i][1]
-
+            contract_type = self.config["contracts_info"][i][-1]
             self.redactor.replace_text_in_paragraph(
                 self.redactor.get_paragraph(start + i * stride),
                 "05.403297-ТЭ от 01.08.2017",
                 # self.config["contracts_info"][i][1]
                 contract_number
             )
+
+            if contract_type == 'ФОТЭ':
+                self.redactor.replace_text_in_paragraph(
+                self.redactor.get_paragraph(start + i * stride),
+                "Договору",
+                # self.config["contracts_info"][i][1]
+                "Акту"
+            )
+
             
             if self.config["table_info"][contract_number]["accrual_debt"] is not None:
                 if self.config["table_info"][contract_number]["accrual_debt"] != "0,00":
                     self.redactor.replace_text_in_paragraph(
                         self.redactor.get_paragraph(start + i * stride + 1),
-                        self.borders("задолженность"),
+                        "ANOTHERDEBT",
                         # self.config["contracts_info"][i][2]["debt"]
                         self.config["table_info"][contract_number]["accrual_debt"]
                     )
                     self.redactor.replace_text_in_paragraph(
                         self.redactor.get_paragraph(start + i * stride + 1),
-                        self.borders("период"),
+                        "PERIOD",
                         # self.config["contracts_info"][i][2]["contract_periods"]
                         self.config["table_info"][contract_number]["contract_periods"]  
                     )
@@ -750,17 +760,17 @@ class ClaimGenerator:
                 if self.config["table_info"][contract_number]["correcting_debt"] != "0,00":
                     self.redactor.replace_text_in_paragraph(
                         self.redactor.get_paragraph(start + i * stride + 2),
-                        self.borders("доля годовой корректировки"),
+                        "DOLYAGODKORECT",
                         self.config["table_info"][contract_number]["correcting_debt"]
                     )
                     self.redactor.replace_text_in_paragraph(
                         self.redactor.get_paragraph(start + i * stride + 2),
-                        self.borders("период корректировки"),
+                        "KORREKTPERIOD",
                         self.config["table_info"][contract_number]["contract_periods_correcting"]
                     )
                     self.redactor.replace_text_in_paragraph(
                         self.redactor.get_paragraph(start + i * stride + 2),
-                        self.borders("год корректировки"),
+                        "KORREKTGOD",
                         self.config["table_info"][contract_number]["correcting_year"]
                     )
                 else:
@@ -772,22 +782,23 @@ class ClaimGenerator:
 
             self.redactor.replace_text_in_paragraph(
                 self.redactor.get_paragraph(start + i * stride + 3),
-                self.borders("неустойка"),
+                "PENALTYJUST",
                 # self.config["contracts_info"][i][2]["debt_penalty"]
                 self.config["table_info"][contract_number]["penalty"]
             )
             self.redactor.replace_text_in_paragraph(
                 self.redactor.get_paragraph(start + i * stride + 3),
-                self.borders("период неустойки 1"),
+                "NEUSTOYKAPER1",
                 # self.config["contracts_info"][i][2]["debt_penalty"]
                 self.config["table_info"][contract_number]["penalty_period"].split(" по ")[0]
             )
             self.redactor.replace_text_in_paragraph(
                 self.redactor.get_paragraph(start + i * stride + 3),
-                self.borders("период неустойки 2"),
+                "NEUSTOYKAPER2",
                 # self.config["contracts_info"][i][2]["debt_penalty"]
                 self.config["table_info"][contract_number]["penalty_period"].split(" по ")[1]
             )
+        
 
             date_string = self.config["table_info"][contract_number]["penalty_period"].split(" по ")[1]
             format_string = "%d.%m.%Y"
@@ -795,7 +806,7 @@ class ClaimGenerator:
             parsed_date_plus_1 = parsed_date + timedelta(days=1)
             self.redactor.replace_text_in_paragraph(
                 self.redactor.get_paragraph(start + i * stride + 4),
-                self.borders("начальная дата неустойки"),
+                "STARTNEUSTOYKA",
                 # self.config["contracts_info"][i][2]["debt_penalty"]
                 parsed_date_plus_1.strftime(format_string)
             )
@@ -811,11 +822,47 @@ class ClaimGenerator:
         # Проверка > 0 нужна, потому что этот код учитывает только ТЭ и ГВС договоры,
         # на других (например ФОТЭ) будет крашиться
         new_paragraph = None
-        significant_paragraph_template = "/*абзац важный*/"
+        significant_paragraph_template = "ABZACIMPORT"
         significant_paragraph = self.redactor.get_paragraph(
             self.redactor.find_paragraph_contains_text(significant_paragraph_template)
         )
         paragraphs_need_to_be_inserted = [significant_paragraph]
+        
+        # self.redactor.get_table(-1).columns[2].cells[0].text = self.config['responsitive_name']   
+        
+        self.redactor.replace_text_in_table_cell(
+            self.redactor.get_table(-1).columns[2].cells[0],
+            'Самошкина А.Е.',
+            self.config['responsitive_name']
+        )
+        print(self.redactor.get_table(-1).columns[2].cells[0].text)
+
+        if "ФОТЭ" in self.config["lawsuit_info"]["service_type"]:
+            core_paragraph = self.redactor.get_paragraph(self.redactor.find_paragraph_contains_text(
+                "Факт поставки"
+            ))
+            new_paragraph = self.redactor.insert_paragraph_before_paragraph(core_paragraph)
+            self.redactor.clone_paragraph(core_paragraph, new_paragraph)
+            for run in new_paragraph.runs:
+                if "Факт поставки" in run.text:
+                    run.text = run.text.replace(run.text, "В силу п. 25 Постановления Правительства РФ от 14 февраля 2012 г. № 124 «О правилах, обязательных при заключении договоров снабжения коммунальными ресурсами» обязательство Ответчика должно быть исполнено до 15-го числа месяца, следующего за истекшим расчетным периодом (расчетным месяцем). Таким образом, порядок и сроки взаиморасчетов за потребленные ресурсы по Актам ФОТЭ также существенно нарушены Ответчиком.")
+
+            core_paragraph = self.redactor.get_paragraph(self.redactor.find_paragraph_contains_text(
+                "Таким образом, Истец свои обязательства"
+            ))
+
+            new_paragraph = self.redactor.insert_paragraph_after_paragraph(core_paragraph)
+            self.redactor.clone_paragraph(core_paragraph, new_paragraph)
+            for run in new_paragraph.runs:
+                if "Таким образом, Истец свои обязательства" in run.text:
+                    run.text = run.text.replace(run.text, "Как следует из содержания п. 2 ст. 421, ст. 426, п. 4 ст. 445 Гражданского кодекса Российской Федерации (далее - ГК РФ) принуждать потребителя к заключению договора энергоснабжения теплоснабжающая организация не вправе. В тех случаях, когда потребитель пользуется услугами энергоснабжения, однако от заключения договора уклоняется, фактическое пользование абонентом тепловой энергией расценивается в соответствии с п. 3 ст. 438 ГК РФ как акцепт абонентом оферты.")
+
+            new_paragraph = self.redactor.insert_paragraph_after_paragraph(core_paragraph)
+            self.redactor.clone_paragraph(core_paragraph, new_paragraph)
+            for run in new_paragraph.runs:
+                if "Таким образом, Истец свои обязательства" in run.text:
+                    run.text = run.text.replace(run.text, "Согласно п. 3 Информационного письма Президиума ВАС РФ от 17.02.1998 г. № 30 «Обзор практики разрешения споров, связанных с договором энергоснабжения» отсутствие договорных отношений с организацией, чьи теплопотребляющие установки присоединены к сетям энергоснабжающей организации не освобождает потребителя обязанности возместить стоимость отпущенной ему тепловой энергии.")
+
 
         if len(self.config["contract_types_templates"]["types_of_significant_paragraph"]) > 0:
 
@@ -840,47 +887,58 @@ class ClaimGenerator:
 
 
         to_replace = {
-            "/*цена иска*/": self.config["lawsuit_info"]["cost"],
-            "/*госпошлина*/": self.config["lawsuit_info"]["tax"],
-            "/*истец полное имя*/": self.config["plaintiff_info"]["full_name"],
-            "/*истец сокращенное имя*/": self.config["plaintiff_info"]["short_name"],
-            "/*ответчик полное имя*/": self.config["defendant_info"]["full_name"],
-            "/*ответчик сокращенное имя*/": self.config["defendant_info"]["short_name"],
-            "/*тип договора*/": self.config["contract_types_templates"]["contract_type"],
-            # "/*тип договора2*/": self.config["contract_types_templates"]["contract_type2"],
-            "/*сумма долга*/": self.config["table_info"]["all_debt"],
-            "/*истец огрн*/": self.config["plaintiff_info"]["ogrn"],
-            "/*истец инн*/": self.config["plaintiff_info"]["inn"],
-            "/*ответчик огрн*/": self.config["defendant_info"]["ogrn"],
-            "/*ответчик инн*/": self.config["defendant_info"]["inn"],
-            "/*поставляемые ресурсы*/": self.config["contract_types_templates"]["supplied_resources"],
-            "/*поставляемые ресурсы2*/": self.config["contract_types_templates"]["supplied_resources2"],
-            "/*поставляемые ресурсы3*/": self.config["contract_types_templates"]["supplied_resources3"],
-            "/*поставляемые ресурсы4*/": self.config["contract_types_templates"]["supplied_resources4"],
-            "/*поставляемые ресурсы5*/": self.config["contract_types_templates"]["supplied_resources5"],
-            "/*мн.ч.*/": self.config["contract_types_templates"]["plural_template_1"],
-            "/*мн.ч.2*/": self.config["contract_types_templates"]["plural_template_2"],
-            "/*мн.ч.3*/": self.config["contract_types_templates"]["plural_template_3"],
-            "/*мн.ч.4*/": self.config["contract_types_templates"]["plural_template_4"],
-            "/*мн.ч.5*/": self.config["contract_types_templates"]["plural_template_5"],
-            "/*мн.ч.6*/": self.config["contract_types_templates"]["plural_template_6"],
-            "/*мн.ч.7*/": self.config["contract_types_templates"]["plural_template_7"],
-            "/*нужная статья*/": self.config["contract_types_templates"]["service_article"],
+            "COSTOFLAWSUIT": self.config["lawsuit_info"]["cost"],
+            "GOSTAX": self.config["lawsuit_info"]["tax"],
+            "ISTECFULLNAME": self.config["plaintiff_info"]["full_name"],
+            "ISTECSHORTNAME": self.config["plaintiff_info"]["short_name"],
+            "RESPONDFULLNAME": self.config["defendant_info"]["full_name"].upper(),
+            "RESPONDSHORTNAME": self.config["defendant_info"]["short_name"],
+            "CONTRACTTYPE": self.config["contract_types_templates"]["contract_type"],
+            "DEBTSUM": self.config["table_info"]["all_debt"],
+            "ISTECOGRN": self.config["plaintiff_info"]["ogrn"],
+            "ISTECINN": self.config["plaintiff_info"]["inn"],
+            "RESPONDOGRN": self.config["defendant_info"]["ogrn"],
+            "RESPONDINN": self.config["defendant_info"]["inn"],
+            "GETRES1": self.config["contract_types_templates"]["supplied_resources"],
+            "GETRES2": self.config["contract_types_templates"]["supplied_resources2"],
+            "GETRES3": self.config["contract_types_templates"]["supplied_resources3"],
+            "GETRES4": self.config["contract_types_templates"]["supplied_resources4"],
+            "GETRES5": self.config["contract_types_templates"]["supplied_resources5"],
+            "MNCH1": self.config["contract_types_templates"]["plural_template_1"],
+            "MNCH2": self.config["contract_types_templates"]["plural_template_2"],
+            "MNCH3": self.config["contract_types_templates"]["plural_template_3"],
+            "MNCH4": self.config["contract_types_templates"]["plural_template_4"],
+            "MNCH5": self.config["contract_types_templates"]["plural_template_5"],
+            "MNCH6": self.config["contract_types_templates"]["plural_template_6"],
+            "MNCH7": self.config["contract_types_templates"]["plural_template_7"],
+            "SERVICEARTICLE": self.config["contract_types_templates"]["service_article"],
 
-            "/*направлен окончание*/": self.config["contract_types_templates"]["directed_ending"],
-            "/*претензия окончание и.п*/": self.config["contract_types_templates"]["claim_ending_1"],
-            "/*которая окончание*/": self.config["contract_types_templates"]["which_ending"],
-            "/*оставлен окончание*/": self.config["contract_types_templates"]["abandoned_ending"],
-            "/*претензии окончание р.п*/": self.config["contract_types_templates"]["claim_ending_2"],
-            "/*её число*/": self.config["contract_types_templates"]["her_ending"],
-            "/*копия окончание*/": self.config["contract_types_templates"]["copy_ending"],
+            "DIRECTEDENDING": self.config["contract_types_templates"]["directed_ending"],
+            "CLAIMENDINGIP": self.config["contract_types_templates"]["claim_ending_1"],
+            "WHICHENDING": self.config["contract_types_templates"]["which_ending"],
+            "ABANDONEDENDING": self.config["contract_types_templates"]["abandoned_ending"],
+            "CLAIMENDINGRP": self.config["contract_types_templates"]["claim_ending_2"],
+            "HERENDING": self.config["contract_types_templates"]["her_ending"],
+            "COPYENDING": self.config["contract_types_templates"]["copy_ending"],
         }
+        if "ФОТЭ" in self.config["lawsuit_info"]["service_type"]:
+            ov_iter = 0
+            am_iter = 0
+
         for paragraph in self.doc.paragraphs:
             # runs = []
             for run in paragraph.runs:
                 # runs.append(run.text)
                 for k, v in to_replace.items():
                     if k in run.text:
+                        if "ФОТЭ" in self.config["lawsuit_info"]["service_type"] and v=='Договорам, Актам ФОТЭ' and am_iter<1:
+                            v = "Договорам"
+                            am_iter+=1
+                        if "ФОТЭ" in self.config["lawsuit_info"]["service_type"] and v=='Договоров, Актов ФОТЭ' and ov_iter==0:
+                            ov_iter+=1  
+                        if "ФОТЭ" in self.config["lawsuit_info"]["service_type"] and v=='Договоров, Актов ФОТЭ' and ov_iter>0:
+                            v = "Договоров"
+                            ov_iter+=1
                         run.text = run.text.replace(k, v)
             # print(runs)
 
@@ -1014,34 +1072,54 @@ class ClaimGenerator:
         service_type = self.config["lawsuit_info"]["service_type"]
 
         contruct_types = []
-        if "ГВС" in service_type:
+        if "ГВС" in service_type or "СОИ" in service_type:
             contruct_types.append("ГВС")
         if "ТЭ" in service_type:
             contruct_types.append("ТЭ")
+        if "ФОТЭ" in service_type:
+            contruct_types.append("ФОТЭ")
 
-        if len(contracts) == 1:
-            templates["supplied_resources4"] = "ТЭ"
-            templates["plural_template_1"] = "Договором"
-            templates["plural_template_2"] = "Договору"
-            templates["plural_template_3"] = "названном Договоре"
-            templates["plural_template_4"] = "Договора"
-            templates["plural_template_5"] = "указанного Договора"
-            templates["plural_template_6"] = "названному Договору"
-            templates["plural_template_7"] = "был заключен следующий договор (далее именуемый – Договор), предметом которого"
+        if len(contracts) == 1 :
+            if not "ФОТЭ" in contruct_types :
+                templates["supplied_resources4"] = "ТЭ"
+                templates["plural_template_1"] = "Договором"
+                templates["plural_template_2"] = "Договору"
+                templates["plural_template_3"] = "названном Договоре"
+                templates["plural_template_4"] = "Договора"
+                templates["plural_template_5"] = "указанного Договора"
+                templates["plural_template_6"] = "названному Договору"
+                templates["plural_template_7"] = "был заключен следующий договор (далее именуемый – Договор), предметом которого"
+            else:
+                templates["plural_template_1"] = "Актом ФОТЭ"
+                templates["plural_template_2"] = "Акту ФОТЭ"
+                templates["plural_template_3"] = "названном Акте ФОТЭ"
+                templates["plural_template_4"] = "Акта ФОТЭ"
+                templates["plural_template_5"] = "указанного Акта ФОТЭ"
+                templates["plural_template_6"] = "названному Акту ФОТЭ"
+                templates["plural_template_7"] = "был заключен следующий Акт о фактическом потреблении тепловой энергии, теплоносителя, горячей воды (далее именуемый – Акт ФОТЭ), предметом которого"
 
-        elif len(contracts) > 1:
-            templates["plural_template_1"] = "Договорами"
-            templates["plural_template_2"] = "Договорам"
-            templates["plural_template_3"] = "названных Договорах"
-            templates["plural_template_4"] = "Договоров"
-            templates["plural_template_5"] = "указанных Договоров"
-            templates["plural_template_6"] = "названным Договорам"
-            templates["plural_template_7"] = "были заключены следующие договоры (далее именуемые – Договоры), предметом которых"
 
+        elif len(contracts)>1 :
+            if not "ФОТЭ" in contruct_types:
+                templates["plural_template_1"] = "Договорами"
+                templates["plural_template_2"] = "Договорам"
+                templates["plural_template_3"] = "названных Договорах"
+                templates["plural_template_4"] = "Договоров"
+                templates["plural_template_5"] = "указанных Договоров"
+                templates["plural_template_6"] = "названным Договорам"
+                templates["plural_template_7"] = "были заключены следующие договоры (далее именуемые – Договоры), предметом которых"
+            else:
+                templates["plural_template_1"] = "Договорами"
+                templates["plural_template_2"] = "Договорам, Актам ФОТЭ"
+                templates["plural_template_3"] = "названных Договорах, Актах ФОТЭ"
+                templates["plural_template_4"] = "Договоров, Актов ФОТЭ"
+                templates["plural_template_5"] = "указанных Договоров, Актов ФОТЭ"
+                templates["plural_template_6"] = "названным Договорам, Актам ФОТЭ"
+                templates["plural_template_7"] = "были заключены следующие договоры (далее именуемые – Договоры), Акты о фактическом потреблении тепловой энергии, теплоносителя, горячей воды (далее – Акты ФОТЭ), предметом которых"
 
         templates["types_of_significant_paragraph"] = []
         # Выбираем нужные шаблоны
-        if ("ГВС" in contruct_types) and ("ТЭ" in contruct_types):
+        if (("ГВС" in contruct_types) or ('ФОТЭ' in contruct_types) or ('СОИ' in contruct_types)) and ("ТЭ" in contruct_types):
             templates["supplied_resources"] = "тепловой энергии и/или теплоносителя (далее – ТЭ), горячей воды через присоединенные сети горячего водоснабжения (далее – ГВС)"
             templates["contract_type"] = "тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС)"
             # templates["contract_type2"] = "тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС)"
@@ -1061,11 +1139,11 @@ class ClaimGenerator:
             templates["supplied_resources2"] = "тепловой энергии/теплоносителя"
             templates["supplied_resources3"] = "тепловую энергию/теплоноситель"
             templates["supplied_resources4"] = "ТЭ"
-            templates["supplied_resources5"] = "тепловую энергию"
+            templates["supplied_resources5"] = "тепловую энергию и теплоноситель"
             templates["types_of_significant_paragraph"].append(company_type + "ТЭ")
             templates["service_article"] = "ст. 15 Федерального закона от 27.07.2010 № 190-ФЗ «О теплоснабжении»"
 
-        elif "ГВС" in contruct_types:
+        elif "ГВС" in contruct_types or 'СОИ' in contruct_types:
             templates["supplied_resources"] = "горячей воды через присоединенные сети горячего водоснабжения (далее – ГВС)"
             templates["contract_type"] = "горячую воду (ГВС)"
             # templates["contract_type2"] = "горячую воду (ГВС)"

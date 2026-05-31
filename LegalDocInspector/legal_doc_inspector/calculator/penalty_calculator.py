@@ -520,7 +520,7 @@ def _split_stage_by_date_correcting(stage:dict, split_date: datetime.datetime, s
             'period': (split_date.strftime("%d.%m.%Y"), None, None),
             'penalty_period_info': None,
             'type': 'correcting',
-            'text': 'Годовая корректировка обязательств',
+            'text': 'Корректировка обязательств',
         }
 
         result.append(payment_stage)
@@ -690,7 +690,6 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
             # print(real_month, month_name)
             start_date = datetime.datetime(real_next_year, real_next_month, int(day_of_penalty))  # дефолтная дата окончания договора без учёта нерабочих дней
             start_date = _get_start_date(start_date) # дата начала периода просрочки
-            
         else:
             additional_month = month_parsed_info['accrual']['additionals'][0]['period']
             additional_parsed = datetime.datetime.strptime(additional_month, "%m.%Y")
@@ -700,6 +699,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
             start_date = _get_start_date(start_date)
             month_parsed_info['accrual']['accruals'].extend(month_parsed_info['accrual']['additionals'])
             month_parsed_info['accrual']['additionals'].clear()
+
         if not start_date_flag:
             start_dates.append(start_date)
             res['start_of_table'] = {
@@ -715,7 +715,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
             if accrual_or_adjustment == 'accrual':
                 text = f"Начислено за период {month}"
             if accrual_or_adjustment == 'adjustment':
-                text = f"Годовая корректировка обязательств"
+                text = f"Корректировка обязательств"
             # обработка выставленных счетов
             if len(parsed_info['accruals'])>0:
                 for accrual in parsed_info['accruals']:
@@ -783,6 +783,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
         
         
         payments_info = _sort_all_payments(month_parsed_info)
+        
         correcting_done_flag = _check_is_correcting_done(month_correcting, payments_info)
         # print(correcting_done_flag)
         if not is_four_party:
@@ -863,12 +864,15 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
         
         else:
             all_payments = StrictFormattedMoney(0)
-            for i ,payment_info in enumerate([month_parsed_info['accrual']['payments'], month_parsed_info['adjustment']['payments']]):
-                for payment in payment_info:
-                    if i == 0: 
+            # for i ,payment_info in enumerate([month_parsed_info['accrual']['payments'], month_parsed_info['adjustment']['payments']]):
+            for payment,i in payments_info:
+                if i == 0:
+                    if not only_correcting_flag:
                         month_accrual -= StrictFormattedMoney(payment['payment'])
-                    else:
-                        month_correcting -= StrictFormattedMoney(payment['payment'])
+                        all_payments += StrictFormattedMoney(payment['payment'])
+
+                else:
+                    month_correcting -= StrictFormattedMoney(payment['payment'])
                     all_payments += StrictFormattedMoney(payment['payment'])
                     # print(payment)
             periods = _get_penalty_periods(start_date, end_date, month_accrual+month_correcting, company_type)
@@ -880,7 +884,8 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
                 'type': 'payment_after_penalty',
                 'text': 'Погашение части долга',
             }
-            periods = [payment_1] + periods[0:]
+            if all_payments != StrictFormattedMoney(0):
+                periods = [payment_1] + periods[0:]
         # обработка годовых корректировок
         for accrual_or_adjustment, parsed_info in month_parsed_info.items():
             if accrual_or_adjustment == 'accrual':
@@ -930,7 +935,7 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
                                 'period': (correcting_date.strftime("%d.%m.%Y"), None , None),
                                 'penalty_period_info': None,
                                 'type': 'correcting',
-                                'text': 'Годовая корректировка обязательств',
+                                'text': 'Корректировка обязательств',
                             }
                             new_periods = [payment_stage] + periods
                             for next_period in new_periods[1:]:

@@ -25,11 +25,12 @@ from flask import session
 from werkzeug.utils import secure_filename
 
 from LegalDocInspector.legal_doc_inspector.utils.parse_info_by_inn import parse_html # класс
-
+from LegalDocInspector.legal_doc_inspector.utils.parse_egrul_sertificate import parse_egrul_certificate
 from LegalDocInspector.legal_doc_inspector.doc_creator.calculation_claim_generator import CalculationClaimGenerator
 from LegalDocInspector.legal_doc_inspector.doc_creator.claim_generator import ClaimGenerator
 
-# from .llm_functions import parse_claim, parse_contract
+from LegalDocInspector.legal_doc_inspector.pdf_parser.parser_models import PDFClaimParser, PDFContractParser
+
 # app.secret_key = os.urandom(30).hex()
 @app.route("/")
 def home():
@@ -40,7 +41,8 @@ def home():
 def parse():
     try:
         table_parser = g.table_parser
-
+        claim_parser : PDFClaimParser = g.claim_parser
+        contract_parser : PDFContractParser = g.contract_parser
         current_config:AppConfig = g.config
         # save_data_folder = Path("/tmp/doc_inspector_data")
         save_data_folder = current_config.save_data_folder
@@ -61,6 +63,18 @@ def parse():
         result_json = dict()
         parsing_table_results = []
         uploaded_files = defaultdict(lambda : [])
+
+        # выписка из ЕГРЮЛ
+        print("try to get egrul certificate file")
+        print(request.files.keys())
+        egrul_certificate_file = request.files[f'egrul_certificate_file']
+
+        egrul_certificate_file_path = Path(folder, secure_filename(egrul_certificate_file.filename))
+        print(f"egrul certificate file path: {egrul_certificate_file_path}")
+        egrul_certificate_file.save(egrul_certificate_file_path)
+        uploaded_files['egrul_certificate_file'].append(str(egrul_certificate_file_path))
+
+
         for complect_id in range(1, complects_count+1):
             complect_folder = Path(folder, f'complect_{complect_id}')
             complect_folder.mkdir(exist_ok=True, parents=True)
@@ -80,6 +94,8 @@ def parse():
             complect_claim_file.save(claim_file_path)
             uploaded_files['claim_file'].append(str(claim_file_path))
             table_parser_results = []
+            
+            
             # справки
             for claim_id in range(certificates_count):
                 print(complect_id, claim_id)
@@ -102,16 +118,18 @@ def parse():
             # LLM parser
 
             # llm_contract_number, service_type_info, overdue_date_info = parse_contract(contract_file_path)
-            # # print("contract parser done!")
+            # print("contract parser done!")
             # plaintiff_inn, claim_number, claim_date = parse_claim(claim_file_path)
             # claim_info = {"claim_date": str(claim_date), "claim_number": str(claim_number)}
-            # # print("claim parser done!")
+            # print("claim parser done!")
 
-            overdue_date_info  = "(заглушка) В следующем фрагменте указан срок, в течение которого Исполнитель должен произвести оплату:\n\n\"5. 5. Исполнитель в срок до 18-го числа месяца, следующего за расчетным, производит оплату стоимости тепловой энергии, теплоносителя, указанной в счете. Датой оплаты считается дата поступления денежных средств на расчетный счет Теплоснабжающей организации.\""
-            service_type_info = "(заглушка) тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))"
-            claim_info = {"claim_date": '01.01.2000', "claim_number": '123456'}
+            # overdue_date_info  = "(заглушка) В следующем фрагменте указан срок, в течение которого Исполнитель должен произвести оплату:\n\n\"5. 5. Исполнитель в срок до 18-го числа месяца, следующего за расчетным, производит оплату стоимости тепловой энергии, теплоносителя, указанной в счете. Датой оплаты считается дата поступления денежных средств на расчетный счет Теплоснабжающей организации.\""
+            contract_type, contract_point, overdue_date, contract_text = contract_parser.analyse_contract(contract_file_path, current_config)
+            # service_type_info = "(заглушка) тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))"
+            # claim_info = {"claim_date": '01.01.2000', "claim_number": '123456'}
+            claim_info = claim_parser.analyse_claim(claim_file_path)
 
-            parsing_table_results.append((merged_table_result, contract_number, overdue_date_info, service_type_info, claim_info))
+            parsing_table_results.append((merged_table_result, contract_number, contract_type, contract_point, overdue_date, contract_text, claim_info))
 
         result_json['table_parser_result'] = parsing_table_results
 
@@ -120,13 +138,25 @@ def parse():
         result_json['results_of_name_parser']['defendant_info']['inn'] = f'{defendant_inn}'
 
         # Получение данных ответчика по его инн
-        full_name, short_name, address, kpp, ogrn = parse_html(int(defendant_inn))
-        result_json['results_of_name_parser']['defendant_info']['full_name'] = full_name
+        try:
+        # full_name, short_name, address, kpp, ogrn = parse_html(int(defendant_inn))
+            full_name, short_name, address, kpp, ogrn, text_content = parse_egrul_certificate(str(egrul_certificate_file_path))
+            if len(short_name) < 1 or short_name is None:
+                short_name = full_name
+            print("EGRUL certificate parsed successfully")
+        except Exception as e:
+            print(e)
+            print("EGRUL certificate parsing failed")
+            return traceback.format_exc(), 500
+            # full_name, short_name, address, kpp, ogrn = parse_html(int(defendant_inn))
+        
+        result_json['results_of_name_parser']['defendant_info']['full_name'] = full_name.upper()
         result_json['results_of_name_parser']['defendant_info']['short_name'] = short_name
         result_json['results_of_name_parser']['defendant_info']['address'] = address
         result_json['results_of_name_parser']['defendant_info']['kpp'] = kpp
         result_json['results_of_name_parser']['defendant_info']['ogrn'] = ogrn
         result_json['path_to_save'] = str(folder.resolve())
+        result_json['egrul_certificate_filename'] = egrul_certificate_file_path.name
 
         # result_json['result_of_llm_parsers'] = pdf_pars_dict
 
@@ -136,7 +166,10 @@ def parse():
 
         return jsonify(result_json), 200
     except Exception as e:
-        return traceback.format_exc(), 500
+
+        print(traceback.format_exc())
+
+
 @app.route("/calculate_penalty", methods=["POST"])
 def calc_penalty():
     try:
@@ -153,6 +186,7 @@ def calc_penalty():
                 end_date=data['end_date'],
             )
             calculated_data['contract_number'] = parsing_result['contract_number']
+            calculated_data['contract_type'] = parsing_result['contract_type']
             last_days_of_penalty.append(parsing_result['day_of_penalty'])
             contract_points.append(parsing_result['contract_point'])
             calculated_results.append(sort_data_structure(calculated_data))
@@ -215,8 +249,8 @@ def create_table():
 
         return send_file(path_to_save, as_attachment=True), 200
     except Exception as e:
-        print(e)
-        return traceback.format_exc(), 500
+        print(traceback.format_exc())
+        return 500
 
 
 def get_request_files(
@@ -325,6 +359,7 @@ def sort_data_structure(data:dict) -> dict:
     4. end_of_table2
     5. debt_info
     6. contract_number
+    7. contract_type
     """
 
     # Создаем новый упорядоченный словарь
@@ -366,7 +401,7 @@ def sort_data_structure(data:dict) -> dict:
         sorted_data[month_key] = data[month_key]
 
     # 3-6. Добавляем остальные элементы в нужном порядке
-    elements_order = ['end_of_table1', 'end_of_table2', 'debt_info', 'contract_number']
+    elements_order = ['end_of_table1', 'end_of_table2', 'debt_info', 'contract_number', 'contract_type']
 
     for element in elements_order:
         if element in data:

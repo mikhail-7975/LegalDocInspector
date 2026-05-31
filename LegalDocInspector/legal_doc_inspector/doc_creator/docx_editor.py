@@ -680,6 +680,12 @@ class DocxRedactor:
 
         return new_paragraph
 
+    def insert_paragraph_before_paragraph(self, src_paragraph: Paragraph) -> Paragraph:
+        new_paragraph = self.doc.add_paragraph()
+        
+        src_paragraph._element.addprevious(new_paragraph._element)
+        
+        return new_paragraph
 
     def insert_table_after_table(self, src_table: Table) -> Table:
         new_table = self.doc.add_table(rows=len(src_table.rows), cols=len(src_table.row_cells(0)))

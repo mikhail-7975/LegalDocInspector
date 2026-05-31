@@ -1,0 +1,16 @@
+# Streamlit: production-режим для exe и python scripts/run_dev.py
+[global]
+developmentMode = false
+
+[server]
+port = 8501
+address = "127.0.0.1"
+headless = true
+enableCORS = false
+enableXsrfProtection = false
+# В exe + torch/docling watcher падает на torch._classes (local_sources_watcher).
+fileWatcherType = "none"
+runOnSave = false
+
+[browser]
+gatherUsageStats = false

@@ -66,7 +66,7 @@ class TableParser:
         self.pattern_date = r"\d{4}"
         self.pattern_adjustment = "доля от размера годовой корректировки платы за тепловую энергию"
         self.pattern_adjustment_2 = r"(январе|феврале|марте|апреле|мае|июне|июле|августе|сентябре|октябре|ноябре|декабре)\s+\d{4}"
-        self.pattern_end = "итого по договору"
+        self.pattern_end = ["итого по договору", 'итого по периоду']
         self.pattern_period = r"(0?[1-9]|1[0-9])\.\d{4}"
 
 
@@ -194,14 +194,21 @@ class TableParser:
         5 - строка, содержащая платеж
         6 - строка, содержащая задолженность за весь текущий период (обычно стоит предпоследней перед следующим блоком)
         7 - строка, содержащая сумму всех задолженностей и платежей (обычно стоит последней перед следующим блоком)
+        8 - пустая строка (так бывает)
         """
         first = self.reader.cell(row, 0)
         second = self.reader.cell(row, 1)
         third = self.reader.cell(row, 2)
         fourth = self.reader.cell(row, 3)
-        sixth = self.reader.cell(row, 5)
-        seventh = self.reader.cell(row, 6)
 
+        try:
+            sixth = self.reader.cell(row, 5)
+            seventh = self.reader.cell(row, 6)
+        except IndexError:
+            sixth = None
+            seventh = self.reader.cell(row,4)
+
+        
         if not pd.isna(first):
             if self.find_pattern(self.pattern_month, first):
                 return 1
@@ -209,7 +216,7 @@ class TableParser:
             if self.pattern_adjustment.lower() in first.lower():
                 return 2
 
-            if self.pattern_end.lower() in first.lower():
+            if first.lower() in self.pattern_end :
                 return 3
 
             if self.find_pattern(self.pattern_period, first) and (not pd.isna(second)):
@@ -223,7 +230,10 @@ class TableParser:
 
             if (not pd.isna(second)) and pd.isna(third) and (not pd.isna(fourth)):
                 return 7
-
+            
+            if sum([pd.isna(x) for x in [first,second,third,fourth,sixth,seventh]])==6:
+                return 8
+        
         print(f"Строка row={row} не соответствует ни одному формату, не ясно как её обрабатывать.")
         raise RuntimeError(f"Invalid row: {row}")
 
@@ -330,12 +340,18 @@ class TableParser:
 
 
     def parse_debt(self, row):
-        debt = self.reader.cell(row, 6)
+        try:
+            debt = self.reader.cell(row, 6)
+        except IndexError:
+            debt = self.reader.cell(row, 4)
         return None if pd.isna(debt) else debt
 
 
     def parse_payment_contract_type(self, row):
-        contract_type = self.reader.cell(row, 5)
+        try:
+            contract_type = self.reader.cell(row, 5)
+        except IndexError:
+            contract_type = None
         return None if pd.isna(contract_type) else contract_type
 
 
@@ -348,11 +364,11 @@ class TableParser:
 
         Если период платежа не совпадает с месяцем, в котором он записан, то это добор.
         """
-        converted_month = convert_month(month.split()[0])
-        converted_period = period.split(".")[0]
-        if converted_month != converted_period:
-            return True
-        return False
+        complained_month, complained_year = convert_month(month.split()[0]), month.split()[1]
+        converted_month , converted_year= period.split(".")
+        if converted_month == complained_month and converted_year==complained_year:
+            return False
+        return True
 
 
     def money_str_to_float(self, money):
@@ -377,10 +393,14 @@ class TableParser:
 
 
     def check_if_is_correcting(self, row):
-        eighth = self.reader.cell(row, 7)
+        try:
+            eighth = self.reader.cell(row, 7)
+        except IndexError:
+            eighth = None
         checking_pattern = "Годовая корректировка обязательств по оплате до факта начислений"
         if (not pd.isna(eighth)) and (checking_pattern.lower() in eighth.lower()):
             return True
+        
         return False
 
 

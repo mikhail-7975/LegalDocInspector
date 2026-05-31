@@ -2,3 +2,33 @@ save_data_folder : data
 debug : True
 claim_template_path : data/templates/claim.docx
 calculation_claim_template_path : data/templates/calculation_claim_new_version_new.docx
+
+point_overdue_key_words_list_weighted:
+  срок: 2
+  числа: 3
+  месяца: 3
+  производится: 1
+  оплата: 3
+  расчётным: 2
+  период: 2
+  следующего: 3
+  оплачивает: 3
+
+point_overdue_key_words_excluded:
+  - оформляет
+  - регулирует
+  - помещения
+  - дубликатов
+  - льгот
+  - распределяются
+  - Ресурсоснабжающая
+  - ОДПУ
+  - указания
+  - подписание
+  - потерь
+  - надлежащим
+
+service_type_key_words_list_weighted:
+  теплоноситель: 3
+  вода: 3
+  

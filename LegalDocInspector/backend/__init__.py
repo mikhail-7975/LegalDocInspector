@@ -3,11 +3,14 @@ from configs.config import load_yaml_config
 from LegalDocInspector.legal_doc_inspector.exel_parser import TableParser
 from LegalDocInspector.legal_doc_inspector.doc_creator.calculation_claim_generator import CalculationClaimGenerator
 from LegalDocInspector.legal_doc_inspector.doc_creator.claim_generator import ClaimGenerator
-
+from LegalDocInspector.legal_doc_inspector.pdf_parser.parser_models import PDFClaimParser, PDFContractParser
+from LegalDocInspector.legal_doc_inspector.docling_frozen_bootstrap import ensure_docling_plugins
 
 def create_app():
+    ensure_docling_plugins()
     app = Flask(__name__)
-
+    contract_parser = PDFContractParser()
+    claim_parser = PDFClaimParser()
     with app.app_context():
         # Import parts of our application
         from . import routes
@@ -16,6 +19,7 @@ def create_app():
         def add_configs():
             if "config" not in g:
                 g.config = load_yaml_config('configs/debug_config.yaml')
+
         @app.before_request
         def add_doc_processors():
             if "table_parser" not in g:
@@ -24,6 +28,10 @@ def create_app():
                 g.claim_generator = ClaimGenerator()
             if 'calc_claim_generator' not in g:
                 g.calc_claim_generator = CalculationClaimGenerator()
+            if 'contract_parser' not in g:
+                g.contract_parser = contract_parser
+            if 'claim_parser' not in g:
+                g.claim_parser = claim_parser
             pass
 
         return app
