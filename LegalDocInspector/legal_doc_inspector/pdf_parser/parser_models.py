@@ -49,6 +49,7 @@ from LegalDocInspector.legal_doc_inspector.pdf_parser.docling_safe_convert impor
 )
 
 _DOCLING_ACCEL_THREADS = min(4, os.cpu_count() or 4)
+_CONTRACT_MAX_PAGES = 15
 torch.set_num_threads(_DOCLING_ACCEL_THREADS)
 
 _log = logging.getLogger(__name__)
@@ -105,6 +106,20 @@ def _resolve_tesseract_cmd() -> str:
 
 
 _get_pdf_page_count = get_pdf_page_count
+
+
+def _get_contract_page_count(pdf_path: Path) -> int:
+    """Число страниц договора для извлечения (не более _CONTRACT_MAX_PAGES)."""
+    total_pages = _get_pdf_page_count(pdf_path)
+    if total_pages > _CONTRACT_MAX_PAGES:
+        _log.info(
+            "Contract PDF has %s page(s), limiting extraction to first %s: %s",
+            total_pages,
+            _CONTRACT_MAX_PAGES,
+            pdf_path,
+        )
+        return _CONTRACT_MAX_PAGES
+    return total_pages
 
 
 def _tesseract_cli_ocr_options() -> TesseractCliOcrOptions:
@@ -421,7 +436,7 @@ class PDFContractParser:
 
     def _convert_contract_pdf_chunked(self, path_to_file: Path) -> list[DoclingDocument]:
         """OCR: постранично; при OOM возвращает обработанные страницы."""
-        page_count = _get_pdf_page_count(path_to_file)
+        page_count = _get_contract_page_count(path_to_file)
         _log.info(
             "Contract PDF has %s page(s), converting with OCR one-by-one: %s",
             page_count,
@@ -451,7 +466,7 @@ class PDFContractParser:
         self, path_to_file: Path
     ) -> list[DoclingDocument]:
         """Без OCR: постранично; пустой список, если текста нет."""
-        page_count = _get_pdf_page_count(path_to_file)
+        page_count = _get_contract_page_count(path_to_file)
         _log.info(
             "Starting conversion (text layer, no OCR), %s page(s): %s",
             page_count,
