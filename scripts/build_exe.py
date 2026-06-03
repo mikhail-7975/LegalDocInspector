@@ -14,15 +14,15 @@
     python scripts/build_exe.py --clean
     python scripts/build_exe.py --force-kill
 
-Перед сборкой каталог dist/LegalDocInspector освобождается автоматически.
-Если папка занята — сборка идёт в dist/LegalDocInspector_<timestamp>.
+По умолчанию результат: dist/LegalDocInspector_ГГГГММДД_ЧЧММСС/ (дата и время сборки).
+С флагом --fixed-name: dist/LegalDocInspector/ (как раньше, с освобождением каталога).
 
 Перед PyInstaller скачиваются модели docling (нужен интернет):
-    vendor/docling-models/ → dist/LegalDocInspector/models/
+    vendor/docling-models/ → dist/.../models/
 
-Результат:
-    dist/LegalDocInspector/LegalDocInspector.exe
-    dist/LegalDocInspector/models/
+Результат (пример):
+    dist/LegalDocInspector_20260528_153045/LegalDocInspector.exe
+    dist/LegalDocInspector_20260528_153045/models/
     dist/LegalDocInspector/data/
     dist/LegalDocInspector/configs/
 """
@@ -36,6 +36,7 @@ import stat
 import subprocess
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -67,6 +68,12 @@ def _set_collect_name(name: str) -> None:
 
 
 _set_collect_name(DEFAULT_COLLECT_NAME)
+
+
+def _timestamped_collect_name() -> str:
+    """Имя папки дистрибутива: LegalDocInspector_YYYYMMDD_HHMMSS."""
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return f"{DEFAULT_COLLECT_NAME}_{stamp}"
 
 
 def _ensure_pyinstaller() -> None:
@@ -273,13 +280,25 @@ def main() -> int:
         action="store_true",
         help="перекачать модели даже если vendor/docling-models уже заполнен",
     )
+    parser.add_argument(
+        "--fixed-name",
+        action="store_true",
+        help="собрать в dist/LegalDocInspector без даты в имени (перезапись/освобождение каталога)",
+    )
     args = parser.parse_args()
 
     _ensure_pyinstaller()
     _warn_if_cwd_inside_dist()
 
-    if not args.no_release_dist:
-        _release_dist_directory(force_kill=args.force_kill)
+    if args.fixed_name:
+        if not args.no_release_dist:
+            _release_dist_directory(force_kill=args.force_kill)
+        _set_collect_name(DEFAULT_COLLECT_NAME)
+    else:
+        if args.force_kill:
+            _kill_running_exe()
+        _set_collect_name(_timestamped_collect_name())
+        print(f"Каталог дистрибутива: dist\\{COLLECT_NAME}")
 
     if not args.skip_models:
         _prefetch_docling_models(
@@ -299,9 +318,10 @@ def main() -> int:
     print("Сборка завершена.")
     print(f"  Запуск: {EXE}")
     print("  Рядом: models/, data/, configs/, .streamlit/, LegalDocInspector/streamlit/.")
-    if COLLECT_NAME != DEFAULT_COLLECT_NAME:
+    if args.fixed_name and COLLECT_NAME != DEFAULT_COLLECT_NAME:
         print(
-            f"\n  Внимание: сборка в dist\\{COLLECT_NAME} (старый dist\\{DEFAULT_COLLECT_NAME} был занят)."
+            f"\n  Внимание: сборка в dist\\{COLLECT_NAME} "
+            f"(dist\\{DEFAULT_COLLECT_NAME} был занят)."
         )
     return 0
 

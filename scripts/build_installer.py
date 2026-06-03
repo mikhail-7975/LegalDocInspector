@@ -86,17 +86,25 @@ def _find_tesseract(explicit: Path | None) -> Path:
 
 
 def _resolve_dist_app_dir() -> Path:
-    if DEFAULT_DIST_APP.is_dir() and (DEFAULT_DIST_APP / "LegalDocInspector.exe").is_file():
-        return DEFAULT_DIST_APP
+    exe_name = "LegalDocInspector.exe"
+    candidates: list[Path] = []
+    dist_root = ROOT / "dist"
 
-    alt = sorted((ROOT / "dist").glob("LegalDocInspector_*"))
-    for path in reversed(alt):
-        if (path / "LegalDocInspector.exe").is_file():
-            print(f"Используется сборка: {path}")
-            return path
+    if DEFAULT_DIST_APP.is_dir() and (DEFAULT_DIST_APP / exe_name).is_file():
+        candidates.append(DEFAULT_DIST_APP)
+
+    for path in dist_root.glob("LegalDocInspector_*"):
+        if path.is_dir() and (path / exe_name).is_file():
+            candidates.append(path)
+
+    if candidates:
+        chosen = max(candidates, key=lambda p: p.name)
+        if chosen != DEFAULT_DIST_APP:
+            print(f"Используется сборка: {chosen}")
+        return chosen
 
     raise SystemExit(
-        f"Не найдена сборка приложения: {DEFAULT_DIST_APP}\n"
+        f"Не найдена сборка приложения в {dist_root}\n"
         "  Выполните: python scripts/build_exe.py --force-kill --clean\n"
         "  или без --skip-exe в build_installer.py"
     )
