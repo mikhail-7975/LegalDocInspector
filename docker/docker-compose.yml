@@ -1,0 +1,17 @@
+services:
+  python:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: legaldoc
+    working_dir: /app
+    # mem_limit: 1g
+    # memswap_limit: 17g
+    ports:
+      - "8501:8501"
+      - "5001:5001"
+    stdin_open: true
+    tty: true
+    volumes:
+      - ../:/app
+    command: bash

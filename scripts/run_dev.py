@@ -4,20 +4,42 @@
 Разработка:
     python scripts/run_dev.py
 
-Сборка exe (см. scripts/build_exe.py):
-    dist/LegalDocInspector/LegalDocInspector.exe
+Сборка дистрибутива:
+    Windows: python scripts/build_exe.py → dist/LegalDocInspector/LegalDocInspector.exe
+    macOS:   python scripts/build_macos.py → dist/LegalDocInspector/LegalDocInspector
+    Инструкция macOS: docs/BUILD_MACOS.md
 """
 
 from __future__ import annotations
 
+import multiprocessing
 import os
+import signal
 import subprocess
 import sys
 import time
 from pathlib import Path
+from typing import Protocol
 
 BACKEND_PORT = 5001
 STREAMLIT_PORT = 8501
+_LAUNCHER_PID_ENV = "LDI_MAIN_LAUNCHER_PID"
+
+_shutdown_requested = False
+_lock_handle: object | None = None
+
+
+class _ChildProcess(Protocol):
+    def poll(self) -> int | None: ...
+
+    def terminate(self) -> None: ...
+
+    def kill(self) -> None: ...
+
+    def wait(self, timeout: float | None = None) -> int: ...
+
+
+_active_children: list[_ChildProcess] = []
 
 
 def _is_frozen() -> bool:
@@ -29,6 +51,48 @@ def project_root() -> Path:
     if _is_frozen():
         return Path(sys.executable).resolve().parent
     return Path(__file__).resolve().parents[1]
+
+
+def _configure_runtime_env() -> None:
+    """Стабильнее в frozen-сборке (torch/docling/multiprocessing)."""
+    os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+    os.environ.setdefault("OMP_NUM_THREADS", "1")
+    os.environ.setdefault("MKL_NUM_THREADS", "1")
+
+
+def _is_frozen_side_reexec() -> bool:
+    """
+    PyInstaller/torch переисполняют бинарник без аргументов.
+    У такого процесса в env уже записан PID лаунчера, но свой PID другой.
+    """
+    if not _is_frozen() or len(sys.argv) != 1:
+        return False
+    launcher_pid = os.environ.get(_LAUNCHER_PID_ENV)
+    return launcher_pid is not None and launcher_pid != str(os.getpid())
+
+
+class _MpChild:
+    def __init__(self, proc: multiprocessing.Process) -> None:
+        self._proc = proc
+
+    def poll(self) -> int | None:
+        if self._proc.is_alive():
+            return None
+        return self._proc.exitcode
+
+    def terminate(self) -> None:
+        if self._proc.is_alive():
+            self._proc.terminate()
+
+    def kill(self) -> None:
+        if self._proc.is_alive():
+            self._proc.kill()
+
+    def wait(self, timeout: float | None = None) -> int:
+        self._proc.join(timeout=timeout)
+        if self._proc.is_alive():
+            raise subprocess.TimeoutExpired(cmd=[], timeout=timeout or 0)
+        return self._proc.exitcode if self._proc.exitcode is not None else 0
 
 
 def _streamlit_interface_path(root: Path) -> Path:
@@ -47,8 +111,6 @@ def _streamlit_interface_path(root: Path) -> Path:
 
 
 def _backend_cmd(root: Path) -> list[str]:
-    if _is_frozen():
-        return [sys.executable, "--backend"]
     return [sys.executable, str(root / "run.py")]
 
 
@@ -58,7 +120,6 @@ def _configure_streamlit_env() -> None:
     os.environ["STREAMLIT_SERVER_PORT"] = str(STREAMLIT_PORT)
     os.environ["STREAMLIT_SERVER_ADDRESS"] = "127.0.0.1"
     os.environ.setdefault("STREAMLIT_BROWSER_GATHER_USAGE_STATS", "false")
-    # torch/transformers в frozen exe ломают local_sources_watcher при сканировании __path__.
     os.environ["STREAMLIT_SERVER_FILE_WATCHER_TYPE"] = "none"
     os.environ.setdefault("TRANSFORMERS_NO_ADVISORY_WARNINGS", "1")
 
@@ -79,13 +140,17 @@ def _streamlit_argv(interface: Path) -> list[str]:
 
 
 def _streamlit_cmd(root: Path) -> list[str]:
-    if _is_frozen():
-        return [sys.executable, "--streamlit"]
     interface = _streamlit_interface_path(root)
     return [sys.executable, "-m", *_streamlit_argv(interface)]
 
 
-def _start_process(
+def _popen_kwargs() -> dict:
+    if sys.platform == "win32":
+        return {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
+    return {"start_new_session": True}
+
+
+def _start_subprocess(
     cmd: list[str], *, cwd: Path, streamlit: bool = False
 ) -> subprocess.Popen[bytes]:
     env = os.environ.copy()
@@ -96,18 +161,137 @@ def _start_process(
         env["STREAMLIT_SERVER_ADDRESS"] = "127.0.0.1"
         env["STREAMLIT_SERVER_FILE_WATCHER_TYPE"] = "none"
         env.setdefault("TRANSFORMERS_NO_ADVISORY_WARNINGS", "1")
-    return subprocess.Popen(cmd, cwd=cwd, env=env)
+    proc = subprocess.Popen(cmd, cwd=cwd, env=env, **_popen_kwargs())
+    _active_children.append(proc)
+    return proc
 
 
-def _stop_process(proc: subprocess.Popen[bytes]) -> None:
+def _ensure_mp_spawn() -> None:
+    try:
+        multiprocessing.set_start_method("spawn", force=True)
+    except RuntimeError:
+        pass
+
+
+def _backend_worker() -> None:
+    raise SystemExit(_run_backend())
+
+
+def _streamlit_worker() -> None:
+    raise SystemExit(_run_streamlit())
+
+
+def _start_frozen_worker(target, *, name: str) -> _MpChild:
+    proc = multiprocessing.Process(target=target, name=name, daemon=False)
+    proc.start()
+    handle = _MpChild(proc)
+    _active_children.append(handle)
+    return handle
+
+
+def _acquire_launcher_lock(root: Path) -> None:
+    global _lock_handle
+    lock_path = root / ".legaldocinspector.lock"
+    if sys.platform == "win32":
+        import msvcrt
+
+        _lock_handle = open(lock_path, "a+")
+        try:
+            _lock_handle.seek(0)
+            msvcrt.locking(_lock_handle.fileno(), msvcrt.LK_NBLCK, 1)
+        except OSError as exc:
+            _lock_handle.close()
+            _lock_handle = None
+            raise SystemExit(
+                "LegalDocInspector уже запущен (занят lock-файл).\n"
+                "  Закройте другой экземпляр или удалите:\n"
+                f"    {lock_path}"
+            ) from exc
+    else:
+        import fcntl
+
+        _lock_handle = open(lock_path, "w")
+        try:
+            fcntl.flock(_lock_handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            _lock_handle.close()
+            _lock_handle = None
+            raise SystemExit(
+                "LegalDocInspector уже запущен (занят lock-файл).\n"
+                "  Закройте другой экземпляр или выполните:\n"
+                "    pkill -x LegalDocInspector"
+            )
+    _lock_handle.write(str(os.getpid()))
+    _lock_handle.flush()
+
+
+def _release_launcher_lock() -> None:
+    global _lock_handle
+    if _lock_handle is None:
+        return
+    try:
+        if sys.platform == "win32":
+            import msvcrt
+
+            _lock_handle.seek(0)
+            msvcrt.locking(_lock_handle.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(_lock_handle.fileno(), fcntl.LOCK_UN)
+    except OSError:
+        pass
+    _lock_handle.close()
+    _lock_handle = None
+
+
+def _stop_process(proc: _ChildProcess, *, force: bool = False) -> None:
     if proc.poll() is not None:
         return
-    proc.terminate()
+
+    if isinstance(proc, subprocess.Popen):
+        if sys.platform == "win32":
+            if force:
+                proc.kill()
+            else:
+                proc.terminate()
+        else:
+            sig = signal.SIGKILL if force else signal.SIGTERM
+            try:
+                os.killpg(os.getpgid(proc.pid), sig)
+            except (ProcessLookupError, PermissionError, AttributeError):
+                proc.send_signal(sig)
+    else:
+        if force:
+            proc.kill()
+        else:
+            proc.terminate()
+
+    timeout = 3 if force else 8
     try:
-        proc.wait(timeout=10)
-    except subprocess.TimeoutExpired:
-        proc.kill()
-        proc.wait(timeout=5)
+        proc.wait(timeout=timeout)
+        return
+    except (subprocess.TimeoutExpired, multiprocessing.TimeoutError):
+        pass
+
+    if not force:
+        _stop_process(proc, force=True)
+
+
+def _stop_all_children(*, force: bool = False) -> None:
+    for proc in reversed(_active_children):
+        _stop_process(proc, force=force)
+    _active_children.clear()
+
+
+def _request_shutdown(signum: int | None = None, frame: object | None = None) -> None:
+    global _shutdown_requested
+    if _shutdown_requested:
+        print("\nПринудительное завершение...")
+        _stop_all_children(force=True)
+        _release_launcher_lock()
+        raise SystemExit(128 + (signum or signal.SIGINT))
+    _shutdown_requested = True
 
 
 def _run_backend() -> int:
@@ -130,7 +314,10 @@ def _run_backend() -> int:
     from LegalDocInspector.backend import create_app
 
     app = create_app()
-    app.run(debug=False, port=BACKEND_PORT)
+    try:
+        app.run(debug=False, port=BACKEND_PORT, use_reloader=False)
+    except KeyboardInterrupt:
+        pass
     return 0
 
 
@@ -150,14 +337,29 @@ def _run_streamlit() -> int:
 
     sys.argv = _streamlit_argv(interface)
     print(f"Streamlit UI: http://127.0.0.1:{STREAMLIT_PORT}")
-    stcli.main()
+    try:
+        stcli.main()
+    except KeyboardInterrupt:
+        pass
+    except SystemExit as exc:
+        if exc.code not in (0, None):
+            raise
     return 0
 
 
 def main() -> int:
+    global _shutdown_requested
+
     root = project_root()
+    os.environ[_LAUNCHER_PID_ENV] = str(os.getpid())
+    _acquire_launcher_lock(root)
+
     backend_url = f"http://localhost:{BACKEND_PORT}"
     streamlit_url = f"http://localhost:{STREAMLIT_PORT}"
+
+    signal.signal(signal.SIGINT, _request_shutdown)
+    if hasattr(signal, "SIGTERM"):
+        signal.signal(signal.SIGTERM, _request_shutdown)
 
     print("Запуск сервисов (Ctrl+C для остановки)...")
     print(f"  Бэкенд:    {backend_url}")
@@ -165,42 +367,60 @@ def main() -> int:
     print(f"  Каталог:   {root}")
     print()
 
-    backend = _start_process(_backend_cmd(root), cwd=root)
-    time.sleep(0.5)
-    streamlit = _start_process(_streamlit_cmd(root), cwd=root, streamlit=True)
+    if _is_frozen():
+        _ensure_mp_spawn()
+        backend = _start_frozen_worker(_backend_worker, name="ldi-backend")
+        time.sleep(0.5)
+        streamlit = _start_frozen_worker(_streamlit_worker, name="ldi-streamlit")
+    else:
+        backend = _start_subprocess(_backend_cmd(root), cwd=root)
+        time.sleep(0.5)
+        streamlit = _start_subprocess(_streamlit_cmd(root), cwd=root, streamlit=True)
 
-    processes: list[tuple[str, subprocess.Popen[bytes]]] = [
+    processes: list[tuple[str, _ChildProcess]] = [
         ("бэкенд", backend),
         ("streamlit", streamlit),
     ]
     exit_code = 0
 
     try:
-        while True:
+        while not _shutdown_requested:
             for name, proc in processes:
                 code = proc.poll()
                 if code is not None:
                     print(f"\nПроцесс «{name}» завершился с кодом {code}.")
                     exit_code = code if code != 0 else exit_code
-                    raise KeyboardInterrupt
+                    _shutdown_requested = True
+                    break
             time.sleep(0.3)
     except KeyboardInterrupt:
-        print("\nОстановка процессов...")
+        _shutdown_requested = True
     finally:
-        for _, proc in reversed(processes):
-            _stop_process(proc)
+        if _shutdown_requested:
+            print("\nОстановка процессов...")
+        _stop_all_children()
+        _release_launcher_lock()
+        _shutdown_requested = False
 
     return exit_code
 
 
 def _dispatch() -> int:
+    _configure_runtime_env()
+
+    # Старый способ (subprocess): оставлен для совместимости при отладке бинарника.
     if len(sys.argv) >= 2:
         if sys.argv[1] == "--backend":
             return _run_backend()
         if sys.argv[1] == "--streamlit":
             return _run_streamlit()
+
+    if _is_frozen_side_reexec():
+        return 0
+
     return main()
 
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     raise SystemExit(_dispatch())
