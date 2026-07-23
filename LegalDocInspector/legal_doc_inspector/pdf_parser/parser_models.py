@@ -221,7 +221,7 @@ class PDFClaimParser:
         )
         del doc_converter_ocr
         return pairs
-    
+
     def _extract_text_with_page(self, data: list) -> list[tuple[int, str]]:
         """
         Принимает список, полученный как list(doc.as_dict().values()),
@@ -245,7 +245,7 @@ class PDFClaimParser:
             if page_no is not None:
                 result.append((int(page_no), str(text)))
         return result
-    
+
     def analyse_claim(self, path_to_file: str|Path):
         if isinstance(path_to_file, str):
             path_to_file = Path(path_to_file)
@@ -278,7 +278,7 @@ class PDFClaimParser:
             claim_dict = {"claim_date": str(date), "claim_number": str(number)}
             response.append(claim_dict)
         return response
-    
+
     def _parse_claim_number_and_date(self, texts_with_pages: List[Tuple[int, str]]) -> List[Tuple[Optional[str], Optional[str]]]:
         """
         Принимает список пар [(страница, текст), ...].
@@ -317,7 +317,7 @@ class PDFClaimParser:
                     date = match2.group()
                     date_flag = True
                     num_flag = True
-                    
+
                 if match2 and len(string)<11:
                     # print(string)
                     # print(match2.group())
@@ -330,11 +330,11 @@ class PDFClaimParser:
                     number = match1.group()
 
                     num_flag = True
-                
+
                 if num_flag and date_flag:
                     response.append((number, date ))
                     break
-        
+
         return response
 
 
@@ -358,7 +358,7 @@ class PDFContractParser:
 
         start_time = time.time()
         self.doc_converter.initialize_pipeline(InputFormat.PDF)
-        
+
         init_runtime = time.time() - start_time
         self.morph = pymorphy3.MorphAnalyzer(lang='ru')
 
@@ -367,7 +367,7 @@ class PDFContractParser:
     def analyse_contract(self, path_to_file: str | Path, config:AppConfig):
         """
         Docstring для analyse_contract
-        
+
         :param self: Описание
         :param path_to_file: Описание
         :type path_to_file: str | Path
@@ -376,7 +376,7 @@ class PDFContractParser:
 
         returns
         tuple (тип договора, пункт договора, день, текст)
-        
+
         """
         if isinstance(path_to_file, str):
             path_to_file = Path(path_to_file)
@@ -390,7 +390,7 @@ class PDFContractParser:
                                                                 excluded_words=config.point_overdue_excluded)
         elif type_of_service == 'ФОТЭ':
             return type_of_service, '-', '15', 'Данный тип договора является актом ФОТЭ, согласно закону базовый день начала просрочки - 15-е число месяца'
-        
+
 
         else:
             return type_of_service, '-', '18', type_of_service
@@ -399,12 +399,12 @@ class PDFContractParser:
         #                                                    excluded_words=config.service_type_excluded)
         release_memory()
         return type_of_service, point_of_contract, overdue_day, result_text
-    
+
     def _find_type_of_contract(self, parsed_html):
         soup = BeautifulSoup(parsed_html, 'lxml')
         candidates = soup.find_all(['h1','h2','p'])
         valid_values_keywords = ['акт','договор', 'контракт', 'гвс', 'тэ', 'фотэ', 'сои']
-        
+
         valid_values_keywords_lemmatized = {self._lemmatize_word(elem) for elem in valid_values_keywords}
         valid_values = []
 
@@ -413,7 +413,7 @@ class PDFContractParser:
                 text_elem_lemmatized = self._lemmatize_words(text_elem)
                 if valid_values_keywords_lemmatized & text_elem_lemmatized:
                     valid_values.append(text_elem.lower())
-        
+
         soi_keywords = ['целей содержания общего имущества', 'сои', 'cои']
         te_keywords = ['договор теплоснабжения', 'на снабжение тепловой', 'контракт теплоснабжения']
         gvs_keywords = ['договор поставки горячей воды', 'горячей воды', 'гвс', 'горячего водоснабжения']
@@ -431,7 +431,7 @@ class PDFContractParser:
             for keyword in fote_keywords:
                 if keyword in valid_elem:
                     return 'ФОТЭ'
-            
+
         return "не удалось определить тип договора"
 
     def _convert_contract_pdf_chunked(self, path_to_file: Path) -> list[DoclingDocument]:
@@ -566,7 +566,7 @@ class PDFContractParser:
     def _find_point_of_service_type(self, parsed_html_text:str, keywords:dict, excluded_words:list):
         service_type_key_words_list_weighted = keywords
         finded_text, candidates = self._find_top5_elements_weighted(parsed_html_text, service_type_key_words_list_weighted, excluded_words)
-        
+
         # print(finded_text)
         if len(finded_text) > 0:
             return finded_text[0][0]
@@ -578,7 +578,7 @@ class PDFContractParser:
         for perspective_elem in perspective_elems:
             elem_text, _ , current_index = perspective_elem
             # print(elem_text)
-            
+
             matches = re.match(pattern, elem_text)
             if matches is not None:
                 return matches.group(0), elem_text
@@ -599,10 +599,10 @@ class PDFContractParser:
     def _find_day_overdue_suggestions(self, result_text: str):
     # Удаляем число из начала
         cleaned = re.sub(r'^\d+(?:[.,]\d+)*', '', result_text).lstrip()
-        
+
         # Находим все элементы
         matches = re.findall(r'\d+|\n|числа', cleaned, flags=re.IGNORECASE)
-        
+
         if '\n' in matches:
             # Ищем число между \n и "числа"
             for i in range(len(matches)):
@@ -618,14 +618,14 @@ class PDFContractParser:
             for i in range(len(matches) - 1):
                 if matches[i].isdigit() and matches[i+1].lower() == 'числа':
                     return matches[i]
-        
+
         # Если не нашли по правилам, возвращаем первое число
         for elem in matches:
             if elem.isdigit():
                 return elem
-        
+
         return None
-    
+
     def _check_contract_point(self, elem:str) -> bool:
         keywords = ["производит", "оплату", "сроки"]
         excl_word = ["энергоснабжающая", "передает", "выставляет"]
@@ -635,7 +635,7 @@ class PDFContractParser:
 
         if excl_word_lemmatized & elem_lemmatized:
             return False
-        
+
         if keywords_lemmatized & elem_lemmatized:
             return True
 
@@ -685,7 +685,7 @@ class PDFContractParser:
 
         top5 = sorted(scored, key=lambda x: x[1], reverse=True)[:5]
         return top5, candidates
-    
+
 
     def _lemmatize_words(self, text: str) -> set[str]:
         """Извлекает слова и возвращает множество лемм (в нижнем регистре)."""
@@ -697,7 +697,7 @@ class PDFContractParser:
     def _lemmatize_word(self, word: str) -> str:
         """Лемматизирует одно слово."""
         return self.morph.parse(word.lower())[0].normal_form
-    
+
     def _strip_html(self, html: str) -> str:
         """
         Удаляет HTML-теги с помощью регулярных выражений и декодирует HTML-сущности.

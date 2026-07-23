@@ -214,6 +214,12 @@ def run_calculate_penalty(parse_result: dict):
         return False, None, str(exc)
     if response.status_code == 200:
         return True, response.json(), None
+    try:
+        payload = response.json()
+        if isinstance(payload, dict) and payload.get("error"):
+            return False, None, payload["error"]
+    except ValueError:
+        pass
     return False, None, f"{response.status_code}\n{response.text}"
 
 

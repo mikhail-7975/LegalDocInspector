@@ -83,6 +83,11 @@ def convert_data(calculated_data_list: list[dict], last_days_of_penalty: list[in
         contract_dict['last_day'] = f"До {last_days_of_penalty[i]} числа месяца, следующего за расчётным"
         for month_or_type, str_info in contract_info.items():
             if month_or_type == 'start_of_table':
+                if not isinstance(str_info, dict) or "start" not in str_info or "end" not in str_info:
+                    raise ValueError(
+                        "Не удалось определить период просрочки (start_of_table пуст). "
+                        "Обычно это значит, что в справке нет месяцев с задолженностью."
+                    )
                 start_date, end_date = str_info['start'], str_info['end']
                 contract_dict['penalty_period'] = f"{start_date} по {end_date}"
             elif month_or_type == 'end_of_table1':

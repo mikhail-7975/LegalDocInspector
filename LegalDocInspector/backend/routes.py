@@ -202,6 +202,8 @@ def calc_penalty():
         response['claim_data'] = converted_data
         response['calculator_list']  = calculated_results
         return jsonify(response), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return traceback.format_exc(), 500
 

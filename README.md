@@ -39,11 +39,12 @@ python scripts/build_exe.py
 Подробная инструкция: [docs/BUILD_MACOS.md](docs/BUILD_MACOS.md)
 
 ```
-pip install -r requirements-macos.txt
-pip install -r requirements-build.txt
-brew install tesseract tesseract-lang
+python3.11 -m venv .venv && source .venv/bin/activate
+python scripts/setup_macos_env.py
 python scripts/build_macos.py --clean
 ```
+
+`setup_macos_env.py` — установка зависимостей с обходом несовместимости wheel на macOS 13.
 
 Запуск: `dist/LegalDocInspector_*/LegalDocInspector` или двойной клик по `Launch LegalDocInspector.command`. DMG: `python scripts/build_macos.py --dmg`.
 

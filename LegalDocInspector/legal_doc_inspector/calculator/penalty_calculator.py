@@ -656,6 +656,11 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
     end_date = datetime.datetime.strptime(end_date, "%d.%m.%Y")
     
     parsed_data = sort_dict_by_months(parsed_data)
+    if not parsed_data:
+        raise ValueError(
+            "В справке нет периодов с задолженностью — расчёт пени невозможен. "
+            "Все месяцы погашены (долг = 0) или справка не распознана."
+        )
     
     res = {
         'start_of_table' : {}

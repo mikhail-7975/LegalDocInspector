@@ -35,13 +35,25 @@ def _dir_size_mb(path: Path) -> float:
     return total / (1024 * 1024)
 
 
+def _filter_download_kwargs(fn, kwargs: dict) -> dict:
+    """Оставить только аргументы, которые принимает текущая версия docling."""
+    import inspect
+
+    params = inspect.signature(fn).parameters
+    if any(p.kind == inspect.Parameter.VAR_KEYWORD for p in params.values()):
+        return kwargs
+    return {k: v for k, v in kwargs.items() if k in params}
+
+
 def _download_via_api(output_dir: Path, *, force: bool, minimal: bool) -> Path:
     from docling.utils import model_downloader
 
-    common = dict(output_dir=output_dir, force=force, progress=True)
+    download = model_downloader.download_models
     if minimal:
-        return model_downloader.download_models(
-            **common,
+        kwargs = dict(
+            output_dir=output_dir,
+            force=force,
+            progress=True,
             with_layout=True,
             with_tableformer=True,
             with_code_formula=False,
@@ -49,36 +61,40 @@ def _download_via_api(output_dir: Path, *, force: bool, minimal: bool) -> Path:
             with_rapidocr=False,
             with_easyocr=False,
         )
-    return model_downloader.download_models(
-        **common,
-        with_layout=True,
-        with_tableformer=True,
-        with_tableformer_v2=True,
-        with_code_formula=True,
-        with_picture_classifier=True,
-        with_smolvlm=True,
-        with_granitedocling=True,
-        with_granitedocling_mlx=True,
-        with_granitedocling_2stage=True,
-        with_smoldocling=True,
-        with_smoldocling_mlx=True,
-        with_granite_vision=True,
-        with_granite_chart_extraction=True,
-        with_granite_chart_extraction_v4=True,
-        with_rapidocr=True,
-        with_easyocr=True,
-    )
+    else:
+        kwargs = dict(
+            output_dir=output_dir,
+            force=force,
+            progress=True,
+            with_layout=True,
+            with_tableformer=True,
+            with_tableformer_v2=True,
+            with_code_formula=True,
+            with_picture_classifier=True,
+            with_smolvlm=True,
+            with_granitedocling=True,
+            with_granitedocling_mlx=True,
+            with_granitedocling_2stage=True,
+            with_smoldocling=True,
+            with_smoldocling_mlx=True,
+            with_granite_vision=True,
+            with_granite_chart_extraction=True,
+            with_granite_chart_extraction_v4=True,
+            with_rapidocr=True,
+            with_easyocr=True,
+        )
+    return download(**_filter_download_kwargs(download, kwargs))
 
 
 def _download_via_cli(output_dir: Path, *, force: bool, minimal: bool) -> None:
     import subprocess
 
+    # docling 2.x: python -m docling.cli.models download ...
+    # (пакет docling.cli без __main__, console script: docling-tools)
     cmd = [
         sys.executable,
         "-m",
-        "docling.cli",
-        "tools",
-        "models",
+        "docling.cli.models",
         "download",
         "--output-dir",
         str(output_dir),
