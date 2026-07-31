@@ -269,7 +269,7 @@ class PDFClaimParser:
         release_memory()
         claims = self._standartize_claims(claims)
         if len(claims) == 0:
-            claims = [{"claim-date": "Не удалось распознать дату", "claim_number" : "Не удалось распознать номер"}]
+            claims = [{"claim_date": "Не удалось распознать дату", "claim_number": "Не удалось распознать номер"}]
         return claims
 
     def _standartize_claims(self, claims:list[tuple[str | None, str | None]]):
