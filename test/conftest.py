@@ -9,14 +9,14 @@ import pytest
 from test.helpers.case_loader import (
     CASE_2026_06_17,
     case_files,
-    load_generation_input,
     load_result_parser,
     missing_generation_fields,
+    resolve_generation_input,
 )
 
 
 @pytest.fixture(scope="session")
-def case_2026_06_17_files() -> dict[str, Path]:
+def case_2026_06_17_files() -> dict:
     return case_files(CASE_2026_06_17)
 
 
@@ -27,7 +27,7 @@ def case_2026_06_17_result() -> dict:
 
 @pytest.fixture(scope="session")
 def case_2026_06_17_generation() -> dict | None:
-    return load_generation_input(CASE_2026_06_17)
+    return resolve_generation_input(CASE_2026_06_17)
 
 
 @pytest.fixture
