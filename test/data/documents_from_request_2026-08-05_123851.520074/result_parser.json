@@ -1,0 +1,54 @@
+{
+    "table_parser_result": [
+        [
+            {
+                "Àïğåëü 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 2464168.37,
+                                "period": "04.2026"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 2464168.37,
+                        "total_amount_of_payments": 0,
+                        "debt": 2464168.37
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                }
+            },
+            "¹ 09.807382-Òİ îò 10.04.2017",
+            "Òİ",
+            "Íå óäàëîñü íàéòè ïóíêò",
+            null,
+            null,
+            [
+                {
+                    "claim_date": "04.06.2026",
+                    "claim_number": "623760"
+                }
+            ]
+        ]
+    ],
+    "results_of_name_parser": {
+        "defendant_info": {
+            "inn": "7716769960",
+            "full_name": "ÎÁÙÅÑÒÂÎ Ñ ÎÃĞÀÍÈ×ÅÍÍÎÉ ÎÒÂÅÒÑÒÂÅÍÍÎÑÒÜŞ «ÌÈÒÈÍÎ-1»",
+            "short_name": "ÎÎÎ «ÌÈÒÈÍÎ-1»",
+            "address": "125430, Ã.ÌÎÑÊÂÀ, Ø. ÏßÒÍÈÖÊÎÅ, Ä. 21, ÏÎÌÅÙ. XXXI",
+            "kpp": "773301001",
+            "ogrn": "1147746296653"
+        }
+    },
+    "path_to_save": "C:\\Program Files\\LegalDocInspector_20260601\\LegalDocInspector_20260601_155844\\data\\documents_from_request_2026-08-05_123851.520074",
+    "egrul_certificate_filename": "ul-1147746296653-20260805123723.pdf"
+}

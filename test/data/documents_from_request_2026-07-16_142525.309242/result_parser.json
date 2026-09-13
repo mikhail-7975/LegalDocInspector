@@ -1,0 +1,223 @@
+{
+    "table_parser_result": [
+        [
+            {
+                "ƒÂÍ‡·¸ 2024": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 430639.63,
+                                "period": "12.2024"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 430639.63,
+                        "total_amount_of_payments": 0,
+                        "debt": 430639.63
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                },
+                "ﬂÌ‚‡¸ 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 470078.75,
+                                "period": "01.2025"
+                            }
+                        ],
+                        "payments": [
+                            {
+                                "payment": 80000,
+                                "date": "10.12.2021",
+                                "contract_type": 8904
+                            },
+                            {
+                                "payment": 50000,
+                                "date": "18.01.2022",
+                                "contract_type": 8904
+                            },
+                            {
+                                "payment": 38768.72,
+                                "date": "18.01.2022",
+                                "contract_type": 8904
+                            },
+                            {
+                                "payment": 85520.56,
+                                "date": "16.05.2022",
+                                "contract_type": 8904
+                            },
+                            {
+                                "payment": 62246.09,
+                                "date": "26.07.2022",
+                                "contract_type": 8904
+                            },
+                            {
+                                "payment": 153543.38,
+                                "date": "26.07.2022",
+                                "contract_type": 8904
+                            }
+                        ],
+                        "additionals": [],
+                        "total_amount_of_accruals": 470078.75,
+                        "total_amount_of_payments": 470078.75,
+                        "debt": 0
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [
+                            {
+                                "accrual": 196919.9,
+                                "period": "12.2024"
+                            }
+                        ],
+                        "total_amount_of_accruals": 196919.9,
+                        "total_amount_of_payments": 0,
+                        "debt": 196919.9
+                    }
+                },
+                "‘Â‚‡Î¸ 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 474967.93,
+                                "period": "02.2025"
+                            }
+                        ],
+                        "payments": [
+                            {
+                                "payment": 106456.62,
+                                "date": "26.07.2022",
+                                "contract_type": 8904
+                            }
+                        ],
+                        "additionals": [],
+                        "total_amount_of_accruals": 474967.93,
+                        "total_amount_of_payments": 106456.62,
+                        "debt": 368511.31
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [
+                            {
+                                "accrual": 196919.9,
+                                "period": "12.2024"
+                            }
+                        ],
+                        "total_amount_of_accruals": 196919.9,
+                        "total_amount_of_payments": 0,
+                        "debt": 196919.9
+                    }
+                },
+                "Ã‡Ú 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 461046.11,
+                                "period": "03.2025"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 461046.11,
+                        "total_amount_of_payments": 0,
+                        "debt": 461046.11
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [
+                            {
+                                "accrual": 196919.9,
+                                "period": "12.2024"
+                            }
+                        ],
+                        "total_amount_of_accruals": 196919.9,
+                        "total_amount_of_payments": 0,
+                        "debt": 196919.9
+                    }
+                },
+                "¿ÔÂÎ¸ 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 451233.63,
+                                "period": "04.2025"
+                            }
+                        ],
+                        "payments": [
+                            {
+                                "payment": 95000,
+                                "date": "29.05.2025",
+                                "contract_type": 8900
+                            },
+                            {
+                                "payment": 2300.94,
+                                "date": "30.05.2025",
+                                "contract_type": 8900
+                            },
+                            {
+                                "payment": 14624.24,
+                                "date": "30.05.2025",
+                                "contract_type": 8900
+                            }
+                        ],
+                        "additionals": [],
+                        "total_amount_of_accruals": 451233.63,
+                        "total_amount_of_payments": 111925.18,
+                        "debt": 339308.45
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [
+                            {
+                                "accrual": 66267.58,
+                                "period": "12.2024"
+                            },
+                            {
+                                "accrual": 130652.32,
+                                "period": "12.2024"
+                            }
+                        ],
+                        "total_amount_of_accruals": 196919.9,
+                        "total_amount_of_payments": 0,
+                        "debt": 196919.9
+                    }
+                }
+            },
+            "π 04.303360-“› ÓÚ 01.01.2012",
+            "“›",
+            "ÕÂ Û‰‡ÎÓÒ¸ Ì‡ÈÚË ÔÛÌÍÚ",
+            null,
+            null,
+            [
+                {
+                    "claim_date": "16.06.2025",
+                    "claim_number": "560045"
+                }
+            ]
+        ]
+    ],
+    "results_of_name_parser": {
+        "defendant_info": {
+            "inn": "7720513930",
+            "full_name": "“Œ¬¿–»Ÿ≈—“¬Œ —Œ¡—“¬≈ÕÕ» Œ¬ ∆»À‹ﬂ ¬Œ ¬ÕŒ¬‹ —Œ«ƒ¿¬¿≈ÃŒÃ  ŒÕƒŒÃ»Õ»”Ã≈ ´¬Œ—“Œ  - 3ª",
+            "short_name": "“—∆¬—  ´¬Œ—“Œ  - 3ª",
+            "address": "111123, √.ÃŒ— ¬¿, ÿ. ›Õ“”«»¿—“Œ¬, ƒ.53",
+            "kpp": "772001001",
+            "ogrn": "1047796700170"
+        }
+    },
+    "path_to_save": "C:\\Program Files\\LegalDocInspector_20260601\\LegalDocInspector_20260601_155844\\data\\documents_from_request_2026-07-16_142525.309242",
+    "egrul_certificate_filename": "ul-1047796700170-20260109171119.pdf"
+}

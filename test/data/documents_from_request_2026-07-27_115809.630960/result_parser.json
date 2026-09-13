@@ -1,0 +1,92 @@
+{
+    "table_parser_result": [
+        [
+            {
+                "Март 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 816664.45,
+                                "period": "03.2026"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 816664.45,
+                        "total_amount_of_payments": 0,
+                        "debt": 816664.45
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                }
+            },
+            "№ 03.208064ГВС от 30.04.2025",
+            "ГВС",
+            "Не удалось найти пункт",
+            null,
+            null,
+            [
+                {
+                    "claim_date": "18.05.2026",
+                    "claim_number": "620846"
+                }
+            ]
+        ],
+        [
+            {
+                "Март 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 1373017.8,
+                                "period": "03.2026"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 1373017.8,
+                        "total_amount_of_payments": 0,
+                        "debt": 1373017.8
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                }
+            },
+            "№ 03.208064-ТЭ от 30.04.2025",
+            "не удалось определить тип договора",
+            "-",
+            "18",
+            "не удалось определить тип договора",
+            [
+                {
+                    "claim_date": "18.05.2026",
+                    "claim_number": "620845"
+                }
+            ]
+        ]
+    ],
+    "results_of_name_parser": {
+        "defendant_info": {
+            "inn": "9715425880",
+            "full_name": "ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ «МОСКОВСКИЕ ДВОРИКИ»",
+            "short_name": "ООО «МОСКОВСКИЕ ДВОРИКИ»",
+            "address": "127273, Г.МОСКВА, ВН.ТЕР.Г. МУНИЦИПАЛЬНЫЙ ОКРУГ ОТРАДНОЕ, ШАЛТУФЬЕВСКОЕ, Д. 2, ПОМЕЩ. 1 ЭТАЖ",
+            "kpp": "771501001",
+            "ogrn": "1227700517110"
+        }
+    },
+    "path_to_save": "C:\\Program Files\\LegalDocInspector_20260601\\LegalDocInspector_20260601_155844\\data\\documents_from_request_2026-07-27_115809.630960",
+    "egrul_certificate_filename": "pdf"
+}

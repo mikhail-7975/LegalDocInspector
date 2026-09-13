@@ -1,0 +1,101 @@
+{
+    "table_parser_result": [
+        [
+            {
+                "Март 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 1219460.12,
+                                "period": "03.2026"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 1219460.12,
+                        "total_amount_of_payments": 0,
+                        "debt": 1219460.12
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                }
+            },
+            "№ 09.802726-ТЭ от 01.09.2023",
+            "ТЭ",
+            "Не удалось найти пункт",
+            null,
+            null,
+            [
+                {
+                    "claim_date": "05.05.2026",
+                    "claim_number": "620093"
+                }
+            ]
+        ],
+        [
+            {
+                "Март 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 825063.13,
+                                "period": "03.2026"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 825063.13,
+                        "total_amount_of_payments": 0,
+                        "debt": 825063.13
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [
+                            {
+                                "accrual": 96859.27,
+                                "period": "12.2025"
+                            },
+                            {
+                                "accrual": 50071.29,
+                                "period": "12.2025"
+                            }
+                        ],
+                        "total_amount_of_accruals": 146930.56,
+                        "total_amount_of_payments": 0,
+                        "debt": 146930.56
+                    }
+                }
+            },
+            "№ 667-03/09-24-ФОТЭ от 22.08.2024",
+            "ФОТЭ",
+            "-",
+            "15",
+            "Данный тип договора является актом ФОТЭ, согласно закону базовый день начала просрочки - 15-е число месяца",
+            [
+                {
+                    "claim_date": "05.05.2026",
+                    "claim_number": "620094"
+                }
+            ]
+        ]
+    ],
+    "results_of_name_parser": {
+        "defendant_info": {
+            "inn": "7743351812",
+            "full_name": "ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ «УПРАВЛЯЮЩАЯ КОМПАНИЯ ГОРОДСКИЕ УСАДЬБЫ-БИЗНЕС»",
+            "short_name": "ООО «УК ГОРОДСКИЕ УСАДЬБЫ- БИЗНЕС»",
+            "address": "125499, Г.МОСКВА, ВН.ТЕР.Г. МУНИЦИПАЛЬНЫЙ ОКРУГ ГОЛОВИНСКИЙ, Б-Р КРОНШТАДТСКИЙ, Д. 39, К. 1, ПОМЕЩ. 1П",
+            "kpp": "774301001",
+            "ogrn": "1207700495496"
+        }
+    },
+    "path_to_save": "C:\\Program Files\\LegalDocInspector_20260601\\LegalDocInspector_20260601_155844\\data\\documents_from_request_2026-07-22_105617.689790",
+    "egrul_certificate_filename": "ul-1207700495496-20260714150601.pdf"
+}

@@ -1,0 +1,82 @@
+{
+    "table_parser_result": [
+        [
+            {
+                "ßíâàğü 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 957757.99,
+                                "period": "01.2026"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 957757.99,
+                        "total_amount_of_payments": 0,
+                        "debt": 957757.99
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                },
+                "Ôåâğàëü 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 944845.65,
+                                "period": "02.2026"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [
+                            {
+                                "accrual": -539932.68,
+                                "period": "05.2026"
+                            }
+                        ],
+                        "total_amount_of_accruals": 404912.97,
+                        "total_amount_of_payments": 0,
+                        "debt": 404912.97
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                }
+            },
+            "¹ 06.530910-Òİ îò 28.12.2024",
+            "Òİ",
+            "Íå óäàëîñü íàéòè ïóíêò",
+            null,
+            null,
+            [
+                {
+                    "claim_date": "17.04.2026",
+                    "claim_number": "617194"
+                }
+            ]
+        ]
+    ],
+    "results_of_name_parser": {
+        "defendant_info": {
+            "inn": "9715490374",
+            "full_name": "ÎÁÙÅÑÒÂÎ Ñ ÎÃĞÀÍÈ×ÅÍÍÎÉ ÎÒÂÅÒÑÒÂÅÍÍÎÑÒÜŞ «ËÎÃÎÑ İÍÄ Ş»",
+            "short_name": "ÎÎÎ «ËÎÃÎÑ İÍÄ Ş»",
+            "address": "117133, Ã.ÌÎÑÊÂÀ, ÂÍ.ÒÅĞ.Ã. ÌÓÍÈÖÈÏÀËÜÍÛÉ ÎÊĞÓÃ ÒÅÏËÛÉ ÑÒÀÍ, ÓË. ÀÊÀÄÅÌÈÊÀ ÂÀĞÃÈ, Ä. 8, Ê. 1",
+            "kpp": "772801001",
+            "ogrn": "1247700542055"
+        }
+    },
+    "path_to_save": "C:\\Program Files\\LegalDocInspector_20260601\\LegalDocInspector_20260601_155844\\data\\documents_from_request_2026-07-20_154838.237004",
+    "egrul_certificate_filename": "ul-1247700542055-20260720154610.pdf"
+}

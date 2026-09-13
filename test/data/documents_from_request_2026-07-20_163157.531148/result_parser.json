@@ -1,0 +1,111 @@
+{
+    "table_parser_result": [
+        [
+            {
+                "Январь 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 867020.79,
+                                "period": "01.2026"
+                            }
+                        ],
+                        "payments": [
+                            {
+                                "payment": 120737.68,
+                                "date": "10.02.2026",
+                                "contract_type": 8907
+                            },
+                            {
+                                "payment": 83800,
+                                "date": "03.03.2026",
+                                "contract_type": 8907
+                            }
+                        ],
+                        "additionals": [],
+                        "total_amount_of_accruals": 867020.79,
+                        "total_amount_of_payments": 204537.68,
+                        "debt": 662483.11
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                },
+                "Февраль 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 1091268.2,
+                                "period": "02.2026"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 1091268.2,
+                        "total_amount_of_payments": 0,
+                        "debt": 1091268.2
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                },
+                "Март 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 740671.43,
+                                "period": "03.2026"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 740671.43,
+                        "total_amount_of_payments": 0,
+                        "debt": 740671.43
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                }
+            },
+            "№ 07.620430-ТЭ от 01.08.2021",
+            "ТЭ",
+            "Не удалось найти пункт",
+            null,
+            null,
+            [
+                {
+                    "claim_date": "05.05.2026",
+                    "claim_number": "619905"
+                }
+            ]
+        ]
+    ],
+    "results_of_name_parser": {
+        "defendant_info": {
+            "inn": "772080878589",
+            "full_name": "",
+            "short_name": "",
+            "address": "",
+            "kpp": "",
+            "ogrn": ""
+        }
+    },
+    "path_to_save": "C:\\Program Files\\LegalDocInspector_20260601\\LegalDocInspector_20260601_155844\\data\\documents_from_request_2026-07-20_163157.531148",
+    "egrul_certificate_filename": "fl-315774600241144-20260714140824.pdf"
+}

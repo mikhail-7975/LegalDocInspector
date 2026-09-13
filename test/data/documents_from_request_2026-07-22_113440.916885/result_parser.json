@@ -1,0 +1,100 @@
+{
+    "table_parser_result": [
+        [
+            {
+                "Январь 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 347024.89,
+                                "period": "01.2026"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 347024.89,
+                        "total_amount_of_payments": 0,
+                        "debt": 347024.89
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                },
+                "Февраль 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 349114.47,
+                                "period": "02.2026"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 349114.47,
+                        "total_amount_of_payments": 0,
+                        "debt": 349114.47
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                },
+                "Март 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 357800.98,
+                                "period": "03.2026"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 357800.98,
+                        "total_amount_of_payments": 0,
+                        "debt": 357800.98
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                }
+            },
+            "№ 224-13/01-19-ФОТЭ от 01.08.2019",
+            "ФОТЭ",
+            "-",
+            "15",
+            "Данный тип договора является актом ФОТЭ, согласно закону базовый день начала просрочки - 15-е число месяца",
+            [
+                {
+                    "claim_date": "21.05.2026",
+                    "claim_number": "622081"
+                }
+            ]
+        ]
+    ],
+    "results_of_name_parser": {
+        "defendant_info": {
+            "inn": "9709046481",
+            "full_name": "ТОВАРИЩЕСТВО СОБСТВЕННИКОВ НЕДВИЖИМОСТИ «ЗЕМЛЯНОЙ ВАЛ 39»",
+            "short_name": "ТСН «ЗЕМЛЯНОЙ ВАЛ 39»",
+            "address": "105120, Г.МОСКВА, УЛ. ЗЕМЛЯНОЙ ВАЛ, Д. 39/1, СТР. 1, КВ. 80",
+            "kpp": "770901001",
+            "ogrn": "1197746190620"
+        }
+    },
+    "path_to_save": "C:\\Program Files\\LegalDocInspector_20260601\\LegalDocInspector_20260601_155844\\data\\documents_from_request_2026-07-22_113440.916885",
+    "egrul_certificate_filename": "ul-1197746190620-20260716130728.pdf"
+}

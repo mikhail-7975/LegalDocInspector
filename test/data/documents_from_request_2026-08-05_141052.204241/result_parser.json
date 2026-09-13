@@ -1,0 +1,54 @@
+{
+    "table_parser_result": [
+        [
+            {
+                "юОПЕКЭ 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 2993652.62,
+                                "period": "04.2026"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 2993652.62,
+                        "total_amount_of_payments": 0,
+                        "debt": 2993652.62
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                }
+            },
+            "╧ 0618103 НР 01.10.2014",
+            "рщ",
+            "мЕ СДЮКНЯЭ МЮИРХ ОСМЙР",
+            null,
+            null,
+            [
+                {
+                    "claim_date": "08.06.2026",
+                    "claim_number": "624233"
+                }
+            ]
+        ]
+    ],
+    "results_of_name_parser": {
+        "defendant_info": {
+            "inn": "7721828474",
+            "full_name": "наыеярбн я нцпюмхвеммни нрберярбеммнярэч ╚реокняерэщмепцн╩",
+            "short_name": "ннн ╚реокняерэщмепцн╩",
+            "address": "123056, ц.лняйбю, бм.реп.ц. лсмхжхоюкэмши нйпсц опеямемяйхи, ск. гннкнцхвеяйюъ, д. 26, ярп. 2, онлеы. 1/7",
+            "kpp": "770301001",
+            "ogrn": "1147746382233"
+        }
+    },
+    "path_to_save": "C:\\Program Files\\LegalDocInspector_20260601\\LegalDocInspector_20260601_155844\\data\\documents_from_request_2026-08-05_141052.204241",
+    "egrul_certificate_filename": "ul-1147746382233-20260805135930.pdf"
+}

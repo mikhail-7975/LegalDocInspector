@@ -1,0 +1,54 @@
+{
+    "table_parser_result": [
+        [
+            {
+                "Октябрь 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 318284.81,
+                                "period": "10.2025"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 318284.81,
+                        "total_amount_of_payments": 0,
+                        "debt": 318284.81
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                }
+            },
+            "№ 03.200306-ТЭ от 01.09.2008",
+            "не удалось определить тип договора",
+            "-",
+            "18",
+            "не удалось определить тип договора",
+            [
+                {
+                    "claim_date": "23.12.2025",
+                    "claim_number": "595466"
+                }
+            ]
+        ]
+    ],
+    "results_of_name_parser": {
+        "defendant_info": {
+            "inn": "7715135760",
+            "full_name": "ЖИЛИЩНО-СТРОИТЕЛЬНЫЙ КООПЕРАТИВ «АСБЕСТ»",
+            "short_name": "ЖСК «АСБЕСТ»",
+            "address": "127572, Г.МОСКВА, УЛ. НОВГОРОДСКАЯ, Д. 35К2",
+            "kpp": "771501001",
+            "ogrn": "1077762468277"
+        }
+    },
+    "path_to_save": "C:\\Program Files\\LegalDocInspector_20260601\\LegalDocInspector_20260601_155844\\data\\documents_from_request_2026-06-17_160359.877789",
+    "egrul_certificate_filename": "ul-1077762468277-20260617160054.pdf"
+}

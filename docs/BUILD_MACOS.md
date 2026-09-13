@@ -22,7 +22,7 @@
 
 ## Подготовка окружения
 
-Из корня репозитория:
+Из корня репозитория (рекомендуется один скрипт — учитывает macOS 13 и `docling-parse`):
 
 ```bash
 cd /path/to/LegalDocInspector
@@ -30,6 +30,18 @@ cd /path/to/LegalDocInspector
 python3.11 -m venv .venv
 source .venv/bin/activate
 
+python scripts/setup_macos_env.py
+```
+
+Скрипт [`scripts/setup_macos_env.py`](../scripts/setup_macos_env.py):
+- ставит `requirements-macos.txt` (не `requirements.txt` — там `pywin32` только для Windows);
+- на macOS 13 и ниже перетегирует wheel `docling-parse` (официальные wheel — только `macosx_14_0_*`);
+- ставит `requirements-build.txt` (PyInstaller);
+- опционально Tesseract через Homebrew.
+
+Вручную (macOS 14+):
+
+```bash
 pip install --upgrade pip
 pip install -r requirements-macos.txt
 pip install -r requirements-build.txt

@@ -1,0 +1,116 @@
+{
+    "table_parser_result": [
+        [
+            {
+                "Декабрь 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 4255684.89,
+                                "period": "12.2025"
+                            },
+                            {
+                                "accrual": 7163694.08,
+                                "period": "12.2025"
+                            }
+                        ],
+                        "payments": [
+                            {
+                                "payment": 4255684.89,
+                                "date": "29.01.2026",
+                                "contract_type": 8903
+                            },
+                            {
+                                "payment": 3766280.56,
+                                "date": "03.06.2026",
+                                "contract_type": 8903
+                            }
+                        ],
+                        "additionals": [
+                            {
+                                "accrual": 3885755.04,
+                                "period": "03.2026"
+                            },
+                            {
+                                "accrual": -7163694.08,
+                                "period": "12.2025"
+                            }
+                        ],
+                        "total_amount_of_accruals": 8141439.93,
+                        "total_amount_of_payments": 8021965.45,
+                        "debt": 119474.48
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                }
+            },
+            "№ 03.211232-ТЭ от 28.02.2020",
+            "ТЭ",
+            "Не удалось найти пункт",
+            null,
+            null,
+            [
+                {
+                    "claim_date": "18.05.2026",
+                    "claim_number": "620807"
+                }
+            ]
+        ],
+        [
+            {
+                "Сентябрь 2025": {
+                    "accrual": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [
+                            {
+                                "accrual": 135431.32,
+                                "period": "03.2026"
+                            }
+                        ],
+                        "total_amount_of_accruals": 135431.32,
+                        "total_amount_of_payments": 0,
+                        "debt": 135431.32
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                }
+            },
+            "№ 563-05-03-ФОТЭ от 10.10.2025",
+            "ФОТЭ",
+            "-",
+            "15",
+            "Данный тип договора является актом ФОТЭ, согласно закону базовый день начала просрочки - 15-е число месяца",
+            [
+                {
+                    "claim_date": "18.05.2026",
+                    "claim_number": "620854"
+                }
+            ]
+        ]
+    ],
+    "results_of_name_parser": {
+        "defendant_info": {
+            "inn": "9717078279",
+            "full_name": "ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ «ПИК-КОМФОРТ СИРИУС»",
+            "short_name": "ООО «ПИК-КОМФОРТ СИРИУС»",
+            "address": "123060, Г.МОСКВА, ВН.ТЕР.Г. МУНИЦИПАЛЬНЫЙ ОКРУГ ЩУКИНО, УЛ МАРШАЛА СОКОЛОВСКОГО, Д. 3, ПОМЕЩ. 2/1",
+            "kpp": "773401001",
+            "ogrn": "1197746169675"
+        }
+    },
+    "path_to_save": "C:\\Program Files\\LegalDocInspector_20260601\\LegalDocInspector_20260601_155844\\data\\documents_from_request_2026-07-28_154631.208851",
+    "egrul_certificate_filename": "pdf"
+}

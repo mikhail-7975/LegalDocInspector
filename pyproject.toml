@@ -1,2 +1,6 @@
 [tool.pytest.ini_options]
 pythonpath = ["."]
+markers = [
+    "integration: slow tests that run PDF/EGRUL parsers and document generators",
+    "slow: tests that take a long time (docling, large PDFs)",
+]

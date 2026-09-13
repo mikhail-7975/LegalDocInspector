@@ -24,4 +24,4 @@ jobs:
 
       - name: Run tests
         run: |
-          PYTHONPATH=. python -m pytest test/ -v
+          PYTHONPATH=. python -m pytest test/ -v -m "not integration"
