@@ -1,0 +1,28 @@
+{
+    "company_type": "УК",
+    "end_date": "25.07.2026",
+    "plaintiff_info": {
+        "inn": "7720518494",
+        "full_name": "ПУБЛИЧНОЕ АКЦИОНЕРНОЕ ОБЩЕСТВО «МОСКОВСКАЯ ОБЪЕДИНЕННАЯ ЭНЕРГЕТИЧЕСКАЯ КОМПАНИЯ»",
+        "short_name": "ПАО \"МОЭК\"",
+        "addres": "119526, г. Москва, проспект Вернадского, д. 101, к. 3, эт/каб 20/2017",
+        "ogrn": "1047796974092",
+        "correspondency_addres": "121596, г. Москва, ул. Горбунова, д. 2, стр. 3, офис В613"
+    },
+    "responsitive_name": "Кузнецов И.В.",
+    "lawsuit_info": {
+        "service_type": "ГВС и ТЭ"
+    },
+    "complects": [
+        {
+            "contract_type": "ГВС",
+            "contract_point": "7.1",
+            "day_of_penalty": 20
+        },
+        {
+            "contract_type": "ТЭ",
+            "contract_point": "7.1",
+            "day_of_penalty": 18
+        }
+    ]
+}
