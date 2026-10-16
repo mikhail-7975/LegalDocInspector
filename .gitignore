@@ -186,3 +186,4 @@ experiments/*
 data/*
 !data/templates/*
 dist*
+*.DS_Store
