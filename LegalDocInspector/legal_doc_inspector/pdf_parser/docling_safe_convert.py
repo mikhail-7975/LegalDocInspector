@@ -169,6 +169,22 @@ def documents_export_to_html(documents: list[DoclingDocument]) -> str:
     return "\n".join(parts)
 
 
+def sidecar_html_path(pdf_path: str | Path) -> Path:
+    """Путь к HTML рядом с PDF: file.pdf → file.html; файл без суффикса «pdf» → pdf.html."""
+    pdf_path = Path(pdf_path)
+    if pdf_path.suffix.lower() == ".pdf":
+        return pdf_path.with_suffix(".html")
+    return pdf_path.parent / f"{pdf_path.name}.html"
+
+
+def write_pdf_sidecar_html(pdf_path: str | Path, html: str) -> Path:
+    """Пишет HTML рядом с исходным PDF (для отладки эвристик / регрессии)."""
+    out = sidecar_html_path(pdf_path)
+    out.write_text(html or "", encoding="utf-8")
+    _log.info("Saved sidecar HTML: %s", out)
+    return out
+
+
 def documents_export_to_text(documents: list[DoclingDocument]) -> str:
     parts: list[str] = []
     for doc in documents:

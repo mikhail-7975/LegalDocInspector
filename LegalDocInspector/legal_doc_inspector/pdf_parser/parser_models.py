@@ -46,6 +46,7 @@ from LegalDocInspector.legal_doc_inspector.pdf_parser.docling_safe_convert impor
     get_pdf_page_count,
     is_allocation_error,
     release_memory,
+    write_pdf_sidecar_html,
 )
 
 _DOCLING_ACCEL_THREADS = min(4, os.cpu_count() or 4)
@@ -179,6 +180,7 @@ class PDFClaimParser:
             raise RuntimeError(
                 f"Conversion failed for {path_to_file}: {last_error}"
             ) from last_error
+        write_pdf_sidecar_html(path_to_file, documents_export_to_html(documents))
         pairs = extract_text_pairs_from_documents(
             documents,
             extract_text_with_page=self._extract_text_with_page,
@@ -382,6 +384,7 @@ class PDFContractParser:
             path_to_file = Path(path_to_file)
         contract_documents = self._parse_contract_documents(path_to_file)
         conv_result_html = documents_export_to_html(contract_documents)
+        write_pdf_sidecar_html(path_to_file, conv_result_html)
         # print(conv_result_html)
         type_of_service = self._find_type_of_contract(conv_result_html)
         if type_of_service not in ['ФОТЭ', 'не удалось определить тип договора']:

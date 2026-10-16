@@ -38,10 +38,12 @@ def extract_text_from_pdf(pdf_path: str | Path) -> tuple[str,str]:
 
         from LegalDocInspector.legal_doc_inspector.pdf_parser.docling_safe_convert import (
             convert_pdf_pages,
+            documents_export_to_html,
             documents_export_to_markdown,
             documents_export_to_text,
             get_pdf_page_count,
             is_allocation_error,
+            write_pdf_sidecar_html,
         )
         from LegalDocInspector.legal_doc_inspector.pdf_parser.parser_models import (
             _docling_pipeline_options_low_memory,
@@ -96,6 +98,7 @@ def extract_text_from_pdf(pdf_path: str | Path) -> tuple[str,str]:
 
         text_content = documents_export_to_text(documents)
         markdown_content = documents_export_to_markdown(documents)
+        write_pdf_sidecar_html(pdf_path, documents_export_to_html(documents))
 
         if last_error and is_allocation_error(last_error):
             _log.warning(
