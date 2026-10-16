@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
@@ -21,8 +22,14 @@ def case_2026_06_17_files() -> dict:
 
 
 @pytest.fixture(scope="session")
-def case_2026_06_17_result() -> dict:
+def _case_2026_06_17_result_raw() -> dict:
     return load_result_parser(CASE_2026_06_17)
+
+
+@pytest.fixture
+def case_2026_06_17_result(_case_2026_06_17_result_raw) -> dict:
+    """Копия на тест: calculate_penalty мутирует table_parser_result."""
+    return deepcopy(_case_2026_06_17_result_raw)
 
 
 @pytest.fixture(scope="session")

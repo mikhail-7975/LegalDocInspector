@@ -2,6 +2,7 @@ from LegalDocInspector.legal_doc_inspector.exel_parser import TableParser
 from LegalDocInspector.legal_doc_inspector.utils.convert_month import convert_month
 import datetime
 import requests
+from copy import deepcopy
 from decimal import Decimal, ROUND_HALF_UP, ROUND_DOWN
 from collections import defaultdict
 # from calculator_adapter import convert_data
@@ -655,7 +656,8 @@ def calculate_penalty(parsed_data:dict, day_of_penalty:int, company_type:str, en
     all_correcting_debt = StrictFormattedMoney(0)
     end_date = datetime.datetime.strptime(end_date, "%d.%m.%Y")
 
-    parsed_data = sort_dict_by_months(parsed_data)
+    # Не мутировать вход: additionals переносятся в accruals ниже.
+    parsed_data = sort_dict_by_months(deepcopy(parsed_data))
     if not parsed_data:
         raise ValueError(
             "В справке нет периодов с задолженностью — расчёт пени невозможен. "

@@ -11,6 +11,8 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
+
 import pytest
 
 from LegalDocInspector.legal_doc_inspector.calculator.penalty_calculator import (
@@ -55,8 +57,15 @@ def all_case_files() -> dict[str, dict]:
 
 
 @pytest.fixture(scope="session")
-def all_case_results() -> dict[str, dict]:
+def _all_case_results_raw() -> dict[str, dict]:
+    """Кэш JSON с диска. Не отдавать тестам напрямую: calculate_penalty мутирует вход."""
     return {name: load_result_parser(name) for name in CASE_NAMES}
+
+
+@pytest.fixture
+def all_case_results(_all_case_results_raw) -> dict[str, dict]:
+    """Свежая копия на каждый тест — иначе соседние кейсы портят table_parser_result."""
+    return deepcopy(_all_case_results_raw)
 
 
 def _generation_or_skip(case_name: str, result: dict) -> dict:
