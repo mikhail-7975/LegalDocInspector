@@ -112,43 +112,71 @@ class DocxRedactor:
 
 
     def replace_text_in_paragraph(self, paragraph: Paragraph, old_text: str, new_text: str) -> bool:
-        """Расширенная замена текста с обработкой пробелов"""
-        result = False
-        
-        # Если текст не найден в отдельных runs, проверяем весь параграф
-        paragraph_text = paragraph.text
-        if old_text not in paragraph_text:
+        """Заменяет текст в параграфе, в том числе если он разрезан по нескольким run."""
+        if old_text not in paragraph.text:
             return False
-        
-        # Собираем информацию о всех runs
-        runs_text = [run.text for run in paragraph.runs]
-        
-        # Заменяем в каждом run
+
+        result = False
         for i, run in enumerate(paragraph.runs):
-            if old_text in run.text:
-                # Сохраняем оригинальное форматирование
-                original_font = run.font
-                is_bold = run.bold
-                is_italic = run.italic
-                font_size = run.font.size
-                
-                # Заменяем текст
-                new_run_text = run.text.replace(old_text, new_text)
-                
-                # Очищаем лишние пробелы для первого run
-                if i == 0:
-                    new_run_text = new_run_text.lstrip()
-                
-                run.text = new_run_text
-                result = True
-                
-                # Восстанавливаем форматирование
-                run.bold = is_bold
-                run.italic = is_italic
-                if font_size:
-                    run.font.size = font_size
-        
-        return result
+            if old_text not in run.text:
+                continue
+            new_run_text = run.text.replace(old_text, new_text)
+            if i == 0:
+                new_run_text = new_run_text.lstrip()
+            run.text = new_run_text
+            result = True
+
+        if result:
+            return True
+
+        return self._replace_text_spanning_runs(paragraph, old_text, new_text)
+
+    def _replace_text_spanning_runs(
+        self, paragraph: Paragraph, old_text: str, new_text: str
+    ) -> bool:
+        """Подставляет текст, разрезанный Word на несколько соседних run."""
+        runs = list(paragraph.runs)
+        if not runs:
+            return False
+
+        full = "".join(run.text for run in runs)
+        start = full.find(old_text)
+        if start < 0:
+            return False
+        end = start + len(old_text)
+
+        run_spans: list[tuple[int, int, int]] = []
+        pos = 0
+        for i, run in enumerate(runs):
+            run_start = pos
+            run_end = pos + len(run.text)
+            run_spans.append((i, run_start, run_end))
+            pos = run_end
+
+        first_i = last_i = None
+        for i, run_start, run_end in run_spans:
+            if run_start < end and run_end > start:
+                if first_i is None:
+                    first_i = i
+                last_i = i
+        if first_i is None or last_i is None:
+            return False
+
+        first_start = run_spans[first_i][1]
+        last_start = run_spans[last_i][1]
+        prefix = runs[first_i].text[: start - first_start]
+        suffix = runs[last_i].text[end - last_start :]
+
+        if first_i == last_i:
+            replaced = prefix + new_text + suffix
+            runs[first_i].text = replaced.lstrip() if first_i == 0 else replaced
+        else:
+            first_text = prefix + new_text
+            runs[first_i].text = first_text.lstrip() if first_i == 0 else first_text
+            for i in range(first_i + 1, last_i):
+                runs[i].text = ""
+            runs[last_i].text = suffix
+        return True
 
 
     def replace_text_in_document(self, old_text: str, new_text: str) -> bool:

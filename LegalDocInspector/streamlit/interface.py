@@ -87,43 +87,48 @@ def get_documents_complect_form(form_id:int, day_of_penalty: int | None = None, 
 def get_service_type():
     res = []
     ans = ''
-    for contract_num, value in st.session_state.contracts.items():
+    for _complect_idx, value in st.session_state.contracts.items():
         res.append(value['contract_type'])
-    
+
     res = set(res)
     for i in res:
         ans += str(i)
 
     return ans
-    
-def get_contract_form(contract_number:str):
 
-    
+
+def _contract_widget_key(prefix: str, complect_idx: int) -> str:
+    """Ключ виджета по индексу комплекта, чтобы одинаковые номера договоров не делили поле."""
+    return f"{prefix}{complect_idx}"
+
+
+def get_contract_form(complect_idx: int):
+    contract = st.session_state.contracts[complect_idx]
+    contract_number = contract.get("contract_number") or f"комплект {complect_idx + 1}"
+
     st.markdown(f"### информация из договора {contract_number}")
-    st.text(f"Тип договора (ответ нейросети) - {st.session_state.contracts[contract_number]['contract_type_parsed']}")
+    st.text(f"Тип договора (ответ нейросети) - {contract['contract_type_parsed']}")
 
-    if st.session_state.contracts[contract_number]['contract_type'] is None:
+    if contract['contract_type'] is None:
         try:
-            index = ['ТЭ', 'ГВС', 'СОИ', 'ФОТЭ'].index(st.session_state.contracts[contract_number]['contract_type_parsed'])
+            index = ['ТЭ', 'ГВС', 'СОИ', 'ФОТЭ'].index(contract['contract_type_parsed'])
         except ValueError:
             index = 0
     else:
-        index = ['ТЭ', 'ГВС', 'СОИ', 'ФОТЭ'].index(st.session_state.contracts[contract_number]['contract_type'])
+        index = ['ТЭ', 'ГВС', 'СОИ', 'ФОТЭ'].index(contract['contract_type'])
 
-    st.session_state.contracts[contract_number]['contract_type'] = st.selectbox(label="Выберите тип договора",
-                                                                                options=['ТЭ', 'ГВС', 'СОИ', 'ФОТЭ'],
-                                                                                index=index,
-                                                                                on_change=on_change_handler,
-                                                                                key="c_t"+str(contract_number)
-                                                                            )
-    
-    st.text(f"{st.session_state.contracts[contract_number]['contract_text_parsed']}")
-    
-    
+    contract['contract_type'] = st.selectbox(
+        label="Выберите тип договора",
+        options=['ТЭ', 'ГВС', 'СОИ', 'ФОТЭ'],
+        index=index,
+        on_change=on_change_handler,
+        key=_contract_widget_key("c_t", complect_idx),
+    )
+
+    st.text(f"{contract['contract_text_parsed']}")
+
     col1, col2 = st.columns(2)
-    # st.json(st.session_state.contracts[contract_number])
     with col1:
-        contract = st.session_state.contracts[contract_number]
         recognized = contract.get('overdue_date_recognized')
         if recognized is None:
             recognized = _parser_penalty_day_recognized(contract.get('overdue_date_parsed'))
@@ -139,40 +144,46 @@ def get_contract_form(contract_number:str):
         else:
             default_day = int(contract['day_of_penalty'])
 
-        st.session_state.contracts[contract_number]['day_of_penalty'] = st.number_input(
+        contract['day_of_penalty'] = st.number_input(
             label="Выберите число месяца, которое является последним днём оплаты счёта",
             value=default_day,
             min_value=1,
             max_value=31,
-            key='day_of_penalty'+str(contract_number),
+            key=_contract_widget_key("day_of_penalty", complect_idx),
             on_change=on_change_handler,
         )
     with col2:
-        st.session_state.contracts[contract_number]['contract_point']  = st.text_input(label="напишите номер пункта договора, в котором говорится о дне начала просрочки ",
-                                                                                      key="c_p"+str(contract_number),
-                                                                                      on_change=on_change_handler,
-                                                                                      value=st.session_state.contracts[contract_number]['contract_point_parsed'] if st.session_state.contracts[contract_number]['contract_point'] is None else st.session_state.contracts[contract_number]['contract_point']   )
+        contract['contract_point'] = st.text_input(
+            label="напишите номер пункта договора, в котором говорится о дне начала просрочки ",
+            key=_contract_widget_key("c_p", complect_idx),
+            on_change=on_change_handler,
+            value=(
+                contract['contract_point_parsed']
+                if contract['contract_point'] is None
+                else contract['contract_point']
+            ),
+        )
 
 
-def _contract_field_from_session(contract_number: str, field: str):
-    """Актуальное значение поля договора: contracts + виджет Streamlit по key."""
-    contract = st.session_state.contracts.get(contract_number) or {}
+def _contract_field_from_session(complect_idx: int, field: str):
+    """Актуальное значение поля договора: contracts + виджет Streamlit по key комплекта."""
+    contract = st.session_state.contracts.get(complect_idx) or {}
     value = contract.get(field)
     if value is not None and str(value).strip() != "":
         return value
     if field == "contract_point":
-        widget_val = st.session_state.get(f"c_p{contract_number}")
+        widget_val = st.session_state.get(_contract_widget_key("c_p", complect_idx))
         if widget_val is not None and str(widget_val).strip():
             return widget_val
         parsed = contract.get("contract_point_parsed")
         if parsed is not None and str(parsed).strip():
             return parsed
     if field == "day_of_penalty":
-        widget_val = st.session_state.get(f"day_of_penalty{contract_number}")
+        widget_val = st.session_state.get(_contract_widget_key("day_of_penalty", complect_idx))
         if widget_val is not None:
             return widget_val
     if field == "contract_type":
-        widget_val = st.session_state.get(f"c_t{contract_number}")
+        widget_val = st.session_state.get(_contract_widget_key("c_t", complect_idx))
         if widget_val is not None and str(widget_val).strip():
             return widget_val
         parsed = contract.get("contract_type_parsed")
@@ -188,14 +199,14 @@ def build_calculate_penalty_request(parse_result: dict) -> dict:
         "end_date": st.session_state.form_data["end_date"],
         "parsing_results": [],
     }
-    for contract_info in parse_result["table_parser_result"]:
+    for complect_idx, contract_info in enumerate(parse_result["table_parser_result"]):
         contract_number = contract_info[1]
         parsing_result = {
             "parsed_info": contract_info[0],
             "contract_number": contract_number,
-            "contract_point": _contract_field_from_session(contract_number, "contract_point"),
-            "day_of_penalty": _contract_field_from_session(contract_number, "day_of_penalty"),
-            "contract_type": _contract_field_from_session(contract_number, "contract_type"),
+            "contract_point": _contract_field_from_session(complect_idx, "contract_point"),
+            "day_of_penalty": _contract_field_from_session(complect_idx, "day_of_penalty"),
+            "contract_type": _contract_field_from_session(complect_idx, "contract_type"),
         }
         request_json["parsing_results"].append(parsing_result)
     return request_json
@@ -345,30 +356,22 @@ if st.session_state.form_data['flag']:
     i = 1
     if not "contracts" in st.session_state:
         st.session_state.contracts = {}
-        for contract_info in result['table_parser_result']:
+        for complect_idx, contract_info in enumerate(result['table_parser_result']):
             contract_number = contract_info[1]
             contract_type = contract_info[2]
             contract_point = contract_info[3]
             overdue_date = contract_info[4]
             contract_text = contract_info[5]
-            # result['result_of_llm_parsers'] = {}
-            # result['result_of_llm_parsers'][f"contract_{contract_number}"] = {
-            #     "service_type":"тепловую энергию/теплоноситель (ТЭ) и горячую воду (ГВС))",
-            #     "overdue_date":"В следующем фрагменте указан срок, в течение которого Исполнитель должен произвести оплату:\n\n\"5. 5. Исполнитель в срок до 18-го числа месяца, следующего за расчетным, производит оплату стоимости тепловой энергии, теплоносителя, указанной в счете. Датой оплаты считается дата поступления денежных средств на расчетный счет Теплоснабжающей организации.\"",
-            # }
-            # result['result_of_llm_parsers'][f"claim_0"] = {"claim_date":"17.10.2024","claim_number":"517305"}
-
-
-            # json_info = result['result_of_llm_parsers'][f"contract_{contract_number}"]
-            st.session_state.contracts[contract_number] = {
+            st.session_state.contracts[complect_idx] = {
+                'contract_number': contract_number,
                 'contract_type_parsed': contract_type,
                 'contract_point_parsed': contract_point,
                 'overdue_date_parsed': overdue_date,
                 'overdue_date_recognized': _parser_penalty_day_recognized(overdue_date),
-                'contract_text_parsed' : contract_text,
-                'contract_point' : None,
-                'day_of_penalty' : None,
-                'contract_type': None
+                'contract_text_parsed': contract_text,
+                'contract_point': None,
+                'day_of_penalty': None,
+                'contract_type': None,
             }
     # st.json(st.session_state.contracts)
 
@@ -519,17 +522,59 @@ if st.session_state.form_data['flag']:
 
     st.markdown("### Данные об ответчике")
 
+    _defendant = result["results_of_name_parser"]["defendant_info"]
+    _defendant_seed_marker = (
+        str(result.get("path_to_save") or ""),
+        str(result.get("egrul_certificate_filename") or ""),
+        str(_defendant.get("inn") or ""),
+    )
+    if st.session_state.get("_defendant_seed_marker") != _defendant_seed_marker:
+        st.session_state["_defendant_seed_marker"] = _defendant_seed_marker
+        st.session_state["_defendant_w_full_name"] = str(_defendant.get("full_name") or "").upper()
+        st.session_state["_defendant_w_short_name"] = str(_defendant.get("short_name") or "")
+        st.session_state["_defendant_w_addres"] = str(_defendant.get("address") or "")
+        st.session_state["_defendant_w_inn"] = str(_defendant.get("inn") or "")
+        st.session_state["_defendant_w_ogrn"] = str(_defendant.get("ogrn") or "")
 
-    defendant_info['full_name'] = st.text_input(label="Название ответчика", value=f"{result['results_of_name_parser']['defendant_info']['full_name']}".upper(), on_change= on_change_handler)
-    defendant_info['short_name'] = st.text_input(label="Название ответчика(аббревиатура)", value=f"{result['results_of_name_parser']['defendant_info']['short_name']}", on_change= on_change_handler)
-    defendant_info['addres'] = st.text_input(label="Адрес ответчика", value=f"{result['results_of_name_parser']['defendant_info']['address']}", on_change= on_change_handler)
-    defendant_info['inn'] = st.text_input(label="ИНН ответчика", value=f"{result['results_of_name_parser']['defendant_info']['inn']}", on_change= on_change_handler)
-    defendant_info['ogrn'] = st.text_input(label="ОГРН ответчика", value=f"{result['results_of_name_parser']['defendant_info']['ogrn']}", on_change= on_change_handler)
+    for _wk, _dv in (
+        ("_defendant_w_full_name", str(_defendant.get("full_name") or "").upper()),
+        ("_defendant_w_short_name", str(_defendant.get("short_name") or "")),
+        ("_defendant_w_addres", str(_defendant.get("address") or "")),
+        ("_defendant_w_inn", str(_defendant.get("inn") or "")),
+        ("_defendant_w_ogrn", str(_defendant.get("ogrn") or "")),
+    ):
+        st.session_state.setdefault(_wk, _dv)
+
+    defendant_info["full_name"] = st.text_input(
+        label="Название ответчика",
+        key="_defendant_w_full_name",
+        on_change=on_change_handler,
+    )
+    defendant_info["short_name"] = st.text_input(
+        label="Название ответчика(аббревиатура)",
+        key="_defendant_w_short_name",
+        on_change=on_change_handler,
+    )
+    defendant_info["addres"] = st.text_input(
+        label="Адрес ответчика",
+        key="_defendant_w_addres",
+        on_change=on_change_handler,
+    )
+    defendant_info["inn"] = st.text_input(
+        label="ИНН ответчика",
+        key="_defendant_w_inn",
+        on_change=on_change_handler,
+    )
+    defendant_info["ogrn"] = st.text_input(
+        label="ОГРН ответчика",
+        key="_defendant_w_ogrn",
+        on_change=on_change_handler,
+    )
 
 
     st.markdown("### Данные о договорах")
-    for contract_num, value in st.session_state.contracts.items():
-        get_contract_form(contract_number=contract_num)
+    for complect_idx in st.session_state.contracts:
+        get_contract_form(complect_idx=complect_idx)
     if st.button("Произвести расчёты по загруженным наборам документов"):
         with st.spinner(text="Ваш запрос обрабатывается, пожалуйста, подождите"):
             ok, calc_json, err = run_calculate_penalty(result)

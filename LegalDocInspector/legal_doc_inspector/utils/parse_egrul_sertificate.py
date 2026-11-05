@@ -168,6 +168,8 @@ def parse_egrul_certificate(pdf_path: str | Path) -> tuple[Dict[str, str], str]:
     short_name = get_table_info(res_list, "Сокращенное наименование на русском языке")
     kpp = get_table_info(res_list, "КПП юридического лица")
     ogrn = get_table_info(res_list, "ОГРН")
+    if not ogrn:
+        ogrn = get_ogrn_info(text_content)
     
     result = {
         'full_name': full_name,      # Полное наименование организации
@@ -201,13 +203,32 @@ def plaintiff_tuple_from_egrul_pdf(pdf_path: str | Path) -> tuple[str, str, str,
 def get_table_info(res_list:str, pattern) -> str:
 
     for df in res_list:
-        # Строгое совпадение с учетом регистра
-        matches = df[df.iloc[:, 1].astype(str) == pattern]
-        
-        if not matches.empty and len(df) > 2:
-            first_match = str(matches.iloc[0, 2])
-            return first_match
-    
+        if df is None or df.empty or df.shape[1] == 0:
+            continue
+
+        # Строгое совпадение с учетом регистра (колонка наименования → значение)
+        if df.shape[1] > 2:
+            matches = df[df.iloc[:, 1].astype(str) == pattern]
+            if not matches.empty and len(df) > 2:
+                first_match = str(matches.iloc[0, 2])
+                return first_match
+
+        # Строка данных могла стать заголовком: «ОГРН» | «1147…» в именах колонок
+        cols = [str(c).strip() for c in df.columns]
+        for col_idx, col in enumerate(cols):
+            if col == pattern and col_idx + 1 < len(cols):
+                nxt = cols[col_idx + 1]
+                if nxt and nxt != pattern:
+                    return nxt
+
+        # Поиск метки в любой ячейке, значение — соседняя справа
+        for r in range(len(df)):
+            for c in range(df.shape[1] - 1):
+                if str(df.iloc[r, c]).strip() == pattern:
+                    value = str(df.iloc[r, c + 1]).strip()
+                    if value and value != pattern:
+                        return value
+
     return ""
 
 def get_address_info_legacy(text_content: str) -> str:
@@ -516,25 +537,37 @@ def get_ogrn_info(text_content: str) -> str:
     Returns:
         ОГРН юридического лица в виде строки, или пустая строка, если не найдено
     """
-    # Ищем первое вхождение "ОГРН " в тексте
-    # Используем регулярное выражение для поиска первого вхождения
+    # Смежные цифры сразу после «ОГРН»
     ogrn_match = re.search(r'ОГРН\s+(\d{13,15})', text_content, re.IGNORECASE)
-    
     if ogrn_match:
         ogrn = ogrn_match.group(1)
         _log.info(f"Извлечен ОГРН: {ogrn}")
         return ogrn
-    else:
-        # Пробуем более гибкий паттерн на случай, если формат немного отличается
-        # Ищем любое число после первого "ОГРН "
-        ogrn_match = re.search(r'ОГРН\s+(\d+)', text_content, re.IGNORECASE)
-        if ogrn_match:
-            ogrn = ogrn_match.group(1)
-            _log.info(f"Извлечен ОГРН (гибкий паттерн): {ogrn}")
-            return ogrn
-        else:
-            _log.warning("Не найдена строка с ОГРН")
-            return ''
+
+    # Markdown/таблица: «ОГРН | 1147…» или пробелы/пайпы между меткой и номером
+    ogrn_match = re.search(r'ОГРН[^\d]{1,200}?(\d{13,15})', text_content, re.IGNORECASE)
+    if ogrn_match:
+        ogrn = ogrn_match.group(1)
+        _log.info(f"Извлечен ОГРН (через разделители): {ogrn}")
+        return ogrn
+
+    # OCR с пробелами между цифрами: «ОГРН 1 1 4 7 7 4 6 9 3 4 0 3 7»
+    spaced = re.search(r'ОГРН[^\d]{0,20}((?:\d[\s]*){13,15})', text_content, re.IGNORECASE)
+    if spaced:
+        digits = re.sub(r'\D', '', spaced.group(1))
+        if len(digits) in (13, 15):
+            _log.info(f"Извлечен ОГРН (с пробелами): {digits}")
+            return digits
+
+    # Гибкий паттерн последним: иначе «ОГРН 1 1 4…» даст одну цифру
+    ogrn_match = re.search(r'ОГРН\s+(\d+)', text_content, re.IGNORECASE)
+    if ogrn_match:
+        ogrn = ogrn_match.group(1)
+        _log.info(f"Извлечен ОГРН (гибкий паттерн): {ogrn}")
+        return ogrn
+
+    _log.warning("Не найдена строка с ОГРН")
+    return ''
 
 def replace_quotes(text:str):
     text = re.sub(r'"([^"]*)"', r'«\1»', text)
@@ -609,6 +642,35 @@ def find_all_md_tables(md_text: str) -> List[str]:
     
     return tables
 
+def _normalize_md_table_pipe_rows(clean_lines: list[str]) -> list[str]:
+    """Выравнивает число колонок в markdown-строках таблицы."""
+    if not clean_lines:
+        return clean_lines
+
+    def split_row(line: str) -> list[str]:
+        raw = line.strip()
+        if raw.startswith("|"):
+            raw = raw[1:]
+        if raw.endswith("|"):
+            raw = raw[:-1]
+        return [cell.strip() for cell in raw.split("|")]
+
+    rows = [split_row(line) for line in clean_lines]
+    width = max((len(row) for row in rows), default=0)
+    if width == 0:
+        return clean_lines
+
+    normalized = []
+    for row in rows:
+        if len(row) < width:
+            row = row + [""] * (width - len(row))
+        elif len(row) > width:
+            # Лишний | чаще всего в тексте ячейки: склеиваем хвост.
+            row = row[: width - 1] + [" | ".join(row[width - 1 :])]
+        normalized.append("| " + " | ".join(row) + " |")
+    return normalized
+
+
 def parse_md_table(table_text: str) -> Optional[pd.DataFrame]:
     """
     Парсит отдельную markdown таблицу в DataFrame
@@ -629,6 +691,8 @@ def parse_md_table(table_text: str) -> Optional[pd.DataFrame]:
         
         if not has_separator or len(clean_lines) < 2:
             return None
+
+        clean_lines = _normalize_md_table_pipe_rows(clean_lines)
         
         # Парсим с помощью pandas
         df = pd.read_csv(StringIO('\n'.join(clean_lines)), sep='|')

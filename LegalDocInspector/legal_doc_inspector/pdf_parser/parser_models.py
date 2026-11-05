@@ -281,63 +281,144 @@ class PDFClaimParser:
             response.append(claim_dict)
         return response
 
+    _CLAIM_HEADER_HINT = re.compile(
+        r"(претенз|исх(?:\.|од)|№|No\.?)",
+        re.IGNORECASE,
+    )
+    _CLAIM_DATE = re.compile(r"\b\d{1,2}\.\d{1,2}\.\d{4}\b")
+    _CLAIM_NUMBER = re.compile(r"\b\d{6}\b")
+
     def _parse_claim_number_and_date(self, texts_with_pages: List[Tuple[int, str]]) -> List[Tuple[Optional[str], Optional[str]]]:
         """
-        Принимает список пар [(страница, текст), ...].
-        Возвращает (номер_претензии, дата_претензии).
+        Сначала строгие правила (заголовок претензии / «№» рядом с номером),
+        если пар нет — прежняя эвристика по страницам.
         """
-        date_pattern = re.compile(r'\b\d{1,2}\.\d{1,2}\.\d{4}\b')
-        number_pattern = re.compile(r'\b\d{6}\b')
+        claims = self._parse_claim_number_and_date_strict(texts_with_pages)
+        if claims:
+            return claims
+        return self._parse_claim_number_and_date_legacy(texts_with_pages)
+
+    def _claim_skip_pages(self, texts_with_pages: List[Tuple[int, str]]) -> set:
         skip_pages = set()
         for page, text in texts_with_pages:
-            if re.search(r'справка.*прохождении', text, re.IGNORECASE):
+            if re.search(r"справка.*прохождении", text, re.IGNORECASE):
                 skip_pages.add(page)
+        return skip_pages
 
-        # Сгруппируем тексты по страницам
+    def _parse_claim_number_and_date_strict(
+        self, texts_with_pages: List[Tuple[int, str]]
+    ) -> List[Tuple[Optional[str], Optional[str]]]:
+        """
+        Пара засчитывается только если номер и дата лежат в одном блоке или в окне
+        из 2–3 соседних блоков (типичный OCR-разрез «дата / № / номер»), и рядом
+        есть признак заголовка претензии.
+        """
         from collections import defaultdict
+
+        skip_pages = self._claim_skip_pages(texts_with_pages)
         pages_dict = defaultdict(list)
         for page, text in texts_with_pages:
             if page not in skip_pages:
                 pages_dict[page].append(text)
-        response = []
-        for page in list(pages_dict.keys()):
+
+        response: list[tuple[str, str]] = []
+        seen: set[tuple[str, str]] = set()
+        for page in pages_dict:
+            blocks = pages_dict[page]
+            for i in range(len(blocks)):
+                # 1–3 соседних блока: дата и номер часто разрезаны OCR по отдельным run/абзацам
+                for width in (1, 2, 3):
+                    if i + width > len(blocks):
+                        break
+                    window_blocks = blocks[i : i + width]
+                    window = " ".join(window_blocks)
+                    dates = self._CLAIM_DATE.findall(window)
+                    if not dates:
+                        continue
+                    if not self._CLAIM_HEADER_HINT.search(window):
+                        continue
+                    numbers = self._claim_numbers_in_header_window(window_blocks, window)
+                    if not numbers:
+                        continue
+                    # В коротком заголовочном окне берём первую пару номер+дата
+                    pair = (numbers[0], dates[0])
+                    if pair in seen:
+                        continue
+                    seen.add(pair)
+                    response.append(pair)
+
+        return response
+
+    def _parse_claim_number_and_date_legacy(
+        self, texts_with_pages: List[Tuple[int, str]]
+    ) -> List[Tuple[Optional[str], Optional[str]]]:
+        """
+        Старые правила: на странице ищем 6 цифр и дату в одном блоке либо
+        в коротких отдельных блоках (номер len<7, дата len<11); по странице — первая пара.
+        """
+        from collections import defaultdict
+
+        skip_pages = self._claim_skip_pages(texts_with_pages)
+        pages_dict = defaultdict(list)
+        for page, text in texts_with_pages:
+            if page not in skip_pages:
+                pages_dict[page].append(text)
+
+        response: list[tuple[str, str]] = []
+        for page in pages_dict:
             date_flag = False
             num_flag = False
             number = None
             date = None
             for string in pages_dict[page]:
-                match1 = number_pattern.search(string)
-                match2 = date_pattern.search(string)
-
-                # print(match1, match2)
+                match1 = self._CLAIM_NUMBER.search(string)
+                match2 = self._CLAIM_DATE.search(string)
 
                 if match1 and match2:
-                    # print(string)
-                    # print(match2.group())
-                    # print(match1.group())
                     number = match1.group()
                     date = match2.group()
                     date_flag = True
                     num_flag = True
 
-                if match2 and len(string)<11:
-                    # print(string)
-                    # print(match2.group())
+                if match2 and len(string) < 11:
                     date = match2.group()
-
                     date_flag = True
-                if match1 and len(string)<7:
-                    # print(string)
-                    # print(match1.group())
+                if match1 and len(string) < 7:
                     number = match1.group()
-
                     num_flag = True
 
                 if num_flag and date_flag:
-                    response.append((number, date ))
+                    response.append((number, date))
                     break
 
         return response
+
+    def _claim_numbers_in_header_window(self, window_blocks: List[str], window: str) -> List[str]:
+        """Номера, привязанные к «№»/заголовку; почтовый индекс рядом с датой не берём."""
+        postal_nums = set()
+        for block in window_blocks:
+            m = re.match(r"^(\d{6})\s*,", block.strip())
+            if m:
+                postal_nums.add(m.group(1))
+
+        numbers: list[str] = []
+        numbers.extend(re.findall(r"№\s*(\d{6})", window, flags=re.IGNORECASE))
+        numbers.extend(re.findall(r"\bNo\.?\s*(\d{6})", window, flags=re.IGNORECASE))
+        for j in range(len(window_blocks) - 1):
+            left = window_blocks[j].strip()
+            right = window_blocks[j + 1].strip()
+            if left in {"№", "No", "No."} or re.fullmatch(r"№\s*", left):
+                if re.fullmatch(r"\d{6}", right):
+                    numbers.append(right)
+        # Заголовок «Претензия…»/«исх.»: только целый блок из 6 цифр (как после «№»),
+        # а не фрагменты номера договора «07.663212-ТЭ» и не индекс «125009, город…».
+        if re.search(r"претенз|исх(?:\.|од)", window, flags=re.IGNORECASE):
+            for block in window_blocks:
+                if re.fullmatch(r"\d{6}", block.strip()):
+                    numbers.append(block.strip())
+        numbers = [n for n in numbers if n not in postal_nums]
+        # уникальные с сохранением порядка
+        return list(dict.fromkeys(numbers))
 
 
 class PDFContractParser:
