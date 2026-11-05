@@ -5,14 +5,16 @@ calculation_claim_template_path : data/templates/calculation_claim_new_version_n
 
 point_overdue_key_words_list_weighted:
   срок: 2
-  числа: 3
-  месяца: 3
-  производится: 1
-  оплата: 3
-  расчётным: 2
-  период: 2
-  следующего: 3
-  оплачивает: 3
+  числа: 4
+  месяца: 2
+  производится: 2
+  оплата: 5
+  оплачивает: 5
+  оплатить: 4
+  расчётным: 1
+  период: 1
+  следующего: 2
+  потребителем: 2
 
 point_overdue_key_words_excluded:
   - оформляет
@@ -27,6 +29,9 @@ point_overdue_key_words_excluded:
   - подписание
   - потерь
   - надлежащим
+  - показаний
+  - снимаются
+  - выставляет
 
 service_type_key_words_list_weighted:
   теплоноситель: 3

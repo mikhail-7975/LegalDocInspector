@@ -386,7 +386,7 @@ class PDFContractParser:
         conv_result_html = documents_export_to_html(contract_documents)
         write_pdf_sidecar_html(path_to_file, conv_result_html)
         # print(conv_result_html)
-        type_of_service = self._find_type_of_contract(conv_result_html)
+        type_of_service = self._find_type_of_contract(conv_result_html, path_to_file)
         if type_of_service not in ['ФОТЭ', 'не удалось определить тип договора']:
             point_of_contract, overdue_day, result_text = self._find_point_of_overdue_date(conv_result_html,
                                                                 keywords=config.point_overdue_keywords,
@@ -396,6 +396,10 @@ class PDFContractParser:
 
 
         else:
+            _log.warning(
+                "Contract type not determined for %s; returning defaults without payment clause",
+                path_to_file,
+            )
             return type_of_service, '-', '18', type_of_service
         # type_of_service = self._find_point_of_service_type(conv_result_html,
         #                                                    keywords=config.service_type_keywords,
@@ -403,39 +407,233 @@ class PDFContractParser:
         release_memory()
         return type_of_service, point_of_contract, overdue_day, result_text
 
-    def _find_type_of_contract(self, parsed_html):
-        soup = BeautifulSoup(parsed_html, 'lxml')
-        candidates = soup.find_all(['h1','h2','p'])
-        valid_values_keywords = ['акт','договор', 'контракт', 'гвс', 'тэ', 'фотэ', 'сои']
+    _TYPE_UNKNOWN = "не удалось определить тип договора"
 
-        valid_values_keywords_lemmatized = {self._lemmatize_word(elem) for elem in valid_values_keywords}
-        valid_values = []
+    # Латиница, визуально похожая на кириллицу (частый OCR-шум в шапке договора).
+    _OCR_LATIN_LOOKALIKES = str.maketrans({
+        "A": "А", "a": "а",
+        "B": "В",
+        "C": "С", "c": "с",
+        "E": "Е", "e": "е",
+        "H": "Н",
+        "K": "К", "k": "к",
+        "M": "М",
+        "O": "О", "o": "о",
+        "P": "Р", "p": "р",
+        "T": "Т", "t": "т",
+        "X": "Х", "x": "х",
+        "Y": "У", "y": "у",
+    })
 
-        for text_elem in [elem.get_text() for elem in candidates]:
-            if len(text_elem)>2:
-                text_elem_lemmatized = self._lemmatize_words(text_elem)
-                if valid_values_keywords_lemmatized & text_elem_lemmatized:
-                    valid_values.append(text_elem.lower())
+    def _normalize_ocr_contract_text(self, text: str) -> str:
+        """Нормализует OCR-текст шапки/номера договора для поиска типа."""
+        if not text:
+            return ""
+        # Сначала латинские коды типов на исходном тексте (до lookalike-замен).
+        normalized = text
+        for pattern, repl in (
+            (r"(?i)\bfote\b", "ФОТЭ"),
+            (r"(?i)\bgvs\b", "ГВС"),
+            (r"(?i)\bsoi\b", "СОИ"),
+            (r"(?i)(?<![A-Za-zА-Яа-яЁё])te(?![A-Za-zА-Яа-яЁё])", "ТЭ"),
+            (r"(?i)-\s*te(?![A-Za-zА-Яа-яЁё])", "-ТЭ"),
+        ):
+            normalized = re.sub(pattern, repl, normalized)
+        normalized = normalized.translate(self._OCR_LATIN_LOOKALIKES)
+        # После lookalike: «ТЕ»/«ФОТЕ» как кириллические токены → канонические коды.
+        normalized = re.sub(r"(?i)\bфоте\b", "ФОТЭ", normalized)
+        normalized = re.sub(r"(?i)\bте\b", "ТЭ", normalized)
+        # OCR «ТтЭ» / «Т-Э» в номере договора.
+        normalized = re.sub(r"(?i)Т\s*т\s*Э", "ТЭ", normalized)
+        normalized = re.sub(r"(?i)Т\s*-\s*Э", "ТЭ", normalized)
+        return normalized
 
-        soi_keywords = ['целей содержания общего имущества', 'сои', 'cои']
-        te_keywords = ['договор теплоснабжения', 'на снабжение тепловой', 'контракт теплоснабжения']
-        gvs_keywords = ['договор поставки горячей воды', 'горячей воды', 'гвс', 'горячего водоснабжения']
-        fote_keywords = ['акт проверки', 'фотэ']
+    def _type_from_type_code(
+        self, text: str, *, require_number_context: bool = False
+    ) -> str | None:
+        """Тип по коду в имени файла / номере договора (ФОТЭ раньше ТЭ)."""
+        normalized = self._normalize_ocr_contract_text(text)
+        if not normalized:
+            return None
+        # Суффиксы номера (…-ТЭ, …064ГВС) — высокий приоритет, меньше ложных «ВВП ГВС».
+        number_suffix_patterns: list[tuple[str, str]] = [
+            (r"(?i)\d\s*[-_/]?\s*ФОТЭ(?:[^А-Яа-яЁё]|$)", "ФОТЭ"),
+            (r"(?i)\dГВС(?:[^А-Яа-яЁё]|$)", "ГВС"),
+            (r"(?i)\d\s*[-_/]\s*ТЭ(?:[^А-Яа-яЁё]|$)", "ТЭ"),
+            (r"(?i)[-_/]\s*ТЭ(?:[^А-Яа-яЁё]|$)", "ТЭ"),
+            (r"(?i)(?:№|No\.?)\s*[^\n]{0,40}?ФОТЭ", "ФОТЭ"),
+            (r"(?i)(?:№|No\.?)\s*[^\n]{0,40}?ГВС", "ГВС"),
+            (r"(?i)(?:№|No\.?)\s*[^\n]{0,40}?ТЭ", "ТЭ"),
+            (r"(?i)(?:№|No\.?)\s*[^\n]{0,40}?СОИ", "СОИ"),
+        ]
+        for pattern, contract_type in number_suffix_patterns:
+            if re.search(pattern, normalized):
+                return contract_type
+        if require_number_context:
+            return None
+        # Отдельный токен (имя файла / короткая шапка).
+        token_patterns: list[tuple[str, str]] = [
+            (r"(?i)(?:^|[^А-Яа-яЁё])ФОТЭ(?:[^А-Яа-яЁё]|$)", "ФОТЭ"),
+            (r"(?i)(?:^|[^А-Яа-яЁё])СОИ(?:[^А-Яа-яЁё]|$)", "СОИ"),
+            (r"(?i)(?:^|[^А-Яа-яЁё])ГВС(?:[^А-Яа-яЁё]|$)", "ГВС"),
+            (r"(?i)(?:^|[^А-Яа-яЁё])ТЭ(?:[^А-Яа-яЁё]|$)", "ТЭ"),
+        ]
+        for pattern, contract_type in token_patterns:
+            if re.search(pattern, normalized):
+                return contract_type
+        return None
+
+    def _type_from_title_keywords(self, text_lower: str) -> str | None:
+        """Тип по формулировкам заголовка (без широкого скана всего договора)."""
+        soi_keywords = (
+            "целей содержания общего имущества",
+            "цели содержания общего имущества",
+            "содержание общего имущества",
+        )
+        te_keywords = (
+            "договор теплоснабжения",
+            "контракт теплоснабжения",
+            "на снабжение тепловой",
+            "снабжение тепловой энергией",
+            "поставка тепловой энергии",
+        )
+        # Без голых «горячего водоснабжения» / «ГВС»: они часто встречаются в договорах ТЭ.
+        gvs_keywords = (
+            "договор горячего водоснабжения",
+            "договор поставки горячей воды",
+            "контракт горячего водоснабжения",
+        )
+        fote_keywords = (
+            "акт проверки",
+            "акта проверки",
+            "фотэ",
+        )
+        for keyword in soi_keywords:
+            if keyword in text_lower:
+                return "СОИ"
+        for keyword in te_keywords:
+            if keyword in text_lower:
+                return "ТЭ"
+        for keyword in gvs_keywords:
+            if keyword in text_lower:
+                return "ГВС"
+        for keyword in fote_keywords:
+            if keyword in text_lower:
+                return "ФОТЭ"
+        return None
+
+    def _find_type_of_contract(
+        self,
+        parsed_html: str,
+        path_to_file: str | Path | None = None,
+    ) -> str:
+        """
+        Определяет тип договора (ТЭ / ГВС / ФОТЭ / СОИ).
+
+        Источники сигнала (по приоритету): имя файла, строки с «Договор №» / титул,
+        коды типа в первых блоках HTML, затем keyword-эвристика по кандидатам.
+        """
+        if path_to_file is not None:
+            from_name = self._type_from_type_code(Path(path_to_file).name)
+            if from_name:
+                return from_name
+
+        soup = BeautifulSoup(parsed_html or "", "lxml")
+        # Короткие/заголовочные блоки — для кодов типа; длинные div/li дают ложные «ГВС».
+        heading_tags = ("title", "h1", "h2", "h3")
+        body_tags = ("p", "div", "li", "td")
+        max_code_block_len = 280
+
+        heading_blocks: list[str] = []
+        short_blocks: list[str] = []
+        legacy_blocks: list[str] = []  # как раньше: в основном h1/h2/p
+
+        for elem in soup.find_all(list(heading_tags) + list(body_tags)):
+            text_elem = elem.get_text(" ", strip=True)
+            if len(text_elem) <= 2:
+                continue
+            tag = elem.name
+            if tag in heading_tags:
+                heading_blocks.append(text_elem)
+            if len(text_elem) <= max_code_block_len:
+                short_blocks.append(text_elem)
+            if tag in ("h1", "h2", "h3", "p"):
+                legacy_blocks.append(text_elem)
+
+        contract_line_re = re.compile(
+            r"договор.{0,80}?№|контракт.{0,40}?№|акт\s+проверки|акта\s+проверки",
+            re.IGNORECASE | re.DOTALL,
+        )
+
+        # 1) Строки с «Договор … №» / актом — код типа и титульные фразы.
+        for text_elem in heading_blocks + short_blocks[:50]:
+            normalized = self._normalize_ocr_contract_text(text_elem)
+            low = normalized.lower()
+            if not contract_line_re.search(low):
+                continue
+            from_code = self._type_from_type_code(normalized)
+            if from_code:
+                return from_code
+            from_title = self._type_from_title_keywords(low)
+            if from_title:
+                return from_title
+
+        # 2) Титульные фразы в заголовках — раньше голых кодов («ВВП ГВС»).
+        for text_elem in heading_blocks:
+            from_title = self._type_from_title_keywords(
+                self._normalize_ocr_contract_text(text_elem).lower()
+            )
+            if from_title:
+                return from_title
+
+        # 3) Коды в заголовках; в коротких блоках — только рядом с номером.
+        for text_elem in heading_blocks:
+            from_code = self._type_from_type_code(
+                self._normalize_ocr_contract_text(text_elem)
+            )
+            if from_code:
+                return from_code
+        for text_elem in short_blocks[:50]:
+            from_code = self._type_from_type_code(
+                self._normalize_ocr_contract_text(text_elem),
+                require_number_context=True,
+            )
+            if from_code:
+                return from_code
+
+        # 4) Титульные фразы в коротких блоках.
+        for text_elem in short_blocks[:50]:
+            from_title = self._type_from_title_keywords(
+                self._normalize_ocr_contract_text(text_elem).lower()
+            )
+            if from_title:
+                return from_title
+
+        # 5) Legacy: леммы по h1/h2/h3/p (без длинных div).
+        valid_values_keywords = ["акт", "договор", "контракт", "гвс", "тэ", "фотэ", "сои"]
+        valid_values_keywords_lemmatized = {
+            self._lemmatize_word(elem) for elem in valid_values_keywords
+        }
+        valid_values: list[str] = []
+        for text_elem in legacy_blocks:
+            text_elem_lemmatized = self._lemmatize_words(text_elem)
+            if valid_values_keywords_lemmatized & text_elem_lemmatized:
+                valid_values.append(
+                    self._normalize_ocr_contract_text(text_elem).lower()
+                )
+
         for valid_elem in valid_values[:20]:
-            for keyword in soi_keywords:
-                if keyword in valid_elem:
-                    return 'СОИ'
-            for keyword in te_keywords:
-                if keyword in valid_elem:
-                    return 'ТЭ'
-            for keyword in gvs_keywords:
-                if keyword in valid_elem:
-                    return 'ГВС'
-            for keyword in fote_keywords:
-                if keyword in valid_elem:
-                    return 'ФОТЭ'
+            if len(valid_elem) <= max_code_block_len:
+                from_code = self._type_from_type_code(
+                    valid_elem, require_number_context=True
+                )
+                if from_code:
+                    return from_code
+            from_title = self._type_from_title_keywords(valid_elem)
+            if from_title:
+                return from_title
 
-        return "не удалось определить тип договора"
+        return self._TYPE_UNKNOWN
 
     def _convert_contract_pdf_chunked(self, path_to_file: Path) -> list[DoclingDocument]:
         """OCR: постранично; при OOM возвращает обработанные страницы."""
@@ -554,17 +752,85 @@ class PDFContractParser:
             return documents[0]
         raise RuntimeError(f"No pages converted for contract PDF: {path_to_file}")
 
-    def _find_point_of_overdue_date(self, parsed_html_text:str, keywords:dict, excluded_words:list):
-        point_overdue_key_words_list_weighted = keywords
-        exclude_words = excluded_words
-        finded_text, candidates = self._find_top5_elements_weighted(parsed_html_text, point_overdue_key_words_list_weighted, exclude_words)
-        # print(finded_text)
-        if len(finded_text) > 0:
-            contract_point, result_text = self._find_point_overdue_suggestions(finded_text, candidates)
-            overdue_day = self._find_day_overdue_suggestions(result_text)
-            return contract_point, overdue_day, result_text
-        else:
-            return "Не удалось найти пункт", None, None
+    _PAYMENT_DEADLINE_RE = re.compile(
+        r"(?is)(?:оплат\w*|оплачива\w*).{0,120}?до\s+(\d{1,2})(?:-?\s*го)?\s+числ"
+        r"|до\s+(\d{1,2})(?:-?\s*го)?\s+числ\w*.{0,80}?(?:оплат\w*|оплачива\w*)"
+    )
+    _POINT_AT_START_RE = re.compile(r"^\s*(\d+(?:[.,]\d+)*)")
+    _POINT_EXPLICIT_RE = re.compile(
+        r"(?i)(?:пункт\w*|п)\s*\.?\s*(\d+(?:[.,]\d+)*)"
+    )
+    _DAY_UNTIL_RE = re.compile(
+        r"(?i)до\s+(\d{1,2})(?:-?\s*го)?\s+числ"
+    )
+
+    @staticmethod
+    def _normalize_contract_point(raw: str | None) -> str | None:
+        """Нормализует пункт к виду 7.2 (точка вместо запятой)."""
+        if not raw:
+            return None
+        return raw.strip().replace(",", ".")
+
+    def _extract_contract_point(self, text: str) -> str | None:
+        """Ищет номер пункта в начале строки, «п. 7.2» / «пункт 5.5»."""
+        if not text:
+            return None
+        m = self._POINT_AT_START_RE.match(text)
+        if m:
+            return self._normalize_contract_point(m.group(1))
+        m = self._POINT_EXPLICIT_RE.search(text)
+        if m:
+            return self._normalize_contract_point(m.group(1))
+        return None
+
+    def _is_payment_deadline_clause(self, text: str) -> bool:
+        return bool(text and self._PAYMENT_DEADLINE_RE.search(text))
+
+    def _find_point_of_overdue_date(
+        self, parsed_html_text: str, keywords: dict, excluded_words: list
+    ):
+        finded_text, candidates = self._find_top5_elements_weighted(
+            parsed_html_text, keywords, excluded_words
+        )
+        # Предпочитаем абзацы «оплата … до N числа» среди top-N.
+        if finded_text:
+            payment_first = [
+                item
+                for item in finded_text
+                if self._is_payment_deadline_clause(item[0])
+            ]
+            ordered = payment_first + [
+                item for item in finded_text if item not in payment_first
+            ]
+            contract_point, result_text = self._find_point_overdue_suggestions(
+                ordered, candidates
+            )
+            if result_text:
+                overdue_day = self._find_day_overdue_suggestions(result_text)
+                point_out = (
+                    contract_point
+                    if contract_point and "не удалось" not in contract_point.lower()
+                    else "Не удалось найти пункт"
+                )
+                return point_out, overdue_day, result_text
+
+        # Fallback: прямой поиск платёжной оговорки по всем p/li.
+        soup = BeautifulSoup(parsed_html_text or "", "lxml")
+        for elem in soup.find_all(["p", "li"]):
+            text = elem.get_text(" ", strip=True)
+            if not self._is_payment_deadline_clause(text):
+                continue
+            point = self._extract_contract_point(text)
+            day = self._find_day_overdue_suggestions(text)
+            if point or day:
+                return (
+                    point or "Не удалось найти пункт",
+                    day,
+                    text,
+                )
+
+        return "Не удалось найти пункт", None, None
+
     #FIXME нужно брать информацию из шапки договора
     def _find_point_of_service_type(self, parsed_html_text:str, keywords:dict, excluded_words:list):
         service_type_key_words_list_weighted = keywords
@@ -576,62 +842,74 @@ class PDFContractParser:
         else:
             return "К сожалению, не удалось распознать часть текста"
 
-    def _find_point_overdue_suggestions(self, perspective_elems:list[tuple[str, int, int]], candidates):
-        pattern = r'^\d+(?:[.,]\d+)*'
+    def _find_point_overdue_suggestions(
+        self, perspective_elems: list[tuple[str, int, int]], candidates
+    ):
         for perspective_elem in perspective_elems:
-            elem_text, _ , current_index = perspective_elem
-            # print(elem_text)
+            elem_text, _, current_index = perspective_elem
+            point = self._extract_contract_point(elem_text)
+            if point and (
+                self._is_payment_deadline_clause(elem_text)
+                or self._check_contract_point(elem_text)
+            ):
+                return point, elem_text
+            if point and self._find_day_overdue_suggestions(elem_text):
+                return point, elem_text
 
-            matches = re.match(pattern, elem_text)
-            if matches is not None:
-                return matches.group(0), elem_text
-            zone_of_interest = [elem.get_text() for elem in candidates[current_index-5:current_index]]
-            # print(zone_of_interest)
+            zone_of_interest = [
+                elem.get_text()
+                for elem in candidates[max(0, current_index - 5) : current_index]
+            ]
+            flag = False
             for elem in zone_of_interest[::-1]:
-                matches = re.match(pattern, elem)
-                # print(matches)
-                if matches is not None:
-                    flag = self._check_contract_point(elem)
-                    if flag:
-                        return matches.group(0), elem + '\n' + elem_text
-                    else :
-                        continue
+                point = self._extract_contract_point(elem)
+                if point is None:
+                    continue
+                flag = bool(self._check_contract_point(elem))
+                if flag:
+                    return point, elem + "\n" + elem_text
             if not flag:
                 continue
 
+            # Последний шанс по текущему абзацу: пункт в середине («п. 7.2»).
+            point = self._extract_contract_point(elem_text)
+            if point:
+                return point, elem_text
+
+        return "Не удалось найти пункт", None
+
     def _find_day_overdue_suggestions(self, result_text: str):
-    # Удаляем число из начала
-        cleaned = re.sub(r'^\d+(?:[.,]\d+)*', '', result_text).lstrip()
+        """День оплаты: приоритет «до N числа», диапазон 1–28."""
+        if not result_text:
+            return None
 
-        # Находим все элементы
-        matches = re.findall(r'\d+|\n|числа', cleaned, flags=re.IGNORECASE)
+        # Убираем номер пункта в начале, чтобы не спутать с днём.
+        cleaned = re.sub(r"^\s*\d+(?:[.,]\d+)*\s*[.]?\s*", "", result_text).lstrip()
 
-        if '\n' in matches:
-            # Ищем число между \n и "числа"
-            for i in range(len(matches)):
-                if matches[i] == '\n':
-                    # Ищем число после \n
-                    for j in range(i + 1, len(matches)):
-                        if matches[j].isdigit():
-                            # Проверяем, есть ли "числа" после этого числа
-                            if 'числа' in [m.lower() for m in matches[j+1:]]:
-                                return matches[j]
-        else:
-            # Ищем число перед "числа"
-            for i in range(len(matches) - 1):
-                if matches[i].isdigit() and matches[i+1].lower() == 'числа':
-                    return matches[i]
+        m = self._DAY_UNTIL_RE.search(cleaned)
+        if m:
+            day = int(m.group(1))
+            if 1 <= day <= 28:
+                return str(day)
 
-        # Если не нашли по правилам, возвращаем первое число
-        for elem in matches:
-            if elem.isdigit():
-                return elem
+        # «N числа» без «до», но рядом с оплатой.
+        m = re.search(r"(?i)(\d{1,2})(?:-?\s*го)?\s+числ", cleaned)
+        if m and self._is_payment_deadline_clause(result_text):
+            day = int(m.group(1))
+            if 1 <= day <= 28:
+                return str(day)
 
         return None
 
-    def _check_contract_point(self, elem:str) -> bool:
-        keywords = ["производит", "оплату", "сроки"]
-        excl_word = ["энергоснабжающая", "передает", "выставляет"]
+    def _check_contract_point(self, elem: str) -> bool:
+        keywords = ["производит", "оплату", "сроки", "оплачивает", "оплата"]
+        excl_word = [
+            "энергоснабжающая",
+            "передает",
+            "выставляет",
+            "показаний",
+            "снимаются",
+        ]
         keywords_lemmatized = {self._lemmatize_word(w) for w in keywords}
         excl_word_lemmatized = {self._lemmatize_word(w) for w in excl_word}
         elem_lemmatized = self._lemmatize_words(elem)
@@ -641,6 +919,7 @@ class PDFContractParser:
 
         if keywords_lemmatized & elem_lemmatized:
             return True
+        return False
 
     def _find_top5_elements_weighted(self,
         html: str,
