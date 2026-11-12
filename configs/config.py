@@ -23,7 +23,7 @@ def save_yaml_config(filename: str, config: dict):
 
 def load_yaml_config(filename: str) -> AppConfig:
     """Load configuration from YAML file and return as YamlConfig instance"""
-    with open(filename) as f:
+    with open(filename, encoding="utf-8") as f:
         config_data = yaml.safe_load(f)
 
     return AppConfig(

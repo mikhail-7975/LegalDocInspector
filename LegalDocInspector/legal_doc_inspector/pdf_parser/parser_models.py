@@ -421,6 +421,41 @@ class PDFClaimParser:
         return list(dict.fromkeys(numbers))
 
 
+def _html_fragments(html: str) -> list[str]:
+    """Делит склейку постраничных HTML-документов Docling на отдельные документы.
+
+    lxml останавливается на первом ``</html>``, поэтому страница с пунктом об оплате
+    иначе не попадает в поиск.
+    """
+    if not html or not str(html).strip():
+        return []
+    html = str(html)
+    doctype_starts = [
+        match.start() for match in re.finditer(r"(?i)<!DOCTYPE\s+html\b", html)
+    ]
+    if len(doctype_starts) > 1 or (len(doctype_starts) == 1 and doctype_starts[0] > 0):
+        starts = doctype_starts
+    else:
+        starts = [match.start() for match in re.finditer(r"(?i)<html\b", html)]
+    if len(starts) <= 1:
+        return [html]
+    fragments: list[str] = []
+    for index, start in enumerate(starts):
+        end = starts[index + 1] if index + 1 < len(starts) else len(html)
+        fragment = html[start:end].strip()
+        if fragment:
+            fragments.append(fragment)
+    return fragments or [html]
+
+
+def _find_html_tags(html: str, tags: list[str]):
+    found = []
+    for fragment in _html_fragments(html):
+        soup = BeautifulSoup(fragment, "lxml")
+        found.extend(soup.find_all(tags))
+    return found
+
+
 class PDFContractParser:
 
     def __init__(self, device='cuda') -> None:
@@ -619,7 +654,6 @@ class PDFContractParser:
             if from_name:
                 return from_name
 
-        soup = BeautifulSoup(parsed_html or "", "lxml")
         # Короткие/заголовочные блоки — для кодов типа; длинные div/li дают ложные «ГВС».
         heading_tags = ("title", "h1", "h2", "h3")
         body_tags = ("p", "div", "li", "td")
@@ -629,7 +663,9 @@ class PDFContractParser:
         short_blocks: list[str] = []
         legacy_blocks: list[str] = []  # как раньше: в основном h1/h2/p
 
-        for elem in soup.find_all(list(heading_tags) + list(body_tags)):
+        for elem in _find_html_tags(
+            parsed_html or "", list(heading_tags) + list(body_tags)
+        ):
             text_elem = elem.get_text(" ", strip=True)
             if len(text_elem) <= 2:
                 continue
@@ -867,6 +903,23 @@ class PDFContractParser:
     def _is_payment_deadline_clause(self, text: str) -> bool:
         return bool(text and self._PAYMENT_DEADLINE_RE.search(text))
 
+    def _text_with_following_deadline(self, text: str, candidates, index: int) -> str:
+        """Добавляет соседние строки, если «до N числа» вынесено из пункта в список."""
+        if self._find_day_overdue_suggestions(text):
+            return text
+        parts = [text]
+        for elem in candidates[index + 1 : index + 8]:
+            following = elem.get_text(" ", strip=True)
+            if not following:
+                continue
+            if self._POINT_AT_START_RE.match(following):
+                break
+            parts.append(following)
+            joined = "\n".join(parts)
+            if self._find_day_overdue_suggestions(joined):
+                return joined
+        return text
+
     def _find_point_of_overdue_date(
         self, parsed_html_text: str, keywords: dict, excluded_words: list
     ):
@@ -895,19 +948,23 @@ class PDFContractParser:
                 )
                 return point_out, overdue_day, result_text
 
-        # Fallback: прямой поиск платёжной оговорки по всем p/li.
-        soup = BeautifulSoup(parsed_html_text or "", "lxml")
-        for elem in soup.find_all(["p", "li"]):
+        # Fallback: прямой поиск платёжной оговорки по всем страницам.
+        elements = _find_html_tags(parsed_html_text or "", ["p", "li"])
+        for index, elem in enumerate(elements):
             text = elem.get_text(" ", strip=True)
-            if not self._is_payment_deadline_clause(text):
-                continue
             point = self._extract_contract_point(text)
-            day = self._find_day_overdue_suggestions(text)
-            if point or day:
+            window = text
+            if point and self._check_contract_point(text):
+                window = self._text_with_following_deadline(text, elements, index)
+            if not self._is_payment_deadline_clause(window):
+                continue
+            day = self._find_day_overdue_suggestions(window)
+            resolved_point = point or self._extract_contract_point(window)
+            if resolved_point or day:
                 return (
-                    point or "Не удалось найти пункт",
+                    resolved_point or "Не удалось найти пункт",
                     day,
-                    text,
+                    window,
                 )
 
         return "Не удалось найти пункт", None, None
@@ -933,9 +990,13 @@ class PDFContractParser:
                 self._is_payment_deadline_clause(elem_text)
                 or self._check_contract_point(elem_text)
             ):
-                return point, elem_text
+                return point, self._text_with_following_deadline(
+                    elem_text, candidates, current_index
+                )
             if point and self._find_day_overdue_suggestions(elem_text):
-                return point, elem_text
+                return point, self._text_with_following_deadline(
+                    elem_text, candidates, current_index
+                )
 
             zone_of_interest = [
                 elem.get_text()
@@ -948,14 +1009,18 @@ class PDFContractParser:
                     continue
                 flag = bool(self._check_contract_point(elem))
                 if flag:
-                    return point, elem + "\n" + elem_text
+                    return point, self._text_with_following_deadline(
+                        elem + "\n" + elem_text, candidates, current_index
+                    )
             if not flag:
                 continue
 
             # Последний шанс по текущему абзацу: пункт в середине («п. 7.2»).
             point = self._extract_contract_point(elem_text)
             if point:
-                return point, elem_text
+                return point, self._text_with_following_deadline(
+                    elem_text, candidates, current_index
+                )
 
         return "Не удалось найти пункт", None
 
@@ -1020,8 +1085,7 @@ class PDFContractParser:
         if exclude_words:
             exclude_lemmas = {self._lemmatize_word(w) for w in exclude_words}
 
-        soup = BeautifulSoup(html, 'lxml')
-        candidates = soup.find_all(['p', 'li'])
+        candidates = _find_html_tags(html, ["p", "li"])
 
         scored = []
 

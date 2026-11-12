@@ -194,3 +194,32 @@ def test_find_point_mid_sentence_punkt(
     )
     assert point == "5.5"
     assert day == "18"
+
+
+def test_find_point_across_concatenated_page_html(contract_heuristics: PDFContractParser):
+    """Пункт на второй странице: Docling склеивает полные HTML-документы."""
+    from configs.config import load_yaml_config
+    from pathlib import Path
+
+    config = load_yaml_config(
+        str(Path(__file__).resolve().parent.parent / "configs" / "debug_config.yaml")
+    )
+    first_page = (
+        "<!DOCTYPE html><html><body><p>Стороны заключили настоящий Договор "
+        "теплоснабжения о нижеследующем.</p><p>2</p></body></html>"
+    )
+    second_page = (
+        "<!DOCTYPE html><html><body>"
+        "<p>5.5. Потребитель производит оплату потребленных тепловой энергии "
+        "и теплоносителя в следующие сроки:</p>"
+        "<li>-до 18-го числа месяца, следующего за расчетным, - сумму "
+        "окончательного платежа за расчетный период.</li>"
+        "</body></html>"
+    )
+    point, day, _ = contract_heuristics._find_point_of_overdue_date(
+        first_page + "\n" + second_page,
+        keywords=config.point_overdue_keywords,
+        excluded_words=config.point_overdue_excluded,
+    )
+    assert point == "5.5"
+    assert day == "18"
