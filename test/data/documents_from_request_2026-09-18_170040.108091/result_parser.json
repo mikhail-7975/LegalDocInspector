@@ -1,0 +1,118 @@
+{
+    "table_parser_result": [
+        [
+            {
+                "¿ÔÂÎ¸ 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 976491.83,
+                                "period": "04.2026"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 976491.83,
+                        "total_amount_of_payments": 0,
+                        "debt": 976491.83
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                }
+            },
+            "π 02.104249Í“› ÓÚ 29.12.2025",
+            "“›",
+            "ÕÂ Û‰‡ÎÓÒ¸ Ì‡ÈÚË ÔÛÌÍÚ",
+            null,
+            null,
+            [
+                {
+                    "claim_date": "18.06.2026",
+                    "claim_number": "626371"
+                }
+            ]
+        ],
+        [
+            {
+                "ﬂÌ‚‡¸ 2025": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 1299215.97,
+                                "period": "01.2025"
+                            }
+                        ],
+                        "payments": [
+                            {
+                                "payment": 192099.97,
+                                "date": "20.02.2025",
+                                "contract_type": 8902
+                            },
+                            {
+                                "payment": 1107116,
+                                "date": "20.02.2025",
+                                "contract_type": 8902
+                            },
+                            {
+                                "payment": -1107116,
+                                "date": "20.02.2025",
+                                "contract_type": 8902
+                            },
+                            {
+                                "payment": 1031020.46,
+                                "date": "26.05.2025",
+                                "contract_type": 8902
+                            },
+                            {
+                                "payment": 34997.14,
+                                "date": "30.06.2025",
+                                "contract_type": 8902
+                            }
+                        ],
+                        "additionals": [],
+                        "total_amount_of_accruals": 1299215.97,
+                        "total_amount_of_payments": 1258117.57,
+                        "debt": 41098.4
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                }
+            },
+            "π 02.104249Í“› ÓÚ 31.01.2025",
+            "“›",
+            "ÕÂ Û‰‡ÎÓÒ¸ Ì‡ÈÚË ÔÛÌÍÚ",
+            null,
+            null,
+            [
+                {
+                    "claim_date": "08.07.2026",
+                    "claim_number": "628505"
+                }
+            ]
+        ]
+    ],
+    "results_of_name_parser": {
+        "defendant_info": {
+            "inn": "7718115610",
+            "full_name": "√À¿¬ÕŒ≈ ”œ–¿¬À≈Õ»≈ ‘≈ƒ≈–¿À‹ÕŒ… —À”∆¡€ »—œŒÀÕ≈Õ»ﬂ Õ¿ ¿«¿Õ»… œŒ √. ÃŒ— ¬≈",
+            "short_name": "√”‘—»Õ –Œ——»» œŒ √. ÃŒ— ¬≈",
+            "address": "125130, √.ÃŒ— ¬¿, ”À Õ¿–¬— ¿ﬂ, ƒ. 15¿",
+            "kpp": "774301001",
+            "ogrn": "1037739300906"
+        }
+    },
+    "path_to_save": "C:\\Users\\Dell\\program\\LegalDocInspector_20260601\\LegalDocInspector_20260601_155844\\data\\documents_from_request_2026-09-18_170040.108091",
+    "egrul_certificate_filename": "pdf"
+}

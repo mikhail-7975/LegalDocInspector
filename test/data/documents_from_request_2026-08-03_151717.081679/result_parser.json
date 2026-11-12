@@ -1,0 +1,153 @@
+{
+    "table_parser_result": [
+        [
+            {
+                "Март 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 2969121.57,
+                                "period": "03.2026"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 2969121.57,
+                        "total_amount_of_payments": 0,
+                        "debt": 2969121.57
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                },
+                "Апрель 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 2298846.59,
+                                "period": "04.2026"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 2298846.59,
+                        "total_amount_of_payments": 0,
+                        "debt": 2298846.59
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                }
+            },
+            "№ 01.095454-ТЭ от 01.12.2020",
+            "не удалось определить тип договора",
+            "-",
+            "18",
+            "не удалось определить тип договора",
+            [
+                {
+                    "claim_date": "16.06.2026",
+                    "claim_number": "625087"
+                }
+            ]
+        ],
+        [
+            {
+                "Апрель 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 773564.39,
+                                "period": "04.2026"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 773564.39,
+                        "total_amount_of_payments": 0,
+                        "debt": 773564.39
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                }
+            },
+            "№ 09.802440-ТЭ от 15.08.2025",
+            "не удалось определить тип договора",
+            "-",
+            "18",
+            "не удалось определить тип договора",
+            [
+                {
+                    "claim_date": "03.06.2026",
+                    "claim_number": "623713"
+                }
+            ]
+        ],
+        [
+            {
+                "Апрель 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 2288211.53,
+                                "period": "04.2026"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 2288211.53,
+                        "total_amount_of_payments": 0,
+                        "debt": 2288211.53
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                }
+            },
+            "№ 09.802728-ТЭ от 01.11.2023",
+            "ТЭ",
+            "Не удалось найти пункт",
+            null,
+            null,
+            [
+                {
+                    "claim_date": "03.06.2026",
+                    "claim_number": "623736"
+                }
+            ]
+        ]
+    ],
+    "results_of_name_parser": {
+        "defendant_info": {
+            "inn": "9701147008",
+            "full_name": "ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ «ЖС ФАСИЛИТИ МЕНЕДЖМЕНТ»",
+            "short_name": "ООО «ЖС ФМ»",
+            "address": "107076, Г.МОСКВА, ВН.ТЕР.Г. МУНИЦИПАЛЬНЫЙ ОКРУГ СОКОЛЬНИКИ, ПЕР СТРОМЫНСКИЙ, Д. 6, ПОМЕЩ. 31/1",
+            "kpp": "771801001",
+            "ogrn": "1197746595530"
+        }
+    },
+    "path_to_save": "C:\\Users\\Dell\\program\\LegalDocInspector_20260601\\LegalDocInspector_20260601_155844\\data\\documents_from_request_2026-08-03_151717.081679",
+    "egrul_certificate_filename": "pdf"
+}

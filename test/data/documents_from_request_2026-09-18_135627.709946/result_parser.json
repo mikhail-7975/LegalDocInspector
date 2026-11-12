@@ -1,0 +1,60 @@
+{
+    "table_parser_result": [
+        [
+            {
+                "Май 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 818859.81,
+                                "period": "05.2026"
+                            }
+                        ],
+                        "payments": [
+                            {
+                                "payment": 18859.81,
+                                "date": "25.06.2026",
+                                "contract_type": 8903
+                            }
+                        ],
+                        "additionals": [],
+                        "total_amount_of_accruals": 818859.81,
+                        "total_amount_of_payments": 18859.81,
+                        "debt": 800000
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                }
+            },
+            "№ 03.210503-ТЭ от 01.01.2012",
+            "не удалось определить тип договора",
+            "-",
+            "18",
+            "не удалось определить тип договора",
+            [
+                {
+                    "claim_date": "15.07.2026",
+                    "claim_number": "630920"
+                }
+            ]
+        ]
+    ],
+    "results_of_name_parser": {
+        "defendant_info": {
+            "inn": "7716214038",
+            "full_name": "ТОВАРИЩЕСТВО СОБСТВЕННИКОВ ЖИЛЬЯ «СТАРОВАТУТИНСКИЙ»",
+            "short_name": "ТСЖ «СТАРОВАТУТИНСКИЙ»",
+            "address": "129281, Г.МОСКВА, ПР-Д СТАРОВАТУТИНСКИЙ, Д.17",
+            "kpp": "771601001",
+            "ogrn": "1027739028470"
+        }
+    },
+    "path_to_save": "C:\\Users\\Dell\\program\\LegalDocInspector_20260601\\LegalDocInspector_20260601_155844\\data\\documents_from_request_2026-09-18_135627.709946",
+    "egrul_certificate_filename": "pdf"
+}

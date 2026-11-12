@@ -1,0 +1,138 @@
+{
+    "table_parser_result": [
+        [
+            {
+                "Апрель 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 155355.24,
+                                "period": "04.2026"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 155355.24,
+                        "total_amount_of_payments": 0,
+                        "debt": 155355.24
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                },
+                "Май 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 154263.9,
+                                "period": "05.2026"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 154263.9,
+                        "total_amount_of_payments": 0,
+                        "debt": 154263.9
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                }
+            },
+            "№ 02.114101ГВС от 01.01.2014",
+            "ГВС",
+            "Не удалось найти пункт",
+            null,
+            null,
+            [
+                {
+                    "claim_date": "23.06.2026",
+                    "claim_number": "627421"
+                }
+            ]
+        ],
+        [
+            {
+                "Апрель 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 337511.76,
+                                "period": "04.2026"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 337511.76,
+                        "total_amount_of_payments": 0,
+                        "debt": 337511.76
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                },
+                "Май 2026": {
+                    "accrual": {
+                        "accruals": [
+                            {
+                                "accrual": 334649.85,
+                                "period": "05.2026"
+                            }
+                        ],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": 334649.85,
+                        "total_amount_of_payments": 0,
+                        "debt": 334649.85
+                    },
+                    "adjustment": {
+                        "accruals": [],
+                        "payments": [],
+                        "additionals": [],
+                        "total_amount_of_accruals": null,
+                        "total_amount_of_payments": null,
+                        "debt": null
+                    }
+                }
+            },
+            "№ 02.114101-ТЭ от 01.01.2014",
+            "не удалось определить тип договора",
+            "-",
+            "18",
+            "не удалось определить тип договора",
+            [
+                {
+                    "claim_date": "23.06.2026",
+                    "claim_number": "627420"
+                }
+            ]
+        ]
+    ],
+    "results_of_name_parser": {
+        "defendant_info": {
+            "inn": "7714099693",
+            "full_name": "ЖИЛИЩНО- СТРОИТЕЛЬНЫЙ КООПЕРАТИВ «ИЗОБРЕТАТЕЛЬ-2»",
+            "short_name": "ЖСК «ИЗОБРЕТАТЕЛЬ-2»",
+            "address": "107061, Г.МОСКВА, УЛ. БОЛЬШАЯ ЧЕРКИЗОВСКАЯ, Д. 10, К. 2, 1",
+            "kpp": "771801001",
+            "ogrn": "1037700023272"
+        }
+    },
+    "path_to_save": "C:\\Users\\Dell\\program\\LegalDocInspector_20260601\\LegalDocInspector_20260601_155844\\data\\documents_from_request_2026-09-16_102700.307516",
+    "egrul_certificate_filename": "ul-1037700023272-20260916102007.pdf"
+}
