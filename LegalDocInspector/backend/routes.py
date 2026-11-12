@@ -166,8 +166,11 @@ def parse():
 
         return jsonify(result_json), 200
     except Exception as e:
-
         print(traceback.format_exc())
+        message = str(e)
+        if "не является файлом Excel" in message:
+            return message, 400
+        return traceback.format_exc(), 500
 
 
 @app.route("/calculate_penalty", methods=["POST"])

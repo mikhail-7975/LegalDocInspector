@@ -3,10 +3,15 @@
 """
 
 import re
+from pathlib import Path
+
 import pandas as pd
 import json
 
 from LegalDocInspector.legal_doc_inspector.utils.convert_month import convert_month
+
+
+_EXCEL_SUFFIXES = {".xls", ".xlsx", ".xlsm"}
 
 
 class ExcelReader:
@@ -23,6 +28,12 @@ class ExcelReader:
         Args:
             filename (str): имя excel документа
         """
+        suffix = Path(filename).suffix.lower()
+        if suffix not in _EXCEL_SUFFIXES:
+            raise ValueError(
+                f"Файл справки «{Path(filename).name}» не является файлом Excel "
+                "(.xls, .xlsx, .xlsm)."
+            )
         self.doc = pd.read_excel(filename, sheet_name=0, header=None)
 
 

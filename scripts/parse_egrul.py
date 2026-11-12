@@ -15,6 +15,10 @@ from LegalDocInspector.legal_doc_inspector.utils.parse_egrul_sertificate import 
 
 
 def main():
+    from LegalDocInspector.logging_config import configure_console_logging
+
+    configure_console_logging()
+
     parser = argparse.ArgumentParser(
         description='Извлечение данных из выписки из ЕГРЮЛ в формате PDF',
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -69,7 +73,7 @@ def main():
         print("Конвертация PDF в markdown...")
         
         # Вызов функции парсинга
-        result, markdown_content = parse_egrul_certificate(pdf_path)
+        full_name, short_name, address, kpp, ogrn, markdown_content = parse_egrul_certificate(pdf_path)
         
         # Определение пути для markdown файла
         if args.markdown_path:
@@ -104,30 +108,36 @@ def main():
             print(f"Ошибка при сохранении markdown файла: {e}", file=sys.stderr)
             import traceback
             traceback.print_exc()
+        result = {
+            "full_name": full_name,
+            "short_name": short_name,
+            "address": address,
+            "kpp": kpp,
+            "ogrn": ogrn,
+        }
+
         print("\nИзвлеченные данные:")
         print("=" * 50)
-        
-        # Вывод результатов
-        for key, value in result.items():
-            label = {
-                'full_name': 'Полное наименование',
-                'short_name': 'Сокращенное наименование',
-                'address': 'Адрес',
-                'kpp': 'КПП',
-                'ogrn': 'ОГРН'
-            }.get(key, key)
-            print(f"{label:30}: {value if value else '(не заполнено)'}")
-        
+
+        def _fmt(value: str) -> str:
+            return value if value else "(не заполнено)"
+
+        print(f"{'Полное наименование':30}: {_fmt(full_name)}")
+        print(f"{'Сокращенное наименование':30}: {_fmt(short_name)}")
+        print(f"{'Адрес':30}: {_fmt(address)}")
+        print(f"{'КПП':30}: {_fmt(kpp)}")
+        print(f"{'ОГРН':30}: {_fmt(ogrn)}")
+
         print("=" * 50)
-        
+
         # Сохранение в JSON файл, если указан путь
         if args.output:
             output_path = Path(args.output)
             indent = 2 if args.pretty else None
-            with open(output_path, 'w', encoding='utf-8') as f:
+            with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(result, f, ensure_ascii=False, indent=indent)
             print(f"\nРезультат сохранен в JSON: {output_path}")
-        
+
         # Вывод JSON в консоль, если не указан файл вывода
         elif args.pretty:
             print("\nJSON результат:")

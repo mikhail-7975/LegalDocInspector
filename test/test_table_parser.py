@@ -1,5 +1,12 @@
+from pathlib import Path
+
 import pytest
 from LegalDocInspector.legal_doc_inspector.exel_parser import TableParser
+
+NON_EXCEL = (
+    Path(__file__).resolve().parents[1]
+    / "test/data/documents_from_request_2026-07-22_113440.916885/complect_1/pdf.html"
+)
 
 TEST_CASES = [
     "test/excel_test_cases/1. 02.108320-ТЭ   08.2025.XLSM",
@@ -86,3 +93,11 @@ def test_parse_table():
         result = parser.parse()
         assert result == test_output
         parser.close()
+
+
+def test_table_parser_rejects_non_excel_certificate():
+    assert NON_EXCEL.is_file()
+    parser = TableParser()
+    with pytest.raises(ValueError, match="не является файлом Excel") as exc:
+        parser.open(str(NON_EXCEL))
+    assert "engine" not in str(exc.value)

@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import io
 import shutil
 from pathlib import Path
 
 import pytest
 from docx import Document
 
+from LegalDocInspector.legal_doc_inspector.doc_creator.claim_generator import ClaimGenerator
 from LegalDocInspector.legal_doc_inspector.doc_creator.docx_editor import DocxRedactor
 from LegalDocInspector.legal_doc_inspector.pdf_parser.parser_models import PDFClaimParser
 from LegalDocInspector.legal_doc_inspector.utils.parse_egrul_sertificate import (
@@ -19,7 +21,22 @@ from LegalDocInspector.legal_doc_inspector.utils.parse_egrul_sertificate import 
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = ROOT / "data/templates/calculation_claim_new_version_new.docx"
+CLAIM_TEMPLATE = ROOT / "data/templates/claim.docx"
+NON_EXCEL_CERTIFICATE = (
+    ROOT
+    / "test/data/documents_from_request_2026-07-22_113440.916885/complect_1/pdf.html"
+)
 ERROR3_ZIP = ROOT / "data/errors/error3/для программы (ООО УК Меридиан).zip"
+
+_FOTE_LEGAL_STARTS = (
+    "В силу п. 25",
+    "Согласно п. 3 Информационного письма",
+    "Как следует из содержания п. 2 ст. 421",
+)
+_FOTE_LEFTOVER_TAILS = (
+    "в указанном в настоящем Иске количестве",
+    "исполнил надлежащим образом",
+)
 
 
 def test_replace_text_spanning_split_runs(tmp_path):
@@ -241,3 +258,116 @@ def test_error3_egrul_pdf_yields_ogrn(tmp_path):
 
     _full, _short, _address, _kpp, ogrn, _text = parse_egrul_certificate(pdf_path)
     assert ogrn == "1147746934037"
+
+
+def _minimal_fote_config(service_type: str, n_contracts: int) -> dict:
+    return {
+        "company_type": "УК",
+        "contracts_info": [{} for _ in range(n_contracts)],
+        "responsitive_name": "Иванов И.И.",
+        "plaintiff_info": {
+            "full_name": "ПАО «МОЭК»",
+            "short_name": "ПАО «МОЭК»",
+            "ogrn": "1047796974092",
+            "inn": "7720518494",
+        },
+        "defendant_info": {
+            "full_name": "ООО «Тест»",
+            "short_name": "ООО «Тест»",
+            "ogrn": "1234567890123",
+            "inn": "7700000000",
+        },
+        "table_info": {"all_debt": "100,00"},
+        "lawsuit_info": {
+            "service_type": service_type,
+            "cost": "100,00",
+            "tax": "10,00",
+            "claims": ["№ 1 от 01.01.2026"],
+        },
+    }
+
+
+@pytest.mark.skipif(not CLAIM_TEMPLATE.exists(), reason="нет шаблона иска")
+@pytest.mark.parametrize(
+    ("service_type", "n_contracts"),
+    [("ФОТЭ", 1), ("ТЭ и ФОТЭ", 2)],
+)
+def test_fote_legal_inserts_do_not_keep_source_paragraph_tail(
+    tmp_path, service_type, n_contracts
+):
+    """Вставки по акту ФОТЭ — отдельные абзацы, без хвоста клонированного абзаца шаблона."""
+    out = tmp_path / "claim.docx"
+    generator = ClaimGenerator()
+    generator.config = _minimal_fote_config(service_type, n_contracts)
+    generator.redactor.clone_file(str(CLAIM_TEMPLATE), str(out))
+    generator.doc = generator.redactor.open(str(out))
+    generator.prepare_data()
+    generator.fill_other_parts()
+
+    paragraphs = [p.text for p in generator.doc.paragraphs]
+    fact_supply = [text for text in paragraphs if "Факт поставки" in text]
+    assert len(fact_supply) == 1
+    assert fact_supply[0].strip().startswith("Факт поставки")
+
+    for start in _FOTE_LEGAL_STARTS:
+        matched = [text for text in paragraphs if text.strip().startswith(start)]
+        assert len(matched) == 1, start
+        for tail in _FOTE_LEFTOVER_TAILS:
+            assert tail not in matched[0], start
+
+
+def test_parse_returns_body_for_non_excel_certificate(monkeypatch, tmp_path):
+    """Справка не в Excel не должна превращать /parse в пустой HTML 500."""
+    assert NON_EXCEL_CERTIFICATE.is_file()
+
+    class _DummyParser:
+        def __init__(self, *args, **kwargs):
+            pass
+
+    import LegalDocInspector.legal_doc_inspector.pdf_parser.parser_models as parser_models
+    from configs.config import load_yaml_config
+    from dataclasses import replace
+
+    monkeypatch.setattr(parser_models, "PDFClaimParser", _DummyParser)
+    monkeypatch.setattr(parser_models, "PDFContractParser", _DummyParser)
+
+    config = replace(
+        load_yaml_config(str(ROOT / "configs/debug_config.yaml")),
+        save_data_folder=str(tmp_path),
+    )
+
+    from LegalDocInspector.backend import create_app
+
+    monkeypatch.setattr(
+        "LegalDocInspector.backend.load_yaml_config", lambda _filename: config
+    )
+    app = create_app()
+    app.config["TESTING"] = True
+    app.config["PROPAGATE_EXCEPTIONS"] = False
+
+    payload = NON_EXCEL_CERTIFICATE.read_bytes()
+    name = NON_EXCEL_CERTIFICATE.name
+
+    def _file():
+        return (io.BytesIO(payload), name)
+
+    response = app.test_client().post(
+        "/parse",
+        data={
+            "date": "2026-11-11",
+            "complects_count": "1",
+            "1_certificates_count": "1",
+            "egrul_certificate_file": _file(),
+            "complect_1_claim_file": _file(),
+            "complect_1_contract_file": _file(),
+            "complect_1_certificate_file_0": _file(),
+        },
+        content_type="multipart/form-data",
+    )
+
+    body = response.get_data(as_text=True)
+    assert response.status_code == 400
+    assert name in body
+    assert "не является файлом Excel" in body
+    assert "Internal Server Error" not in body
+    assert "did not return a valid response" not in body
