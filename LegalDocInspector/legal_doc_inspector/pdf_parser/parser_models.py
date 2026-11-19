@@ -290,13 +290,14 @@ class PDFClaimParser:
 
     def _parse_claim_number_and_date(self, texts_with_pages: List[Tuple[int, str]]) -> List[Tuple[Optional[str], Optional[str]]]:
         """
-        Сначала строгие правила (заголовок претензии / «№» рядом с номером),
-        если пар нет — прежняя эвристика по страницам.
+        Сначала прежняя эвристика по страницам (первая пара «6 цифр + дата»).
+        Строгие правила — только если эвристика ничего не нашла
+        (дата и номер разрезаны OCR и не попали в короткие блоки).
         """
-        claims = self._parse_claim_number_and_date_strict(texts_with_pages)
+        claims = self._parse_claim_number_and_date_legacy(texts_with_pages)
         if claims:
             return claims
-        return self._parse_claim_number_and_date_legacy(texts_with_pages)
+        return self._parse_claim_number_and_date_strict(texts_with_pages)
 
     def _claim_skip_pages(self, texts_with_pages: List[Tuple[int, str]]) -> set:
         skip_pages = set()

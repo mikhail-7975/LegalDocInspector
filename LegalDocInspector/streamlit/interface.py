@@ -343,6 +343,8 @@ if st.session_state.complects[st.session_state.form_data['num_complects']]['clai
             st.session_state.form_data['flag'] = flag
             st.session_state.form_data['result'] = response.json()
             st.session_state.form_data['path_to_save'] = response.json()['path_to_save']
+            st.session_state.removed_claim_indexes = set()
+            st.session_state.extra_claims = []
             # st.json(response.json())
 
 
@@ -609,21 +611,37 @@ if st.session_state.form_data['flag2']:
         claim_info = contract_info[6]
         for claim_item in claim_info:
             st.session_state.form_data['lawsuit_info']['claims'].append(f"№ {claim_item['claim_number']} от {claim_item['claim_date']}")
+    st.session_state.form_data['lawsuit_info']['claims'].extend(
+        st.session_state.setdefault("extra_claims", [])
+    )
 
 #     st.markdown(f"### Данные об услуге, полученные из договоров")
 #     st.markdown(f"{'___'.join(f' - {elem}' for elem in service_type_info)}")
 
 #     st.markdown(f'### Данные о претензиях')
     claims_edit = []
-    # st.markdown(f"номера и даты претензий\n {'___'.join(f'- {claim}' for claim in claims)}")
+    removed_claim_indexes = st.session_state.setdefault("removed_claim_indexes", set())
+    visible_n = 0
     for i, claim in enumerate(st.session_state.form_data['lawsuit_info']['claims']):
-        new_value = st.text_input(
-            label=f"Претензия #{i + 1}",
-            value=claim,
-            key=f"claim_{i}",
-            on_change= on_change_handler
-        )
+        if i in removed_claim_indexes:
+            continue
+        visible_n += 1
+        claim_col, delete_col = st.columns([5, 1], vertical_alignment="bottom")
+        with claim_col:
+            new_value = st.text_input(
+                label=f"Претензия #{visible_n}",
+                value=claim,
+                key=f"claim_{i}",
+                on_change= on_change_handler
+            )
+        with delete_col:
+            if st.button("Удалить", key=f"del_claim_{i}"):
+                removed_claim_indexes.add(i)
+                st.rerun()
         claims_edit.append(new_value)
+    if st.button("Добавить претензию", key="add_claim"):
+        st.session_state.extra_claims.append("")
+        st.rerun()
     st.session_state.form_data['lawsuit_info']['claims'] = claims_edit
 
     st.session_state.form_data['plaintiff_info'] = plaintiff_info
